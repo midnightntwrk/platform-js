@@ -1,0 +1,378 @@
+/*
+ * This file is part of midnight-sdk.
+ * Copyright (C) 2025 Midnight Foundation
+ * SPDX-License-Identifier: Apache-2.0
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * You may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+import { FileSystem, Path } from '@effect/platform';
+import { CompiledContract, type Contract, ContractRuntimeError } from '@midnight-ntwrk/compact-js/effect';
+import * as Hex from '@midnight-ntwrk/platform-js/effect/Hex'
+import { Effect, Either, identity, Layer } from 'effect';
+import pkg from 'json5';
+import TS from 'typescript';
+const { parse, stringify } = pkg;
+
+import { MidnightBech32m, UnshieldedAddress } from '@midnight-ntwrk/wallet-sdk-address-format';
+
+import * as CompiledContractReflection from "../CompiledContractReflection.js";
+
+const CONTRACT_FOLDER = 'contract';
+const CONTRACT_DECLARATION_FILE = 'index.d.ts';
+const TRUE_OR_FALSE_REGEXP = /^(true|false)$/;
+
+// Ceiling on consecutive alias and type-parameter resolutions. Those steps consume no input, so a
+// cyclic alias (`type A = A`) would otherwise recurse until the stack overflows. Branches that do
+// consume input reset the count, leaving deeply nested values bounded by the input itself.
+const MAX_RESOLUTION_DEPTH = 64;
+
+type FileSnapshot = {
+  file: TS.IScriptSnapshot;
+  version: number;
+}
+
+class BasicHost implements TS.LanguageServiceHost {
+  #files: Record<string, FileSnapshot>;
+
+  constructor(readonly files: Record<string, FileSnapshot>) {
+    this.#files = { ...files };
+  }
+
+  getCurrentDirectory(): string {
+    return '';
+  }
+  getDefaultLibFileName(_: TS.CompilerOptions): string {
+    return 'lib';
+  }
+  getCompilationSettings(): TS.CompilerOptions {
+    return TS.getDefaultCompilerOptions();
+  }
+  getScriptVersion(fileName: string): string {
+    return String(this.files[fileName].version);
+  }
+  getScriptSnapshot(fileName: string): TS.IScriptSnapshot | undefined {
+    return this.files[fileName]?.file;
+  }
+  getScriptFileNames(): string[] {
+    return Object.keys(this.#files);
+  }
+  fileExists(path: string): boolean {
+    return !!this.files[path];
+  }
+  readFile(path: string): string | undefined {
+    const file = this.files[path].file
+    return file?.getText(0, file?.getLength())
+  }
+}
+
+const parseBech32mToHex = (input: string): Either.Either<string, Error> =>
+  Either.try({
+    try: () => {
+      const parsedBech32 = MidnightBech32m.parse(input);
+      return UnshieldedAddress.codec.decode(parsedBech32.network, parsedBech32).hexString;
+    },
+    catch: (error) => error instanceof Error ? error : new Error(String(error))
+  });
+
+const typeNodeName: (type: TS.TypeNode) => string =
+  (type) => {
+    if (type.kind === TS.SyntaxKind.NumberKeyword) return 'number';
+    if (type.kind === TS.SyntaxKind.BigIntKeyword) return 'bigint';
+    if (type.kind === TS.SyntaxKind.StringKeyword) return 'string';
+    if (type.kind === TS.SyntaxKind.BooleanKeyword) return 'boolean';
+    if (type.kind === TS.SyntaxKind.ArrayType) {
+      return `${typeNodeName((type as TS.ArrayTypeNode).elementType)}[]`;
+    }
+    if (type.kind === TS.SyntaxKind.TupleType) {
+      return `[${(type as TS.TupleTypeNode).elements.map((_) => typeNodeName(_ as TS.TypeNode)).join(', ')}]`;
+    }
+    if (type.kind === TS.SyntaxKind.TypeLiteral) {
+      const typeLiteral = type as TS.TypeLiteralNode;
+      return `{ ${typeLiteral.members.map((_) => `${(_.name as TS.Identifier).escapedText.toString()}: ${typeNodeName((_ as TS.PropertySignature).type!)}`).join(', ')} }`;
+    }
+    if (TS.isTypeReferenceNode(type) && TS.isIdentifier(type.typeName)) {
+      const name = type.typeName.escapedText.toString();
+      const typeArgs = type.typeArguments?.map(typeNodeName) ?? [];
+      return typeArgs.length ? `${name}<${typeArgs.join(', ')}>` : name;
+    }
+    return '<unknown>';
+  };
+
+// A source file's top-level type aliases by name, generic ones (`Maybe<T>`) included, so
+// `transformParams` can resolve a named reference. Cached, since every reference looks one up.
+const typeAliasCache = new WeakMap<TS.SourceFile, ReadonlyMap<string, TS.TypeAliasDeclaration>>();
+const getTypeAliases = (sourceFile: TS.SourceFile): ReadonlyMap<string, TS.TypeAliasDeclaration> => {
+  const cached = typeAliasCache.get(sourceFile);
+  if (cached) return cached;
+  const aliases = new Map<string, TS.TypeAliasDeclaration>();
+  for (const statement of sourceFile.statements) {
+    if (TS.isTypeAliasDeclaration(statement)) {
+      aliases.set(statement.name.escapedText.toString(), statement);
+    }
+  }
+  typeAliasCache.set(sourceFile, aliases);
+  return aliases;
+};
+
+// Environment of in-scope generic type parameters. Each parameter binds to its argument type node
+// *and* the environment that node was captured in, so a parameter passed through to another generic
+// (`Wrapper<T> = { inner: Maybe<T> }`) resolves in the enclosing scope instead of recursing forever.
+type TypeBindings = ReadonlyMap<string, { node: TS.TypeNode; env: TypeBindings }>;
+
+const transformParams: (
+  args: string[],
+  types: TS.TypeNode[],
+  quotedStrings?: boolean,
+  bindings?: TypeBindings,
+  depth?: number
+) => Either.Either<any[], ContractRuntimeError.ContractRuntimeError> = // eslint-disable-line @typescript-eslint/no-explicit-any
+  (args, types, quotedStrings = false, bindings = new Map(), depth = 0) => {
+    // Recurse, rethrowing the typed error as an exception so it is caught by the enclosing
+    // `Either.try`. Used by the branches that decode a compound type element by element.
+    const transformOrThrow = (
+      elemArgs: string[],
+      elemTypes: TS.TypeNode[],
+      elemQuoted: boolean,
+      elemBindings: TypeBindings,
+      elemDepth = 0
+    ) => {
+      if (elemDepth >= MAX_RESOLUTION_DEPTH) {
+        throw new SyntaxError(
+          `Exceeded the maximum type alias resolution depth of ${MAX_RESOLUTION_DEPTH}; the declaration may contain a cyclic type alias`
+        );
+      }
+      return Either.getOrThrowWith(
+        transformParams(elemArgs, elemTypes, elemQuoted, elemBindings, elemDepth),
+        identity
+      );
+    };
+
+    if (args.length !== types.length) {
+      return Either.left(
+        ContractRuntimeError.make(
+          `Invalid number of arguments. Expected ${types.length} arguments, but got ${args.length}`
+        )
+      );
+    }
+    const transformedArgs: any[] = []; // eslint-disable-line @typescript-eslint/no-explicit-any
+    for (let idx = 0; idx < types.length; idx++) {
+      const type = types[idx];
+      const transformedArg = Either.try({
+        try: () => {
+          if (type!.kind === TS.SyntaxKind.NumberKeyword) {
+            const num = Number(args[idx]);
+            if (!Number.isFinite(num) || args[idx].trim() === '') {
+              throw new SyntaxError(`Cannot convert ${args[idx]} to a Number`);
+            }
+            return num;
+          }
+          if (type!.kind === TS.SyntaxKind.BigIntKeyword) {
+            const input = quotedStrings ? parse(args[idx]) : args[idx];
+            if (typeof input === 'string') {
+              if (input.trim() === '') {
+                throw new SyntaxError(`Cannot convert ${args[idx]} to a BigInt`);
+              }
+              return BigInt(input);
+            }
+            if (typeof input === 'number') {
+              if (!Number.isInteger(input)) {
+                throw new SyntaxError(`Cannot convert ${args[idx]} to a BigInt`);
+              }
+              if (!Number.isSafeInteger(input)) {
+                throw new SyntaxError(
+                  'Unsafe JSON number; pass bigint values as quoted decimal strings'
+                );
+              }
+              return BigInt(input);
+            }
+            throw new SyntaxError(`Cannot convert ${args[idx]} to a BigInt`);
+          }
+          if (type!.kind === TS.SyntaxKind.StringKeyword) {
+            return quotedStrings ? args[idx].replaceAll('\'', '') : args[idx];
+          }
+          if (type!.kind === TS.SyntaxKind.BooleanKeyword) {
+            if (!TRUE_OR_FALSE_REGEXP.test(args[idx])) throw new SyntaxError(`Cannot convert ${args[idx]} to a Boolean`);
+            return args[idx] === 'true';
+          }
+          if (type!.kind === TS.SyntaxKind.ArrayType) {
+            const arrayElems = parse(args[idx]);
+            if (!Array.isArray(arrayElems)) {
+              throw new SyntaxError(`Cannot convert ${args[idx]} to an array`);
+            }
+            return transformOrThrow(
+              arrayElems.map((arrayElem) => stringify(arrayElem)),
+              Array(arrayElems.length).fill((type as TS.ArrayTypeNode).elementType),
+              true,
+              bindings
+            );
+          }
+          if (type!.kind === TS.SyntaxKind.TupleType) {
+            const tupleElems = parse(args[idx]);
+            if (!Array.isArray(tupleElems)) {
+              throw new SyntaxError(`Cannot convert ${args[idx]} to an array`);
+            }
+            return transformOrThrow(
+              tupleElems.map((tupleElem) => stringify(tupleElem)),
+              (type as TS.TupleTypeNode).elements.map((elemType) => elemType as TS.TypeNode),
+              true,
+              bindings
+            );
+          }
+          if (type!.kind === TS.SyntaxKind.TypeLiteral) {
+            const typeLiteral = type as TS.TypeLiteralNode;
+            const srcObj = parse(args[idx]);
+            if (typeof srcObj !== 'object') {
+              throw new SyntaxError(`Cannot convert ${args[idx]} to an object literal`);
+            }
+            for (const member of typeLiteral.members) {
+              const propKey = ((member as TS.PropertySignature).name as TS.Identifier).escapedText.toString();
+              const propType = (member as TS.PropertySignature).type!;
+              const memberValue = transformOrThrow([stringify(srcObj[propKey])], [propType], true, bindings);
+              srcObj[propKey] = memberValue[0];
+            }
+            return srcObj;
+          }
+          if (type!.kind === TS.SyntaxKind.TypeReference) {
+            const typeRef = type as TS.TypeReferenceNode;
+            const typeName = typeRef.typeName;
+            if (TS.isIdentifier(typeName)) {
+              const name = typeName.escapedText.toString();
+              if (name === 'Uint8Array') {
+                const cleanInput = quotedStrings ? args[idx].replaceAll('\'', '') : args[idx];
+
+                const bech32Result = parseBech32mToHex(cleanInput);
+                const hexString = Either.match(bech32Result, {
+                  onLeft: () => cleanInput,
+                  onRight: (hex) => hex
+                });
+
+                return Either.match(Hex.parseHex(hexString), {
+                  onRight: (parsedHex) => Buffer.from(parsedHex.byteChars, 'hex'),
+                  onLeft: (parseErr) => {
+                    throw new SyntaxError(
+                      `Cannot convert ${args[idx]} to a Uint8Array: ${parseErr.message}`
+                    );
+                  }
+                });
+              }
+              // A reference to a generic type parameter (e.g. `T` in a `Maybe<T>` body): resolve the
+              // bound argument node in the environment it was captured in, then recurse.
+              const bound = bindings.get(name);
+              if (bound) {
+                return transformOrThrow([args[idx]], [bound.node], quotedStrings, bound.env, depth + 1)[0];
+              }
+              // Resolve a named alias and recurse, reusing the branches that already decode its body
+              // (e.g. `TypeLiteral` for a struct). For a generic alias (`Maybe<bigint>`) each type
+              // parameter binds to its type argument together with the current environment, so a
+              // parameter used as another generic's argument still resolves against the outer scope.
+              const aliasDecl = getTypeAliases(type!.getSourceFile()).get(name);
+              if (aliasDecl) {
+                const typeParams = aliasDecl.typeParameters ?? [];
+                const typeArgs = typeRef.typeArguments ?? [];
+                // Parameters with a default may be omitted, as in TypeScript. Defaults are a
+                // suffix of the parameter list, so an omitted argument is always a defaulted one.
+                const requiredCount = typeParams.filter((typeParam) => !typeParam.default).length;
+                if (typeArgs.length < requiredCount || typeArgs.length > typeParams.length) {
+                  const expected = requiredCount === typeParams.length
+                    ? `${typeParams.length}`
+                    : `${requiredCount} to ${typeParams.length}`;
+                  throw new SyntaxError(
+                    `Cannot resolve ${typeNodeName(type!)}: expected ${expected} type argument(s), but got ${typeArgs.length}`
+                  );
+                }
+                // A default is written in the alias's own scope, so it resolves against the
+                // bindings being built here; an explicit argument resolves in the caller's scope.
+                const aliasBindings = new Map<string, { node: TS.TypeNode; env: TypeBindings }>();
+                typeParams.forEach((typeParam, typeParamIdx) => {
+                  const typeArg = typeArgs[typeParamIdx];
+                  aliasBindings.set(
+                    typeParam.name.escapedText.toString(),
+                    typeArg ? { node: typeArg, env: bindings } : { node: typeParam.default!, env: aliasBindings }
+                  );
+                });
+                return transformOrThrow([args[idx]], [aliasDecl.type], quotedStrings, aliasBindings, depth + 1)[0];
+              }
+            }
+          }
+          // Unsupported type: fail legibly instead of silently returning `undefined`.
+          throw new SyntaxError(
+            `Cannot convert ${args[idx]}: unsupported argument type ${typeNodeName(type!)}`
+          );
+        },
+        catch: (err) => ContractRuntimeError.make(
+          `Failed to parse argument with index ${idx}`,
+          ContractRuntimeError.make(
+            `Failed to parse string '${args[idx]}' as type of ${typeNodeName(type!)}`,
+            err
+          )
+        )
+      });
+      if (Either.isLeft(transformedArg)) return transformedArg;
+      transformedArgs.push(transformedArg.right);
+    }
+    return Either.right(transformedArgs);
+  };
+
+const makeArgumentParser =
+  <C extends Contract.Contract<PS>, PS>(path: Path.Path, fs: FileSystem.FileSystem, baseAssetFolderPath: string) =>
+    (compiledContract: CompiledContract.CompiledContract<C, PS>) =>
+      Effect.gen(function* () {
+        const assetsPath = CompiledContract.getCompiledAssetsPath(compiledContract);
+        const tsDeclFilePath = path.join(path.resolve(baseAssetFolderPath, assetsPath), CONTRACT_FOLDER, CONTRACT_DECLARATION_FILE);
+        const tsHost = new BasicHost({
+          [tsDeclFilePath]: {
+            file: TS.ScriptSnapshot.fromString(yield* fs.readFileString(tsDeclFilePath)),
+            version: 1
+          }
+        });
+        const tsLangService = TS.createLanguageService(tsHost, TS.createDocumentRegistry());
+        const sourceFile = tsLangService.getProgram()!.getSourceFile(tsDeclFilePath);
+        const impureCircuitsTypeNode = sourceFile?.statements.find(
+          (_) => TS.isTypeAliasDeclaration(_)
+            && _.name.escapedText === 'ImpureCircuits'
+            && _.type.kind === TS.SyntaxKind.TypeLiteral
+        ) as TS.TypeAliasDeclaration;
+        const circuitMethodSignatureNodes =
+          (impureCircuitsTypeNode.type as TS.TypeLiteralNode).members as TS.NodeArray<TS.MethodSignature>;
+        const contractClassNode = sourceFile?.statements.find(
+          (_) => TS.isClassDeclaration(_) && _.name!.escapedText === 'Contract'
+        ) as TS.ClassDeclaration;
+        const initialStateMethodSignatureNode = contractClassNode.members.find(
+          (_) => TS.isMethodDeclaration(_)
+            && (_.name as TS.Identifier).escapedText === 'initialState'
+        );
+
+        return {
+          parseInitializationArgs: (args) => transformParams(args, (initialStateMethodSignatureNode as TS.MethodDeclaration).parameters.slice(1).map((_) => _.type!)) as Either.Either<Contract.Contract.InitializeParameters<C>, ContractRuntimeError.ContractRuntimeError>,
+          // Generic in `K` to match `ArgumentParser.parseCircuitArgs`, whose return type is
+          // `CircuitParameters<C, K>`. A non-generic implementation cannot satisfy it — the
+          // assertion would have to widen `K` back to the whole circuit-id union.
+          parseCircuitArgs: <K extends Contract.ProvableCircuitId<C>>(circuitId: K, args: string[]) => {
+            const circuitNode = circuitMethodSignatureNodes.find((_) => (_.name as TS.Identifier)!.escapedText === circuitId);
+            if (!circuitNode) {
+              return Either.left(ContractRuntimeError.make(`Circuit '${circuitId}' not found on the Compact generated TypeScript declaration.`))
+            }
+            return transformParams(args, circuitNode.parameters.slice(1).map((_) => _.type!)) as Either.Either<Contract.Contract.CircuitParameters<C, K>, ContractRuntimeError.ContractRuntimeError>;
+          }
+        } satisfies CompiledContractReflection.CompiledContractReflection.ArgumentParser<C, PS>;
+      });
+
+export const layer = (baseAssetFolderPath = '.') => Layer.effect(
+  CompiledContractReflection.CompiledContractReflection,
+  Effect.gen(function* () {
+    const path = yield* Path.Path;
+    const fs = yield* FileSystem.FileSystem;
+
+    return CompiledContractReflection.CompiledContractReflection.of({
+      createArgumentParser: makeArgumentParser(path, fs, baseAssetFolderPath)
+    })
+  })
+);
