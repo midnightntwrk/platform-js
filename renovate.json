@@ -1,7 +1,0 @@
-{
-  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "labels": ["bot:renovate"],
-  "extends": [
-    "local>midnightntwrk/renovate-config"
-  ]
-}
