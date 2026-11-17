@@ -14,7 +14,7 @@ the repo root?
 
 ## Decision Drivers
 
-- Moving the package is the expensive part: every path in docs, agent rules, tsconfig, vitest, eslint and CI changes.
+- Moving the package is the expensive part: every path in docs, agent rules, tsconfig, vitest and eslint changes.
   The layout chosen now should not need moving again.
 - The build already runs through Turborepo (`turbo run build|test|package`).
 - midnight-wallet, a sibling Midnight repo, uses a Turborepo workspace with `packages/*`; matching it lowers the cost of
@@ -33,7 +33,9 @@ can be added without another layout move, Turborepo already works here, and it m
 ### Positive Consequences
 
 - A new package is a new folder under `packages/`; nothing else moves.
-- Shared config (`tsconfig.base.json`, `eslint.config.mjs`, `vitest.config.ts`, `turbo.json`) lives once, at the root.
+- `tsconfig.base.json`, `eslint.config.mjs` and `turbo.json` live once, at the root; each package keeps its own
+  tsconfigs (extending the base) and its own `vitest.config.ts`, and the root `vitest.config.ts` only lists the
+  packages' configs as projects.
 
 ### Negative Consequences
 
@@ -42,6 +44,14 @@ can be added without another layout move, Turborepo already works here, and it m
   package folder.
 
 ## Pros and Cons of the Options
+
+### Turborepo workspace at the repo root, the package in `packages/platform-js/`
+
+- Good, because a second package is a new folder under `packages/`, with no layout move.
+- Good, because it keeps Turborepo, which the build already uses.
+- Good, because it matches midnight-wallet.
+- Bad, because with one package the workspace and Turborepo add a layer a single-package repo would not need.
+- Bad, because per-file commands (one test file, the type-check) run in the package folder, not the root.
 
 ### Single package at the repo root
 
