@@ -1,4 +1,4 @@
-# Midnight Template Repository
+# platform-js
 
 > [!WARNING]
 > **This repository is not live yet.** platform-js is moving here from
