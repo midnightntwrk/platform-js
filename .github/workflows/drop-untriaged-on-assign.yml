@@ -1,7 +1,7 @@
 name: Drop untriaged on assign
 
 # Dispatcher — calls the reusable workflow in midnightntwrk/workflows.
-# Removes status:untriaged once an issue is assigned and prioritised.
+# Removes status:untriaged once an issue has an assignee.
 on:
   issues:
     types: [assigned]

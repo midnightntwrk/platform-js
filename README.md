@@ -25,7 +25,7 @@ Defines repository ownership rules.
 
 ### ISSUE_TEMPLATE
 
-Provides templates for reporting various types of issues, such as: bug report, documentation improvement and feature request.
+Provides templates for reporting various types of issues, such as: bug report, feature request, task and documentation improvement.
 
 ### PULL_REQUEST_TEMPLATE
 
