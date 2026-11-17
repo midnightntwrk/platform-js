@@ -7,6 +7,12 @@ updates:
       interval: "weekly"
     cooldown:
       default-days: 7
+    ignore:
+      # changesets/action v2 requires @changesets/cli v3; this repo pins CLI v2, so a
+      # release-PR job would fail with "Changesets CLI v2 is not supported". Lift this
+      # when the CLI moves to v3.
+      - dependency-name: "changesets/action"
+        update-types: ["version-update:semver-major"]
 
 #  - package-ecosystem: "cargo"
 #    directory: "/"
