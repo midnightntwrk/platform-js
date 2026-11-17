@@ -1,6 +1,6 @@
 # Issue tracker: GitHub
 
-Issues and specs for this repo live as GitHub issues in `midnightntwrk/platform-js`. Use the `gh` CLI for all
+Issues for this repo live as GitHub issues in `midnightntwrk/platform-js`. Use the `gh` CLI for all
 operations.
 
 ## Org rules that apply to every issue
@@ -17,8 +17,17 @@ operations.
 ## Conventions
 
 - **Create an issue**: `gh issue create` skips the issue forms in `.github/ISSUE_TEMPLATE/`, so do by hand what the
-  form does: title prefix (`[Task] `, `[Feature] `, `[Bug] ` or `[Docs] `), the form's Issue Type, its labels
-  (`status:untriaged`, `component:platform-js`) and its fields as `###` headings in the body. For a Task:
+  form does: its title prefix, Issue Type and labels (below), plus `bot:ai-assisted`, and its fields as `###` headings
+  in the body.
+
+  | Form                            | Title prefix | Issue Type | Labels                                                       |
+  | ------------------------------- | ------------ | ---------- | ------------------------------------------------------------ |
+  | `task.yml`                      | `[Task] `    | `Task`     | `status:untriaged`, `component:platform-js`                  |
+  | `feature-request.yml`           | `[Feature] ` | `Feature`  | `status:untriaged`, `component:platform-js`                  |
+  | `bug-report.yml`                | `[Bug] `     | `Bug`      | `status:untriaged`, `component:platform-js`                  |
+  | `documentation-improvement.yml` | `[Docs] `    | `Task`     | `status:untriaged`, `documentation`, `component:platform-js` |
+
+  For a Task:
   `gh issue create --title "[Task] ..." --type Task --label status:untriaged,component:platform-js,bot:ai-assisted --body "..."`,
   with `### Summary`, `### Acceptance criteria / done when` and `### Context / notes`. Use a heredoc for multi-line
   bodies.
@@ -45,16 +54,7 @@ target with `gh repo view --json nameWithOwner` (it must print `midnightntwrk/pl
 ## Pull requests as a triage surface
 
 **PRs as a request surface: no.** _(Set to `yes` if this repo treats external PRs as feature requests; `/triage` reads
-this flag.)_
-
-When set to `yes`, PRs run through the same labels and states as issues, using the `gh pr` equivalents:
-
-- **Read a PR**: `gh pr view <number>`, then `gh pr view <number> --comments`, and `gh pr diff <number>` for the diff.
-- **List external PRs for triage**: `gh api --paginate 'repos/{owner}/{repo}/pulls?state=open' --jq '.[] | select(.author_association | IN("OWNER","MEMBER","COLLABORATOR") | not) | {number, title, author: .user.login, author_association, labels: [.labels[].name]}'`.
-- **Comment / label / close**: `gh pr comment`, `gh pr edit --add-label`/`--remove-label`, `gh pr close`.
-
-GitHub shares one number space across issues and PRs, so a bare `#42` may be either: resolve with `gh pr view 42` and
-fall back to `gh issue view 42`.
+this flag.)_ If it is ever set to `yes`, PRs use the same labels as issues, through the `gh pr` equivalents.
 
 ## When a skill says "publish to the issue tracker"
 

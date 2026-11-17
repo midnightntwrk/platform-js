@@ -5,11 +5,7 @@ The template is configured with default repository settings and a set of default
 
 ## Contributing and documentation
 
-- [`CONTRIBUTING.md`](CONTRIBUTING.md): how to contribute.
-- [`DEV_GUIDE.md`](DEV_GUIDE.md): local setup, branch names, commands and tests.
-- [`docs/CodingConventions.md`](docs/CodingConventions.md): coding conventions.
-- [`docs/ClaudeCode.md`](docs/ClaudeCode.md): recommended Claude Code settings.
-- [`docs/AgenticWorkflow.md`](docs/AgenticWorkflow.md): the issue-to-PR flow for agents.
+- [`CONTRIBUTING.md`](CONTRIBUTING.md): how to contribute, with links to the repository guides.
 - [`platform-js/README.md`](platform-js/README.md): the platform-js package.
 
 ### LICENSE

@@ -13,7 +13,9 @@ where do they live?
 
 ## Decision Drivers
 
-- Match midnight-wallet, so one ADR format and location works across our TypeScript repos.
+- Match midnight-wallet, so one ADR format and location works across our TypeScript repos. midnight-wallet
+  (`midnightntwrk/midnight-wallet`) is the Midnight TypeScript repo whose agent setup platform-js is modelled on: its
+  rules, test-first loop and ADR layout.
 - Records must be plain Markdown that both people and agents can read and write.
 
 ## Considered Options

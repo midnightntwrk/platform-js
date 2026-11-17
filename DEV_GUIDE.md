@@ -68,8 +68,15 @@ Run these from the `platform-js/` folder.
 There is no `typecheck` or `format` script yet. To type-check by hand, run `yarn run -T tsc -b tsconfig.json` in
 `platform-js/platform-js/` (`-T` runs a tool installed at the workspace root).
 
-> Known problems today: `yarn lint` fails because typescript-eslint doesn't support TypeScript 7, and the type-check
-> reports errors in `test/effect/NetworkId.test.ts`.
+### Known failures today
+
+These predate the current work. Other docs point here; update this list when one is fixed.
+
+- **`yarn lint` fails**: typescript-eslint doesn't support TypeScript 7. Lint gives no coverage today, so the
+  type-check is the gate.
+- **The type-check reports five known errors**, all TS2345 in `test/effect/NetworkId.test.ts` (lines 30, 37, 38, 44
+  and 45): "Argument of type 'string' is not assignable to parameter of type 'NetworkIdInput'". Any other type error
+  comes from your change.
 
 ---
 
@@ -93,8 +100,6 @@ Run one file from `platform-js/platform-js/`:
 ```bash
 yarn run -T vitest run test/effect/Hex.test.ts
 ```
-
-If an integration tier is ever added, its files would be named `*.integration.test.ts`.
 
 ---
 
