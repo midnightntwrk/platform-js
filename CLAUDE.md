@@ -10,19 +10,20 @@ ranges and configuration, written in TypeScript with [Effect](https://effect.web
 
 ## Documentation Map
 
-| Topic                                              | Where                                      |
-| -------------------------------------------------- | ------------------------------------------ |
-| Contribution workflow                              | `CONTRIBUTING.md`                          |
-| Setup, branching, commands, testing tiers          | `DEV_GUIDE.md`                             |
-| How we build changes with agents (flow charts)     | `docs/AgenticWorkflow.md`                  |
-| Functional programming conventions (full, examples) | `docs/CodingConventions.md`               |
-| Claude Code setup (settings, permissions, plugins) | `docs/ClaudeCode.md`                       |
-| Architectural decisions                            | `docs/decisions/` (MADR ADRs)              |
-| Agent skill configuration                          | `docs/agents/` (see Agent skills below)    |
+| Topic                                               | Where                                                                                                          |
+| --------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| Contribution workflow                               | [`CONTRIBUTING.md`](CONTRIBUTING.md)                                                                           |
+| Setup, branching, commands, testing tiers           | [`DEV_GUIDE.md`](DEV_GUIDE.md)                                                                                 |
+| How we build changes with agents (flow charts)      | [`docs/AgenticWorkflow.md`](docs/AgenticWorkflow.md)                                                           |
+| Functional programming conventions (full, examples) | [`docs/CodingConventions.md`](docs/CodingConventions.md)                                                       |
+| Claude Code setup (settings, permissions, plugins)  | [`docs/ClaudeCode.md`](docs/ClaudeCode.md)                                                                     |
+| Architectural decisions                             | [`docs/decisions/`](docs/decisions/) (MADR ADRs)                                                               |
+| Agent skill configuration                           | [`docs/agents/`](docs/agents/) (see Agent skills below)                                                        |
+| Hard rules for agents (load automatically)          | [`.claude/rules/`](.claude/rules/): `functional-style.md`, `testing.md`, `claude-config.md`, `code-review.md`  |
 
-Hard rules load automatically from `.claude/rules/` when matching files are touched: `functional-style.md` (source
-under `platform-js/platform-js/src`), `testing.md` (tests and vitest config), `claude-config.md` (`.claude/**`).
-`code-review.md` has no path filter and is always loaded: it governs how review findings are turned into fixes.
+Each rule loads when matching files are touched: `functional-style.md` for source under `platform-js/platform-js/src`,
+`testing.md` for tests and vitest config, `claude-config.md` for `.claude/**`. `code-review.md` is always loaded: it
+governs how review findings become fixes.
 
 ## Workflow
 
@@ -31,6 +32,7 @@ The supported agentic flow is in `docs/AgenticWorkflow.md`. It replaces the skil
 - Ready issue → `/implement #N`. Issue with open questions → `/grill-with-docs`, write the outcome into the issue
   **body** (never comments), `/clear`, `/implement #N`. Idea with no issue → `/grill-with-docs`, then `/to-tickets` in
   the same session for exactly **one** ticket, `/clear`, `/implement #N`.
+- After a grill, commit `GLOSSARY.md` and any new ADRs on the change's branch before `/clear`.
 - Never `/to-spec` or `/implement-spec`. `/to-tickets` must not apply `ready-for-agent`.
 - Inside `/implement`, `code-review` means `/mattpocock-skills:code-review`, and Matt's `tdd` runs inside our
   `test-first` loop, gate included.
@@ -38,22 +40,26 @@ The supported agentic flow is in `docs/AgenticWorkflow.md`. It replaces the skil
 ## Git & GitHub Conventions
 
 - **Never commit or push directly to `main`**: always work on a branch named `<type>/<ticket>-<short-description>`
-  (`DEV_GUIDE.md` → Branching Strategy).
+  (`DEV_GUIDE.md` → Branching Strategy). The one exception: a Path C branch (`docs/AgenticWorkflow.md`), made before
+  its issue exists, is `<type>/<short-description>` and keeps that name to the end.
 - Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/): `<type>(<scope>): <description>`,
   imperative mood, lower-case, no trailing period. Breaking changes: `!` after type/scope and/or a `BREAKING CHANGE:`
   footer.
+- Commits are signed off (`git commit -s`, for the DCO). AI-assisted commits also carry the trailer
+  `Assisted-by: AI <noreply@ai-assistant>`, never an AI `Co-Authored-By`.
 - **Never commit, push, or create/edit PRs, issues, or comments unattended**: show the user the diff and the exact
   message/content first, and wait for explicit approval. For an issue or PR body edit, show the old and new body as a
   diff.
 - Issues and PRs use the `.github/` templates, every section filled, and AI-assisted ones carry `bot:ai-assisted`. Link
   issues with plain references (`#123`), **never** closing keywords (`Closes`/`Fixes`/`Resolves`); issues are closed by
-  hand after QA.
-- Labels are IaC-managed: never create one. Triage labels: `docs/agents/triage-labels.md`.
+  hand after QA. The PR template's `Closes #N` hint does not apply here: write `#N`.
+- Labels are IaC-managed: never create one.
 
 ## Build Commands
 
-Run everything from the `platform-js/` folder (the Yarn workspace root; the git root has no `package.json`). The layout
-changes under #18; update these commands when it lands.
+This section is the one agent-facing source for the commands; other agent files point here. Run everything from the
+`platform-js/` folder (the Yarn workspace root; the git root has no `package.json`). The layout changes under #18;
+update these commands when it lands.
 
 ```bash
 nvm use && corepack enable   # at the git root
@@ -61,7 +67,7 @@ cd platform-js
 yarn                         # install dependencies
 yarn build                   # build all packages (turbo)
 yarn test                    # full test suite (turbo; builds dependencies first)
-yarn lint                    # eslint across the workspace (broken today, see Common Gotchas)
+yarn lint                    # eslint across the workspace (see Common Gotchas)
 
 cd platform-js               # the package folder, platform-js/platform-js/
 yarn run -T vitest run test/effect/Hex.test.ts   # one test file
@@ -99,17 +105,23 @@ touched; full rationale and worked examples: `docs/CodingConventions.md`.
 
 ## Common Gotchas
 
-- **Commands don't run from the git root**: `cd platform-js` first.
 - **Tests import the package by name** (`@midnight-ntwrk/platform-js/effect/Hex`), through the `./effect/*` export.
   `./effect/internal/*` is blocked, so tests can't import internals; a new `effect/` module is also re-exported from
   `src/effect/index.ts`.
-- **`yarn lint` fails today**: typescript-eslint doesn't support TypeScript 7. **The type-check fails today** on
-  `test/effect/NetworkId.test.ts`. Both predate the agent setup; don't treat them as caused by your change.
+- **`yarn lint` fails today**: typescript-eslint doesn't support TypeScript 7, so lint gives no coverage. The
+  type-check is the gate.
+- **The type-check has five known errors**, all from before the agent setup: `yarn run -T tsc -b tsconfig.json` (in
+  `platform-js/platform-js/`) reports TS2345 in `test/effect/NetworkId.test.ts` at lines 30, 37, 38, 44 and 45
+  ("Argument of type 'string' is not assignable to parameter of type 'NetworkIdInput'"). Any other type error is yours
+  to fix.
 - **Turbo's cache can be stale** after branch switches or rebases: bypass with `--force` (`yarn build --force`).
-- **Effect skills** in `.claude/skills/effect-*` are managed by the `skills` CLI and pinned in `skills-lock.json`:
-  never hand-edit them; update with `npx skills update` (`docs/ClaudeCode.md`).
+- **Effect skills** in `.claude/skills/effect-*` come from two places. `effect-ts` is vendored Effect v3 guidance from
+  Claude-Matrix (MIT), not managed by a CLI: edit it only with `.claude/skills/effect-ts/ATTRIBUTION.md` updated.
+  `effect-v3-to-v4` is managed by the `skills` CLI and pinned in `skills-lock.json` (copy install mode): never
+  hand-edit it; update with `npx skills update` (`docs/ClaudeCode.md`).
 
-<!-- Managed by /setup-matt-pocock-skills: change it by re-running the skill, not by hand. -->
+<!-- Set up by /setup-matt-pocock-skills. Edit it by hand, together with docs/agents/*.md.
+     Do not re-run the skill: its defaults create bare labels and docs/adr/. -->
 ## Agent skills
 
 ### Issue tracker
