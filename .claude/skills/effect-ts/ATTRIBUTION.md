@@ -14,8 +14,12 @@ This skill (`SKILL.md` and everything under `references/`) is vendored from the
 - Removed the Matrix-plugin-specific frontmatter (`user-invocable`, `context`) and the
   `mcp__plugin_matrix_*` / Context7 entries from `allowed-tools`, since those tools are not
   available in this repository. The skill now uses the standard tool set.
-- Adjusted the `description` to mention this repo's Effect-heavy packages
-  (`compact-js`, `platform-js`).
+- Adjusted the `description` to mention this repo's Effect-heavy package (`platform-js`,
+  Effect 3). The skill came from midnight-sdk, where it also named `compact-js`; that
+  mention was dropped when platform-js moved to its own repository.
+- Kept as vendored Effect 3 guidance on purpose. The upstream `Effect-TS/skills` `effect-ts`
+  skill is an Effect 4 setup recipe, so it is not installed through the `skills` CLI and is
+  not listed in `skills-lock.json`. Edit these files by hand and record each change here.
 
 The reference documents under `references/` are unchanged from upstream.
 

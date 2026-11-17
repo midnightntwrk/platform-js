@@ -3,6 +3,11 @@
 This GitHub repository should be used as a template when creating a new Midnight GitHub repository.
 The template is configured with default repository settings and a set of default files that are expected to exist in all Midnight GitHub repositories.
 
+## Contributing and documentation
+
+- [`CONTRIBUTING.md`](CONTRIBUTING.md): how to contribute, with links to the repository guides.
+- [`platform-js/README.md`](platform-js/README.md): the platform-js package.
+
 ### LICENSE
 
 Apache 2.0.

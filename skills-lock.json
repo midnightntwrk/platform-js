@@ -1,0 +1,13 @@
+{
+  "version": 2,
+  "skills": {
+    "effect-v3-to-v4": {
+      "source": "Effect-TS/skills",
+      "commit": "155c50c911f9c99c294ef8a4461981c5bbe6453e",
+      "sourceType": "github",
+      "skillPath": "skills/effect-v3-to-v4/SKILL.md",
+      "computedHash": "df1435662eee2663a39a051d6933fa854eb206ffa6ce24500325e3c7ee183386",
+      "installMode": "copy"
+    }
+  }
+}

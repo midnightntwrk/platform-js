@@ -24,3 +24,15 @@ logs
 .eslintcache
 .rollup.cache
 .DS_Store
+
+# Agent working notes (grill records, plans, handoffs)
+.scratch/
+
+# skills CLI working directory (skills are copied into .claude/skills/)
+/.agents
+
+# Personal Claude Code settings (shared settings live in .claude/settings.json)
+/.claude/settings.local.json
+
+# Source clones made by the effect-v3-to-v4 skill
+/.repos
