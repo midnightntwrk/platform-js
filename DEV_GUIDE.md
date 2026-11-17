@@ -44,7 +44,8 @@ Examples: `feat/123-network-id-parsing`, `chore/19-agentic-workflow-setup`, `doc
 
 - Open PRs from these branches → merge into `main` after review and green CI.
 
-- Do **not** bump versions or edit changelogs manually.
+- Do **not** bump versions or edit changelogs by hand; [Versioning & releases](#versioning--releases) says how, once
+  [#16](https://github.com/midnightntwrk/platform-js/issues/16) sets up the tooling.
 
 ---
 
