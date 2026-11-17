@@ -7,7 +7,7 @@ paths:
 
 Mandatory for all library code. Rationale and worked examples: `docs/CodingConventions.md`.
 File paths below are relative to `packages/platform-js/src/`, except `test/…` (relative to
-`packages/platform-js/`) and `packages/…` (relative to the repo root). Quoted import specifiers
+`packages/platform-js/`) and paths starting `packages/` (relative to the repo root). Quoted import specifiers
 (`'effect/Either'`) and Effect module names (`effect/Brand`, `effect/Array`) name Effect's own modules, not files.
 
 ## Immutability
