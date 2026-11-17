@@ -62,9 +62,9 @@ Ensure the title is a clear summary of the requirement and provides enough conte
 **Issue Types:**
 
 * **Bug Report:** Provide detailed information about the issue, including steps to reproduce it, expected behavior, and actual behavior, screenshots, or any other relevant information.
-* **Documentation Improvement:** Clearly describe the improvement requested for existing content and/or raise missing areas of documentation and provide details for what should be included.
 * **Feature Request:** Clearly describe your feature, its benefits, and most importantly, the expected outcome. This helps us analyze the proposed solution and develop alternatives.
-* **Enhancement:** (WIP)
+* **Task:** Describe a unit of work that isn't a bug or a new feature. Summarise what needs to be done and list concrete, verifiable acceptance criteria.
+* **Documentation Improvement:** Clearly describe the improvement requested for existing content and/or raise missing areas of documentation and provide details for what should be included.
 
 ## Code Contribution Process
 
