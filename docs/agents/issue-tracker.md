@@ -16,8 +16,12 @@ operations.
 
 ## Conventions
 
-- **Create an issue**: `gh issue create --title "..." --type Task --label bot:ai-assisted --body "..."`. Use a heredoc
-  for multi-line bodies.
+- **Create an issue**: `gh issue create` skips the issue forms in `.github/ISSUE_TEMPLATE/`, so do by hand what the
+  form does: title prefix (`[Task] `, `[Feature] `, `[Bug] ` or `[Docs] `), the form's Issue Type, its labels
+  (`status:untriaged`, `component:platform-js`) and its fields as `###` headings in the body. For a Task:
+  `gh issue create --title "[Task] ..." --type Task --label status:untriaged,component:platform-js,bot:ai-assisted --body "..."`,
+  with `### Summary`, `### Acceptance criteria / done when` and `### Context / notes`. Use a heredoc for multi-line
+  bodies.
 - **Read an issue**: `gh issue view <number> --json number,title,body,labels,comments`.
 - **List issues**: `gh issue list --state open --json number,title,body,labels,comments --jq '[.[] | {number, title, body, labels: [.labels[].name], comments: [.comments[].body]}]'`
   with appropriate `--label` and `--state` filters.

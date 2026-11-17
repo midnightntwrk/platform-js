@@ -53,6 +53,11 @@ After installing the hook, every `git commit` in this repo will include a `Signe
 * **Review Existing Contributions and Issues:** Before submitting, please check if a similar issue or feature request already exists by searching our issue tracker.
 * **Understand the Project:** Familiarize yourself with Midnight's architecture, technology, and coding standards. You can find relevant information in our litepaper.
 * **Set up Your Development Environment:** Ensure you have the necessary tools and dependencies installed. See our developer [documentation](https://docs.midnight.network/) for detailed instructions.
+* **Read the Repository Guides:**
+  * [`DEV_GUIDE.md`](DEV_GUIDE.md): local setup, branch names, commands and tests.
+  * [`docs/CodingConventions.md`](docs/CodingConventions.md): how we write code here.
+  * [`docs/ClaudeCode.md`](docs/ClaudeCode.md): recommended settings if you use Claude Code.
+  * [`docs/AgenticWorkflow.md`](docs/AgenticWorkflow.md): the issue-to-PR flow for agents.
 
 ## Submitting Issues
 
@@ -71,9 +76,10 @@ Ensure the title is a clear summary of the requirement and provides enough conte
 * **Pull Requests:** Code contributions are submitted via Pull Requests.
 * **Fork the Repository:** Create your own fork of the Midnight repository.
 * **Create a Branch:** Make your changes in a separate branch,
-  prefixed with a short name moniker (e.g. `jill-my-feature`).
-* **Follow Coding Standards:** Adhere to the coding style guides specified in our documentation.
-* **Write Tests:** Include unit tests and integration tests to cover your changes.
+  named `<type>/<ticket>-<short-description>` (e.g. `feat/123-network-id-parsing`).
+  See [Branching Strategy](DEV_GUIDE.md#branching-strategy) in `DEV_GUIDE.md`.
+* **Follow Coding Standards:** Adhere to the conventions in [`docs/CodingConventions.md`](docs/CodingConventions.md).
+* **Write Tests:** Include unit tests to cover your changes. See [Testing Tiers](DEV_GUIDE.md#testing-tiers) in `DEV_GUIDE.md`.
 * **Commit Messages:** Write clear and concise commit messages.
 * **Submit Pull Request:** Submit your pull request to the appropriate branch in the main repository.
 * **Please do not `--force` pushes** - doing so means that reviewers will have to re-review all
@@ -83,8 +89,8 @@ Ensure the title is a clear summary of the requirement and provides enough conte
 
 ## Requirements for Acceptable Contributions:
 
-* **Coding Standards:** Code must adhere to the coding style guides defined in our documentation
-* **Testing:** New functionality must include corresponding unit tests and integration tests.
+* **Coding Standards:** Code must adhere to the conventions in [`docs/CodingConventions.md`](docs/CodingConventions.md).
+* **Testing:** New functionality must include corresponding unit tests (see [Testing Tiers](DEV_GUIDE.md#testing-tiers)).
 * **Documentation:** Code changes should be accompanied by proposed relevant documentation updates.
 * **License:** All contributions must be compatible with the project's license.
   Where possible all files should have this license header:
