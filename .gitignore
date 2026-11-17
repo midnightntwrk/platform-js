@@ -17,10 +17,7 @@ reports/
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
-managed/
-midnight-level-db
 logs
-.states
 .eslintcache
 .rollup.cache
 .DS_Store

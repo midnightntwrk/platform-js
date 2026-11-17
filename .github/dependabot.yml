@@ -9,8 +9,7 @@ updates:
       default-days: 7
     ignore:
       # Guards the release workflow planned in #16: changesets/action v2 needs
-      # @changesets/cli v3, and this repo is on CLI v2. Lift this when the CLI
-      # moves to v3.
+      # @changesets/cli v3. Lift this once the installed CLI is v3.
       - dependency-name: "changesets/action"
         update-types: ["version-update:semver-major"]
 

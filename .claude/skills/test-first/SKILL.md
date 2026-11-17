@@ -2,7 +2,7 @@
 name: test-first
 description: >
   Mandatory test-first loop for platform-js. Use whenever implementing new behavior or fixing a bug in code under
-  platform-js/platform-js/src, or on any mention of TDD or test-first. The test is written, observed failing, and
+  packages/platform-js/src, or on any mention of TDD or test-first. The test is written, observed failing, and
   approved by the user BEFORE any implementation. Matt's `tdd` skill (called by /implement) runs inside this loop. Not
   needed for docs, config, or pure refactors with existing coverage.
 ---
@@ -15,7 +15,7 @@ prepared ahead of time, depending on the task. If unsure, prefer fewer tests per
 test at a time unless the user picks a suite for this ticket.
 
 Commands, layout and known failures (lint, type-check) are in `CLAUDE.md` → Build Commands and Common Gotchas. Run
-loop commands from `platform-js/platform-js/` unless a step says otherwise.
+loop commands from `packages/platform-js/` unless a step says otherwise.
 
 ## 0. Choose the test file
 
@@ -74,7 +74,7 @@ as in Matt's `tdd`.
 
 ## 8. Finish
 
-After the last item, from `platform-js/`, run the full suite once:
+After the last item, from the repo root, run the full suite once:
 
 ```bash
 yarn test

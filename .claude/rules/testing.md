@@ -1,6 +1,6 @@
 ---
 paths:
-  - 'platform-js/platform-js/test/**'
+  - 'packages/platform-js/test/**'
   - '**/*.test.ts'
   - '**/vitest.config.ts'
 ---
@@ -9,7 +9,7 @@ paths:
 
 ## One tier: unit
 
-- Every test is a unit test: `*.test.ts` under `platform-js/platform-js/test/`. Pure: no network, no external services,
+- Every test is a unit test: `*.test.ts` under `packages/platform-js/test/`. Pure: no network, no external services,
   no Docker. Must pass anywhere with zero setup. There is no integration tier; don't add one without an issue.
 - Tests import the package by name (`@midnight-ntwrk/platform-js/effect/Hex`), never by relative path into `src/`.
   Nothing enforces this (relative paths still resolve, and lint gives no coverage today: `CLAUDE.md` → Common

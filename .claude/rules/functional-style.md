@@ -1,13 +1,13 @@
 ---
 paths:
-  - 'platform-js/platform-js/src/**/*.ts'
+  - 'packages/platform-js/src/**/*.ts'
 ---
 
 # Functional style — hard rules
 
 Mandatory for all library code. Rationale and worked examples: `docs/CodingConventions.md`.
-File paths below are relative to `platform-js/platform-js/src/`, except `test/…` (relative to
-`platform-js/platform-js/`) and `platform-js/…` (relative to the repo root). Quoted import specifiers
+File paths below are relative to `packages/platform-js/src/`, except `test/…` (relative to
+`packages/platform-js/`) and `packages/…` (relative to the repo root). Quoted import specifiers
 (`'effect/Either'`) and Effect module names (`effect/Brand`, `effect/Array`) name Effect's own modules, not files.
 
 ## Immutability
@@ -77,7 +77,7 @@ File paths below are relative to `platform-js/platform-js/src/`, except `test/�
 
 ## Public API and changesets
 
-- The public API is what `platform-js/platform-js/package.json` `exports` exposes: `.`, `./effect`, `./effect/*`.
+- The public API is what `packages/platform-js/package.json` `exports` exposes: `.`, `./effect`, `./effect/*`.
   `./effect/internal/*` is blocked (`null`) — internal code is free to change.
 - A new module under `effect/` must also be re-exported from `effect/index.ts`.
 - A removed or changed public signature is a major bump. For changesets, follow `DEV_GUIDE.md` → Versioning & releases
