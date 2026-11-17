@@ -271,6 +271,7 @@ __metadata:
     "@types/node": "npm:^26.2.0"
     "@vitest/coverage-v8": "npm:^4.1.9"
     "@vitest/ui": "npm:^4.1.9"
+    effect: "npm:^3.22.0"
     eslint: "npm:^10.8.1"
     eslint-config-prettier: "npm:^10.1.8"
     eslint-import-resolver-typescript: "npm:^4.4.5"
