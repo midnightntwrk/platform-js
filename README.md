@@ -1,4 +1,9 @@
-# Midnight Template Repository
+# platform-js
+
+> [!WARNING]
+> **This repository is not live yet.** platform-js is moving here from
+> [`midnightntwrk/midnight-sdk`](https://github.com/midnightntwrk/midnight-sdk), and nothing has been released from this
+> repository. Until the first release, treat its issues as placeholders: their scope and details may change.
 
 This GitHub repository should be used as a template when creating a new Midnight GitHub repository.
 The template is configured with default repository settings and a set of default files that are expected to exist in all Midnight GitHub repositories.
