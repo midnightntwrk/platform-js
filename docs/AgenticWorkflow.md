@@ -16,10 +16,9 @@ Setup (plugins, permissions, skills): [`docs/ClaudeCode.md`](ClaudeCode.md). Bra
 - **One issue holds the plan.** Grill outcomes are written into the issue **body**, not added as comments, so the body is
   always the current plan. Body edits are shown as a diff first.
 - **One change, one ticket.** If a change needs more than one ticket, split the idea into separate changes instead.
-- **Labels:** only the existing org labels in [`docs/agents/triage-labels.md`](agents/triage-labels.md). Never
-  `ready-for-agent` or `ready-for-human`. AI-assisted issues and PRs carry `bot:ai-assisted`.
-- **No closing keywords.** Link issues with a plain `#123`, never `Closes`/`Fixes`/`Resolves`. Issues are closed by hand
-  after QA.
+- **Issues and PRs** follow [`docs/agents/issue-tracker.md`](agents/issue-tracker.md) (plain `#123` links, no closing
+  keywords, closed by hand after QA), with only the org labels in
+  [`docs/agents/triage-labels.md`](agents/triage-labels.md). Never `ready-for-agent` or `ready-for-human`.
 
 ## Pick your path
 
@@ -92,27 +91,28 @@ wraps the `tdd` step that `/implement` calls, so each behaviour stops at the gat
 ```mermaid
 flowchart TD
   F["/implement #123<br/>fetches the issue, states its title"] --> NEXT{"Next behaviour<br/>from the acceptance criteria"}
-  NEXT --> T["Write the test<br/>(test-first skill)"]
-  T --> RED{"Fails for the<br/>right reason?"}
+  NEXT --> T["Write the test<br/>(test-first skill);<br/>stub any new export"]
+  T --> RED{"Fails on an assertion,<br/>no new type errors?"}
   RED -->|"no: type error, bad import"| T
-  RED -->|yes| GATE["GATE: you review<br/>the failing test"]
+  RED -->|yes| GATE["GATE: you review<br/>the failing test;<br/>its version is recorded"]
   GATE -->|changes asked| T
   GATE -->|approved| IMPL["Write the minimum code<br/>to pass"]
-  IMPL --> GREEN{"Test and package<br/>suite green?"}
+  IMPL --> GREEN{"Package tests and<br/>type-check green?"}
   GREEN -->|"no, and the test<br/>can't pass as written"| ESC["Stop: present the gap.<br/>Never weaken the test"]
   GREEN -->|no| IMPL
-  GREEN -->|yes| MORE{"More behaviours?"}
+  GREEN -->|yes| SAME{"Test unchanged<br/>since the gate?"}
+  SAME -->|"no: back to review"| GATE
+  SAME -->|yes| MORE{"More behaviours?"}
   MORE -->|yes| NEXT
-  MORE -->|no| CHECK["yarn lint + full yarn test<br/>(from platform-js/)"]
-  CHECK --> CR["/mattpocock-skills:code-review<br/>findings fixed test-first"]
+  MORE -->|no| CHECK["Type-check, yarn lint,<br/>full yarn test<br/>(once, at the end)"]
+  CHECK --> CR["/mattpocock-skills:code-review<br/>refactor on green tests;<br/>findings fixed test-first"]
   CR --> COMMIT["Commit on the branch<br/>(diff shown, you approve)"]
 ```
 
-- `yarn lint` fails today for every change (typescript-eslint doesn't support TypeScript 7). Until that's fixed, the
-  check step reports it rather than blocking on it.
-- `code-review` inside `/implement` means `/mattpocock-skills:code-review`, not the built-in `/code-review`.
-- Because of the gate, `/implement` is not run unattended. That is also why we don't use `/implement-spec`, which runs
-  many tickets through subagents.
+- The type-check is `yarn run -T tsc -b tsconfig.json`, run from `platform-js/platform-js/`. The check step reports
+  failures that predate the change rather than blocking on them; which ones are known today is listed in
+  [`DEV_GUIDE.md` → Known failures today](../DEV_GUIDE.md#known-failures-today).
+- Because of the gate, `/implement` is not run unattended.
 
 ## From PR to done
 
