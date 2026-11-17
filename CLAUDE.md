@@ -21,7 +21,7 @@ ranges and configuration, written in TypeScript with [Effect](https://effect.web
 | Agent skill configuration                           | [`docs/agents/`](docs/agents/) (see Agent skills below)                                                        |
 | Hard rules for agents (load automatically)          | [`.claude/rules/`](.claude/rules/): `functional-style.md`, `testing.md`, `claude-config.md`, `code-review.md`  |
 
-Each rule loads when matching files are touched: `functional-style.md` for source under `platform-js/platform-js/src`,
+Each rule loads when matching files are touched: `functional-style.md` for source under `packages/platform-js/src`,
 `testing.md` for tests and vitest config, `claude-config.md` for `.claude/**`. `code-review.md` is always loaded: it
 governs how review findings become fixes.
 
@@ -57,19 +57,18 @@ The supported agentic flow is in `docs/AgenticWorkflow.md`. It replaces the skil
 
 ## Build Commands
 
-This section is the one agent-facing source for the commands; other agent files point here. Run everything from the
-`platform-js/` folder (the Yarn workspace root; the git root has no `package.json`). The layout changes under #18;
-update these commands when it lands.
+This section is the one agent-facing source for the commands; other agent files point here. Run workspace commands
+from the repo root (the Yarn workspace and Turborepo root, ADR-0001), and single-package commands from the package
+folder.
 
 ```bash
-nvm use && corepack enable   # at the git root
-cd platform-js
+nvm use && corepack enable   # at the repo root
 yarn                         # install dependencies
 yarn build                   # build all packages (turbo)
 yarn test                    # full test suite (turbo; builds dependencies first)
 yarn lint                    # eslint across the workspace (see Common Gotchas)
 
-cd platform-js               # the package folder, platform-js/platform-js/
+cd packages/platform-js      # the package folder
 yarn run -T vitest run test/effect/Hex.test.ts   # one test file
 yarn run -T tsc -b tsconfig.json                 # type-check src and tests
 ```
@@ -78,7 +77,7 @@ There is no `typecheck` or `format` script yet. `-T` runs a tool installed at th
 
 ## Architecture
 
-One package, `platform-js/platform-js/` (`@midnight-ntwrk/platform-js`, ESM). Modules live in `src/effect/`, one per
+One package, `packages/platform-js/` (`@midnight-ntwrk/platform-js`, ESM). Modules live in `src/effect/`, one per
 domain type (`Hex`, `NetworkId`, `ContractAddress`, `CoinPublicKey`, `IntegerRange`, `Configuration`, ...), with
 private helpers in `src/effect/internal/`. Errors are `TypeId`-based (`src/effect/ParseError.ts`). Public entry points
 are the `exports` in the package's `package.json`; changing one is a public API change.
@@ -89,7 +88,7 @@ are the `exports` in the package's `package.json`; changing one is a public API 
 user review it, then implement. **A confirmed-failing test must never be weakened to fit the implementation**: escalate
 to the user instead. Full loop: the `test-first` skill (Matt's `tdd`, which `/implement` calls, runs inside it).
 
-Unit tests only today: `*.test.ts` in `platform-js/platform-js/test/`, using `@effect/vitest` and `effect/FastCheck`
+Unit tests only today: `*.test.ts` in `packages/platform-js/test/`, using `@effect/vitest` and `effect/FastCheck`
 property tests. Hard rules load from `.claude/rules/testing.md`; tiers: `DEV_GUIDE.md` → Testing Tiers.
 
 ## Versioning
@@ -111,7 +110,7 @@ touched; full rationale and worked examples: `docs/CodingConventions.md`.
 - **`yarn lint` fails today**: typescript-eslint doesn't support TypeScript 7, so lint gives no coverage. The
   type-check is the gate.
 - **The type-check has five known errors**, all from before the agent setup: `yarn run -T tsc -b tsconfig.json` (in
-  `platform-js/platform-js/`) reports TS2345 in `test/effect/NetworkId.test.ts` at lines 30, 37, 38, 44 and 45
+  `packages/platform-js/`) reports TS2345 in `test/effect/NetworkId.test.ts` at lines 30, 37, 38, 44 and 45
   ("Argument of type 'string' is not assignable to parameter of type 'NetworkIdInput'"). Any other type error is yours
   to fix.
 - **Turbo's cache can be stale** after branch switches or rebases: bypass with `--force` (`yarn build --force`).

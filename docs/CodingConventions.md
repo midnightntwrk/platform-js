@@ -5,7 +5,7 @@ truth for the _why_ and the worked examples; the distilled hard rules that codin
 [`.claude/rules/functional-style.md`](../.claude/rules/functional-style.md) — keep the two in sync when conventions
 change.
 
-All paths below are relative to the package root, `platform-js/platform-js/`.
+All paths below are relative to the package root, `packages/platform-js/`.
 
 Related reading:
 

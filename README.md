@@ -6,7 +6,7 @@ The template is configured with default repository settings and a set of default
 ## Contributing and documentation
 
 - [`CONTRIBUTING.md`](CONTRIBUTING.md): how to contribute, with links to the repository guides.
-- [`platform-js/README.md`](platform-js/README.md): the platform-js package.
+- [`packages/platform-js/README.md`](packages/platform-js/README.md): the platform-js package.
 
 ### LICENSE
 

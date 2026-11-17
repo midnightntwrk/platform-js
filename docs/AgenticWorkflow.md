@@ -109,7 +109,7 @@ flowchart TD
   CR --> COMMIT["Commit on the branch<br/>(diff shown, you approve)"]
 ```
 
-- The type-check is `yarn run -T tsc -b tsconfig.json`, run from `platform-js/platform-js/`. The check step reports
+- The type-check is `yarn run -T tsc -b tsconfig.json`, run from `packages/platform-js/`. The check step reports
   failures that predate the change rather than blocking on them; which ones are known today is listed in
   [`DEV_GUIDE.md` → Known failures today](../DEV_GUIDE.md#known-failures-today).
 - Because of the gate, `/implement` is not run unattended.

@@ -15,10 +15,12 @@ export default tseslint.config(
       '**/.rollup.cache/**',
       '**/gen/**',
       '**/generated/**',
-      '**/managed/**',
       '**/*.d.ts',
       '**/node_modules/**',
       '**/.yarn/**',
+      '.scratch/**',
+      '.repos/**',
+      '.agents/**',
       '**/coverage/**',
       '**/tmp/**',
       '**/temp/**',
@@ -44,7 +46,7 @@ export default tseslint.config(
       'import-x/resolver': {
         typescript: {
           alwaysTryTypes: false,
-          project: ['tsconfig.json', '*/tsconfig.json']
+          project: ['packages/*/tsconfig.json']
         }
       }
     },

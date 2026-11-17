@@ -117,7 +117,7 @@ every later session.
 
 ### Repo skill: `test-first`
 
-`.claude/skills/test-first/SKILL.md` is the mandatory test-first loop for code under `platform-js/platform-js/src`:
+`.claude/skills/test-first/SKILL.md` is the mandatory test-first loop for code under `packages/platform-js/src`:
 design the test → write it → observe **red** for the right reason → **user gate** (you review the test before any
 implementation) → implement → observe **green** → review → refactor. A test that fails for the right reason is never
 weakened to fit the implementation.
@@ -174,7 +174,7 @@ Two skill names mean something specific in this repo:
 ## Hooks
 
 The repo has no hooks of its own yet. Format-on-edit and verify-on-stop hooks are a follow-up once the toolchain
-settles: `platform-js/` has no `format` or `typecheck` scripts today, it uses TypeScript 7, and the Effect language
+settles: the workspace has no `format` or `typecheck` scripts today, it uses TypeScript 7, and the Effect language
 service is not set up.
 
 The `shielded-core-rules` plugin does add hooks. At session start, one tells Claude to load the Shielded rules. Before

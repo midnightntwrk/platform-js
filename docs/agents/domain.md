@@ -22,8 +22,9 @@ Single-context repo:
 │   ├── index.md
 │   ├── template.md
 │   ├── 0000-use-markdown-architectural-decision-records.md
-│   └── 0001-<short-title>.md
-└── platform-js/
+│   └── NNNN-<short-title>.md
+└── packages/
+    └── platform-js/
 ```
 
 ## Writing an ADR

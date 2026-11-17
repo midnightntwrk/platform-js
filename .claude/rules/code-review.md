@@ -8,7 +8,7 @@ including findings from the `code-review` stage inside `/implement`.
 - **Translate first.** Before writing anything, restate the finding as the invariant it protects ("a prefixed hex
   string must never pass as `PlainHex`"), not as the reviewer's sentence. The invariant is what the test, the code and
   the comments express; the reviewer's wording never appears in the repo.
-- **Behaviour findings (code under `platform-js/platform-js/src`): one finding, one `test-first` cycle.** Design the
+- **Behaviour findings (code under `packages/platform-js/src`): one finding, one `test-first` cycle.** Design the
   test from the invariant, observe it fail for that reason, stop for the user's review, then implement. A behaviour
   finding with no failing test is not fixed — it is asserted.
 - **Docs and config findings: fix directly, and state the check** that shows the invariant now holds (what you read,
