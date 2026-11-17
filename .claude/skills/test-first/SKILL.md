@@ -11,26 +11,19 @@ description: >
 
 **The test is the specification.** Once a test fails for the right reason, it must not be weakened to fit the
 implementation. Consult the user on the size of the feedback loop: it may be one test at a time, or a full suite
-prepared ahead of time, depending on the task. If unsure, prefer fewer tests per cycle.
+prepared ahead of time, depending on the task. If unsure, prefer fewer tests per cycle. Inside `/implement`, work one
+test at a time unless the user picks a suite for this ticket.
 
-Commands below are for today's layout: Yarn workspace root `platform-js/`, single package `platform-js/platform-js/`.
-Issue #18 will change the layout; update these commands when it lands.
+Commands, layout and known failures (lint, type-check) are in `CLAUDE.md` → Build Commands and Common Gotchas. Run
+loop commands from `platform-js/platform-js/` unless a step says otherwise.
 
 ## 0. Choose the test file
 
-- platform-js has **unit tests only**: `platform-js/platform-js/test/effect/<Module>.test.ts`. Pure, no network, no
-  infra. Must pass anywhere with zero setup.
-- Tests import the package by name (`@midnight-ntwrk/platform-js/effect/Hex`), never by relative path into `src/`.
-- See `test/effect/Hex.test.ts` for the house style.
+Follow `.claude/rules/testing.md`: where tests live, how they import the package, house style, test doubles.
 
 ## 1. Design the test
 
 - Pin down the exact behavior and the precise assertions before writing anything.
-- Use `@effect/vitest` (`describe`, `it.effect`, `expect`) for Effect-returning code.
-- Prefer property tests with `effect/FastCheck` (`fc.assert`, `fc.property` / `fc.asyncProperty`) where the behavior
-  holds over a range of inputs. Put reusable generators in `test/effect/Arbitrary.ts`.
-- Prefer stubs and fakes over `vi.fn` / `vi.mock`: implement a stub object (or a test `Layer`) that provides the
-  expected data.
 - Design so the test can be implemented **without later modification**.
 
 ## 2. Write the test
@@ -39,19 +32,26 @@ One behavior, precise assertions: exactly what was designed in step 1.
 
 ## 3. Observe RED
 
-From `platform-js/platform-js/`, run the one test file:
+For a new export, first add a stub with the final signature that returns a wrong value or `Effect.die(...)`, so red is
+a failed assertion, not "is not a function". Then run:
 
 ```bash
 yarn run -T vitest run test/effect/<Module>.test.ts
+yarn run -T tsc -b tsconfig.json
 ```
 
-Confirm it fails **for the expected reason**: a failed assertion on the behavior under test. A type error, bad import,
-or setup crash is not red; fix the test harness first.
+Confirm the test fails **for the expected reason**: a failed assertion on the behavior under test. A type error, bad
+import, or setup crash is not red; fix the test harness first. `tsc` may show only the known errors listed in
+`CLAUDE.md` → Common Gotchas; any other type error is yours.
 
 ## 4. GATE: stop for user review
 
-Present the failing test to the user. The user reviews (and ideally commits) the test **before implementation begins**.
-Do not proceed without approval.
+Present the failing test to the user. Do not implement without approval.
+
+At approval, record a reference for the approved test:
+
+- if the user commits it, that commit;
+- otherwise, `git hash-object <file>` for each test file.
 
 ## 5. Implement
 
@@ -60,27 +60,27 @@ The minimum code that makes the test pass. Follow the repo's functional rules (`
 
 ## 6. Observe GREEN
 
-Re-run the exact same command from step 3. Then confirm the whole package still passes.
+Re-run both commands from step 3. The test passes and `tsc` shows only the known errors.
 
-## 7. Review
+Check the test is unchanged since the gate: `git diff <commit> -- test/` is empty, or each `git hash-object` matches.
+If not, go back to step 4 and get approval again.
 
-Re-read the diff as a reviewer would. From `platform-js/`, run:
+No `yarn lint` or full `yarn test` per cycle.
+
+## 7. Next item
+
+Return to step 0 for the next behavior. Refactoring is not part of this loop: it belongs to the `code-review` stage,
+as in Matt's `tdd`.
+
+## 8. Finish
+
+After the last item, from `platform-js/`, run the full suite once:
 
 ```bash
-yarn lint
 yarn test
 ```
 
-`yarn lint` fails today for every change (typescript-eslint doesn't support TypeScript 7; see `CLAUDE.md` → Common
-Gotchas). Report that, don't try to fix it here.
-
-## 8. Consider refactor
-
-Improve names and structure while the tests stay green. Re-run the tests after.
-
-## 9. Next item
-
-Return to step 0 for the next behavior.
+Add `--force` (`yarn test --force`) when `vitest.config.ts` changed: turbo's cache does not track it.
 
 ## If the implementation cannot pass the test as written
 
