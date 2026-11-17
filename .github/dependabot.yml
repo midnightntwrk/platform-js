@@ -8,8 +8,7 @@ updates:
     cooldown:
       default-days: 7
     ignore:
-      # Guards the release workflow planned in #16: changesets/action v2 needs
-      # @changesets/cli v3. Lift this once the installed CLI is v3.
+      # changesets/action v2 requires @changesets/cli v3 or later.
       - dependency-name: "changesets/action"
         update-types: ["version-update:semver-major"]
 
