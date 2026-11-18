@@ -3,21 +3,24 @@ name: CI
 on:
   workflow_dispatch:
   pull_request:
-    branches: ['**']
+  merge_group:
   push:
     branches: ['main']
 
 concurrency:
-  # The event is part of the group so a manual run on a pull request's branch neither cancels the pull request's run
-  # nor is cancelled by it; each still replaces an older run of its own event on the same branch.
-  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.head_ref || github.ref_name }}
-  cancel-in-progress: true
+  # Each pull request (by number) or ref gets its own group, per event, so runs of different events never cancel
+  # each other.
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  # Only pull request runs are replaced by a newer push; every commit on `main` gets a full result.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions: {}
 
 # Build, General Checks and Unit Tests run side by side: the package's exports point at `src/`, so the type-check needs
-# no build first, and `yarn test` builds what it needs itself. `Tests` is the one check `main` requires; it passes only
-# when all three succeed, so a job added here must also be added to its `needs` and its check.
+# no build first, and `yarn test` builds what it needs itself. `Tests` is the check for `main` to require; it passes
+# only when every job in its `needs` succeeds, and a job added to `needs` is checked automatically. Every job shares a
+# 15-minute timeout: a test that loops synchronously can't be stopped by vitest's own timeout, and without this bound
+# it would hold the runner for GitHub's 6-hour default.
 jobs:
   build:
     name: Build
@@ -103,15 +106,14 @@ jobs:
         working-directory: packages/platform-js
         run: yarn run -T tsc -b tsconfig.json
 
-      # ESLint runs Prettier as a rule, so this is also the format check.
+      # Lint still runs when the type-check fails, so one run reports both.
       - name: Run linter
+        if: ${{ !cancelled() }}
         run: yarn lint
 
   test-unit:
     name: Unit Tests
     runs-on: ubuntu-latest
-    # A test that loops synchronously cannot be stopped by vitest's own timeout; without this bound it would hold the
-    # runner for GitHub's 6-hour default.
     timeout-minutes: 15
     permissions:
       contents: read
@@ -160,16 +162,15 @@ jobs:
     steps:
       - name: Aggregate results
         env:
-          BUILD: ${{ needs.build.result }}
-          GENERAL: ${{ needs.general-checks.result }}
-          UNIT: ${{ needs.test-unit.result }}
+          NEEDS: ${{ toJSON(needs) }}
         run: |
-          echo "build=$BUILD general=$GENERAL unit=$UNIT"
-          fail=0
-          for pair in "Build:$BUILD" "General Checks:$GENERAL" "Unit Tests:$UNIT"; do
-            if [ "${pair#*:}" != "success" ]; then
-              echo "::error::${pair%%:*} was ${pair#*:}; expected success."
-              fail=1
-            fi
-          done
-          exit "$fail"
+          set -euo pipefail
+          errors=$(jq -r '
+            if length == 0 then "::error::No jobs in needs; nothing was checked."
+            else to_entries[] | select(.value.result != "success")
+              | "::error::\(.key) was \(.value.result); expected success."
+            end' <<<"$NEEDS")
+          if [ -n "$errors" ]; then
+            echo "$errors"
+            exit 1
+          fi
