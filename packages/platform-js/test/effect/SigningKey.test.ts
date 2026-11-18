@@ -14,7 +14,8 @@
  */
 
 import { describe, expect, it } from '@effect/vitest';
-import * as SigningKey from '@midnight-ntwrk/platform-js/effect/SigningKey';
+
+import * as SigningKey from '../../src/effect/SigningKey.js';
 
 // A valid signing key value is plain hex, 32 to 35 bytes in length.
 const VALID_VALUE = 'a1'.repeat(32);

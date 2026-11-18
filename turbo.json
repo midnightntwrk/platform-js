@@ -2,31 +2,67 @@
   "$schema": "https://turbo.build/schema.v2.json",
   "envMode": "loose",
   "tasks": {
-    "build": {
-      "dependsOn": ["^build"],
+    "dist": {
+      "inputs": ["src/**/*.ts", "tsconfig.json", "tsconfig.build.json", "$TURBO_ROOT$/tsconfig.base.json"],
+      "outputs": ["dist/**", "tsconfig.*.tsbuildinfo"],
       "outputLogs": "new-only",
-      "inputs": ["src/**/*.ts", "!src/**/*.test.ts"],
-      "outputs": ["dist/**", "build/**"]
+      "dependsOn": ["^dist"]
     },
-    "clean": {
-      "cache": false
-    },
-    "clean-build": {
+    "dist:publish": {
       "cache": false,
-      "dependsOn": [
-        "clean",
-        "build"
-      ]
+      "outputLogs": "new-only",
+      "dependsOn": ["^dist:publish"]
+    },
+    "typecheck": {
+      "inputs": ["src/**/*.ts", "test/**/*.ts", "tsconfig*.json", "$TURBO_ROOT$/tsconfig.base.json"],
+      "outputLogs": "new-only",
+      "dependsOn": ["^dist"]
     },
     "test": {
+      "inputs": [
+        "src/**/*.ts",
+        "test/**/*.ts",
+        "tsconfig*.json",
+        "$TURBO_ROOT$/tsconfig.base.json",
+        "vitest.config.ts"
+      ],
+      "outputs": ["coverage/**", "reports/**"],
       "outputLogs": "new-only",
-      "dependsOn": ["^build"],
-      "inputs": ["src/**/*.ts", "test/**/*.ts"],
-      "outputs": ["reports/**", "coverage/**", "logs/**"]
+      "dependsOn": ["^dist"]
+    },
+    "lint": {
+      "inputs": [
+        "src/**/*.ts",
+        "test/**/*.ts",
+        "tsconfig*.json",
+        "$TURBO_ROOT$/tsconfig.base.json",
+        "$TURBO_ROOT$/eslint.config.mjs"
+      ],
+      "outputLogs": "new-only",
+      "dependsOn": ["^dist"]
+    },
+    "clean": {
+      "cache": false,
+      "inputs": [],
+      "outputs": [],
+      "outputLogs": "new-only"
+    },
+    "publint": {
+      "inputs": [
+        "src/**/*.ts",
+        "package.json",
+        "tsconfig.json",
+        "tsconfig.build.json",
+        "tsconfig.publish.json",
+        "$TURBO_ROOT$/tsconfig.base.json"
+      ],
+      "outputs": [],
+      "outputLogs": "new-only",
+      "dependsOn": ["dist:publish"]
     },
     "package": {
       "cache": false,
-      "dependsOn": ["build"]
+      "dependsOn": ["dist:publish"]
     }
   }
 }

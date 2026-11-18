@@ -15,8 +15,9 @@
 
 /* eslint-disable @typescript-eslint/no-use-before-define */
 
-import * as IntegerRange from '@midnight-ntwrk/platform-js/effect/IntegerRange';
 import * as fc from 'effect/FastCheck';
+
+import * as IntegerRange from '../../src/effect/IntegerRange.js';
 
 export const makeNetworkIdArbitrary: () => fc.Arbitrary<string> =
   () => fc.stringMatching(/^(dev|test)-[0-9a-fA-F]{4,8}-0[1-9]$/);

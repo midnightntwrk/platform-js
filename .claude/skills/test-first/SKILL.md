@@ -19,7 +19,7 @@ otherwise.
 
 ## 0. Choose the test file
 
-Follow `.claude/rules/testing.md`: where tests live, how they import the package, house style, test doubles.
+Follow `.claude/rules/testing.md`: where tests live, how they import from `src/`, house style, test doubles.
 
 ## 1. Design the test
 
@@ -36,8 +36,8 @@ For a new export, first add a stub with the final signature that returns a wrong
 a failed assertion, not "is not a function". Then run:
 
 ```bash
-yarn run -T vitest run test/effect/<Module>.test.ts
-yarn run -T tsc -b tsconfig.json
+yarn run -T vitest run test/effect/<Module>.test.ts   # in packages/platform-js/
+yarn typecheck                                         # at the repo root
 ```
 
 Confirm the test fails **for the expected reason**: a failed assertion on the behavior under test. A type error, bad

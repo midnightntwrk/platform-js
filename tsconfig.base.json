@@ -6,10 +6,11 @@
     "sourceMap": true,
     "importHelpers": true,
     "composite": true,
+    "noEmit": true,
     "resolveJsonModule": true,
     "noPropertyAccessFromIndexSignature": false,
-    "module": "ES2022",
-    "moduleResolution": "bundler",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
     "types": ["vitest/globals", "node"]
   },
 }

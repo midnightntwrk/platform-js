@@ -66,24 +66,29 @@ folder.
 ```bash
 nvm use && corepack enable   # at the repo root
 yarn                         # install dependencies
-yarn build                   # build all packages (turbo)
+yarn dist                    # compile each package's src/ to dist/ (turbo)
+yarn typecheck               # type-check src and tests
 yarn test                    # full test suite (turbo; builds dependencies first)
-yarn lint                    # eslint across the workspace
+yarn lint                    # eslint in each package (turbo)
+yarn publint                 # publish build, then publint --strict on the package
+yarn package                 # publish build, then npm pack (the .tgz lands in the package folder)
+yarn clean                   # remove dist, coverage, reports and tsconfig.*.tsbuildinfo
 yarn changeset status --since=origin/main   # the CI changeset check: fails if a package changed without one
 
 cd packages/platform-js      # the package folder
 yarn run -T vitest run test/effect/Hex.test.ts   # one test file
-yarn run -T tsc -b tsconfig.json                 # type-check src and tests
 ```
 
-There is no `typecheck` or `format` script yet. `-T` runs a tool installed at the workspace root.
+There is no `format` script yet. `-T` runs a tool installed at the workspace root.
 
 ## Architecture
 
 One package, `packages/platform-js/` (`@midnight-ntwrk/platform-js`, ESM). Modules live in `src/effect/`, one per
 domain type (`Hex`, `NetworkId`, `ContractAddress`, `CoinPublicKey`, `IntegerRange`, `Configuration`, ...), with
-private helpers in `src/effect/internal/`. Errors are `TypeId`-based (`src/effect/ParseError.ts`). Public entry points
-are the `exports` in the package's `package.json`; changing one is a public API change.
+private helpers in `src/effect/internal/`. Errors are `TypeId`-based (`src/effect/ParseError.ts`). `tsc` compiles
+`src/` straight to `dist/` (`tsconfig.build.json`; `tsconfig.publish.json` drops the maps for publishing). Public entry
+points are the `exports` in the package's `package.json`, which point at `dist/` (`types` and `import` conditions,
+ESM only); changing one is a public API change.
 
 ## Testing
 
@@ -109,15 +114,14 @@ touched; full rationale and worked examples: `docs/CodingConventions.md`.
 
 ## Common Gotchas
 
-- **Tests import the package by name** (`@midnight-ntwrk/platform-js/effect/Hex`), through the `./effect/*` export.
-  `./effect/internal/*` is blocked, so tests can't import internals; a new `effect/` module is also re-exported from
-  `src/effect/index.ts`.
-- **The type-check is clean**, and CI's `General Checks` job fails on any type error: every error
-  `yarn run -T tsc -b tsconfig.json` (in `packages/platform-js/`) reports is yours to fix. CI jobs:
-  `DEV_GUIDE.md` → Continuous integration.
+- **Tests import from `src/`** by relative path (`../../src/effect/Hex.js`), so they never need a build and never
+  test a stale `dist/`. Import public modules, not `src/effect/internal/`. A new `effect/` module is also re-exported
+  from `src/effect/index.ts`.
+- **The type-check is clean**, and CI's `General Checks` job fails on any type error: every error `yarn typecheck`
+  reports is yours to fix. CI jobs: `DEV_GUIDE.md` → Continuous integration.
 - **TypeScript stays on 6.0** (`~6.0.x`): typescript-eslint supports only `<6.1.0`; don't bump to 6.1+ or 7 without
   revisiting [ADR-0002](docs/decisions/0002-stay-on-typescript-6.md).
-- **Turbo's cache can be stale** after branch switches or rebases: bypass with `--force` (`yarn build --force`).
+- **Turbo's cache can be stale** after branch switches or rebases: bypass with `--force` (`yarn dist --force`).
 - **Effect skills** in `.claude/skills/effect-*` come from two places. `effect-ts` is vendored Effect v3 guidance from
   Claude-Matrix (MIT), not managed by a CLI: edit it only with `.claude/skills/effect-ts/ATTRIBUTION.md` updated.
   `effect-v3-to-v4` is managed by the `skills` CLI and pinned in `skills-lock.json` (copy install mode): never

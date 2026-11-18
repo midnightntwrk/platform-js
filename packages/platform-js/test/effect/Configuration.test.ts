@@ -14,9 +14,10 @@
  */
 
 import { describe, expect, it } from '@effect/vitest';
-import * as Configuration from '@midnight-ntwrk/platform-js/effect/Configuration';
 import * as Effect from 'effect/Effect';
 import * as Option from 'effect/Option';
+
+import * as Configuration from '../../src/effect/Configuration.js';
 
 const COIN_PUBLIC = '0102';
 // A valid signing key value is plain hex, 32 to 35 bytes in length.

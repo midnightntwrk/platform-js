@@ -55,20 +55,22 @@ Run these from the repo root.
 
 | Command                | What it does                                          |
 | ---------------------- | ----------------------------------------------------- |
-| `yarn build`           | Builds all packages (Turbo).                          |
+| `yarn dist`            | Compiles each package's `src/` to `dist/` (Turbo).    |
+| `yarn dist:publish`    | Clean build of `dist/` without source maps.           |
+| `yarn typecheck`       | Type-checks `src/` and the tests.                     |
 | `yarn test`            | Runs all tests (Turbo). Builds dependencies first.    |
-| `yarn lint`            | Runs ESLint across the workspace. Warnings fail too.  |
-| `yarn clean`           | Removes build output, reports and coverage.           |
-| `yarn package`         | Builds, then packs each package with `npm pack`.      |
+| `yarn lint`            | Runs ESLint on each package. Warnings fail too.       |
+| `yarn publint`         | Publish build, then `publint --strict`.               |
+| `yarn package`         | Publish build, then `npm pack` in each package.       |
+| `yarn clean`           | Removes `dist`, coverage, reports and build info.     |
 | `yarn changeset`       | Adds a changeset (asks which packages and bumps).     |
 | `yarn changeset:check` | Lists the pending changesets and the bumps they make. |
 
-There is no `typecheck` or `format` script yet. To type-check by hand, run `yarn run -T tsc -b tsconfig.json` in
-`packages/platform-js/` (`-T` runs a tool installed at the workspace root).
+There is no `format` script yet.
 
 ### Known failures today
 
-None today: build, tests, lint and the type-check are clean on `main`, so any failure comes from your change.
+None today: build, tests, lint, publint and the type-check are clean on `main`, so any failure comes from your change.
 
 ### Continuous integration
 
@@ -78,8 +80,8 @@ after `yarn install --immutable`. Tests waits for all three and passes only when
 
 | Job            | Runs                                                         |
 | -------------- | ------------------------------------------------------------ |
-| Build          | `yarn build`                                                 |
-| General Checks | the type-check, then `yarn lint`                             |
+| Build          | `yarn dist`                                                  |
+| General Checks | `yarn typecheck`, then `yarn lint`                           |
 | Unit Tests     | `yarn test`                                                  |
 | Tests          | waits for the three jobs above; passes only when all succeed |
 
@@ -100,7 +102,7 @@ Today there are **unit tests only**. They are pure: no Docker, network or other 
 - Files are named `*.test.ts` and live in `packages/platform-js/test/` (for example `test/effect/Hex.test.ts`).
 - They use [`@effect/vitest`](https://github.com/Effect-TS/effect/tree/main/packages/vitest) (`it.effect`) and property
   tests from `effect/FastCheck`.
-- Tests import the package by name, for example `@midnight-ntwrk/platform-js/effect/Hex`.
+- Tests import from `src/` by relative path, for example `../../src/effect/Hex.js`, so they need no build first.
 
 Run every test from the repo root:
 

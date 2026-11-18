@@ -11,7 +11,6 @@ export default tseslint.config(
   {
     ignores: [
       '**/dist/**',
-      '**/build/**',
       '**/*.d.ts',
       '**/node_modules/**',
       '**/.yarn/**',
