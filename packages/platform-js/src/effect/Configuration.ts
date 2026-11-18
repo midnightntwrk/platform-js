@@ -33,7 +33,7 @@ import * as SigningKey from './SigningKey.js';
  *
  * @category services
  */
-export class Keys extends Context.Tag('@midnight-ntwrk/platform-js/Configuration#Keys')<
+export class Keys extends Context.Tag('@midnightntwrk/platform-js/Configuration#Keys')<
   Keys,
   Configuration.Keys
 >() {}
@@ -43,7 +43,7 @@ export class Keys extends Context.Tag('@midnight-ntwrk/platform-js/Configuration
  *
  * @category services
  */
-export class Network extends Context.Tag('@midnight-ntwrk/platform-js/Configuration#Network')<
+export class Network extends Context.Tag('@midnightntwrk/platform-js/Configuration#Network')<
   Network,
   NetworkId.NetworkId
 >() {}

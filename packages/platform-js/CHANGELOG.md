@@ -1,4 +1,4 @@
-# @midnight-ntwrk/platform-js
+# @midnightntwrk/platform-js
 
 ## 3.0.0
 

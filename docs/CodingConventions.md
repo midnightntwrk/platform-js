@@ -514,7 +514,7 @@ Effect.gen(function* () {
 
 ### Services and Layers
 
-Services are `Context.Tag` classes keyed by `'@midnight-ntwrk/platform-js/<Module>#<Service>'`. A service's shape
+Services are `Context.Tag` classes keyed by `'@midnightntwrk/platform-js/<Module>#<Service>'`. A service's shape
 is either an interface in an `export declare namespace` beside it (the `Keys` service's shape is the `Keys`
 interface in `export declare namespace Configuration`), or an existing type (the `Network` service's shape is
 `NetworkId.NetworkId`). Layers build them with `Layer.effect` and are combined with
@@ -522,7 +522,7 @@ interface in `export declare namespace Configuration`), or an existing type (the
 
 ```typescript
 // src/effect/Configuration.ts
-export class Network extends Context.Tag('@midnight-ntwrk/platform-js/Configuration#Network')<
+export class Network extends Context.Tag('@midnightntwrk/platform-js/Configuration#Network')<
   Network,
   NetworkId.NetworkId
 >() {}
@@ -612,12 +612,12 @@ Effect.all({ a: fetchA(), b: fetchB() }, { concurrency: 'unbounded' }); // → {
 
 ### Effect Usage
 
-platform-js is an Effect library: its public API is Effect modules (`@midnight-ntwrk/platform-js/effect/*`), and
+platform-js is an Effect library: its public API is Effect modules (`@midnightntwrk/platform-js/effect/*`), and
 callers are expected to use Effect.
 
 - **Public modules** (`src/effect/*.ts`): types, constructors, guards and services, each with JSDoc. The package
   `exports` map publishes their compiled `dist/` files through the `./effect/*` wildcard, so a new module is
-  importable by path (`@midnight-ntwrk/platform-js/effect/Hex`) without touching `package.json`. Also re-export each
+  importable by path (`@midnightntwrk/platform-js/effect/Hex`) without touching `package.json`. Also re-export each
   new module from `src/effect/index.ts` as a namespace (`export * as Hex from './Hex.js';`), keeping the list sorted
 - **Internal modules** (`src/effect/internal/*.ts`): implementation, marked `/** @internal */`, removed from the
   emitted types by `stripInternal`, and blocked from import by the package `exports` map, so callers import the public

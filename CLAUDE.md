@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-platform-js (`@midnight-ntwrk/platform-js`) provides core abstractions, utilities and types for building services and
+platform-js (`@midnightntwrk/platform-js`) provides core abstractions, utilities and types for building services and
 libraries that work with the Midnight blockchain: hex and Bech32m values, network IDs, contract addresses, keys, integer
 ranges and configuration, written in TypeScript with [Effect](https://effect.website/).
 
@@ -85,7 +85,7 @@ There is no `format` script yet. `-T` runs a tool installed at the workspace roo
 
 ## Architecture
 
-One package, `packages/platform-js/` (`@midnight-ntwrk/platform-js`, ESM). Modules live in `src/effect/`, one per
+One package, `packages/platform-js/` (`@midnightntwrk/platform-js`, ESM). Modules live in `src/effect/`, one per
 domain type (`Hex`, `NetworkId`, `ContractAddress`, `CoinPublicKey`, `IntegerRange`, `Configuration`, ...), with
 private helpers in `src/effect/internal/`. Errors are `TypeId`-based (`src/effect/ParseError.ts`). `tsc` compiles
 `src/` straight to `dist/` (`tsconfig.build.json`; `tsconfig.publish.json` drops the maps for publishing). Public entry

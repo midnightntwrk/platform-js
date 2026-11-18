@@ -18,7 +18,7 @@ yarn
 ```
 
 The repo root is a Yarn 4 workspace, built with Turborepo. Packages live in `packages/`; today there is one,
-`packages/platform-js/` (`@midnight-ntwrk/platform-js`). See
+`packages/platform-js/` (`@midnightntwrk/platform-js`). See
 [ADR-0001](docs/decisions/0001-turborepo-workspace-with-packages-folder.md).
 
 ---
@@ -138,7 +138,7 @@ The file looks like this:
 
 ```markdown
 ---
-'@midnight-ntwrk/platform-js': minor
+'@midnightntwrk/platform-js': minor
 ---
 
 Add `NetworkId.fromMoniker`.
