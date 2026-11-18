@@ -1,26 +1,16 @@
-# Overview
+# Description
 
-<!-- Describe your changes briefly here, with some context as to why this is needed. -->
+_A clear and concise description of what this pull request does or fixes._
 
-## Submission Checklist
+# Proposed Solution
 
-<!-- Please check all the boxes that apply to your pull request. -->
+_**Optional** Explain how does this PR solves the problem stated in [Description](#Description). You can also enumerate
+different alternatives considered while approaching this task._
 
-- [ ] Useful pull request description
-- [ ] Tests are provided (if possible)
-- [ ] Key commits have useful messages
-- [ ] All check jobs of the CI have succeeded
-- [ ] Self-reviewed the diff
-- [ ] Reviewer requested
-- [ ] Update README.md file (if relevant)
-- [ ] Update documentation (if relevant)
-- [ ] No new todos introduced
+# Important Changes Introduced
 
-## Links
+_**Optional** Notice Reviewers about changes that were introduced while developing this task_
 
-<!--
-- Link any relevant Confluence or additional Jira tickets if need be
-- If your PR closes some of the existing issues, please add links to them here.
-  Mentioned issues will be automatically closed.
-  Usage: "Closes #<issue number>", or "Closes (paste link of issue)"
--->
+# Testing
+
+_**Optional** Leave some recommendations should be useful while reviewers are testing this PR_

@@ -34,6 +34,8 @@ The supported agentic flow is in `docs/AgenticWorkflow.md`. It replaces the skil
   the same session for exactly **one** ticket, `/clear`, `/implement #N`.
 - After a grill, commit `GLOSSARY.md` and any new ADRs on the change's branch before `/clear`.
 - Never `/to-spec` or `/implement-spec`. `/to-tickets` must not apply `ready-for-agent`.
+- Issue bodies use plain `-` bullets, never `- [ ]` checkboxes, whatever a skill's template says
+  (`docs/agents/issue-tracker.md`).
 - Inside `/implement`, `code-review` means `/mattpocock-skills:code-review`, and Matt's `tdd` runs inside our
   `test-first` loop, gate included.
 
@@ -52,7 +54,7 @@ The supported agentic flow is in `docs/AgenticWorkflow.md`. It replaces the skil
   diff.
 - Issues and PRs use the `.github/` templates, every section filled, and AI-assisted ones carry `bot:ai-assisted`. Link
   issues with plain references (`#123`), **never** closing keywords (`Closes`/`Fixes`/`Resolves`); issues are closed by
-  hand after QA. The PR template's `Closes #N` hint does not apply here: write `#N`.
+  hand after QA.
 - Labels are IaC-managed: never create one.
 
 ## Build Commands
