@@ -81,6 +81,10 @@ Ensure the title is a clear summary of the requirement and provides enough conte
 * **Follow Coding Standards:** Adhere to the conventions in [`docs/CodingConventions.md`](docs/CodingConventions.md).
 * **Write Tests:** Include unit tests to cover your changes. See [Testing Tiers](DEV_GUIDE.md#testing-tiers) in `DEV_GUIDE.md`.
 * **Commit Messages:** Write clear and concise commit messages.
+* **Add a Changeset:** If your change touches a package, run `yarn changeset` at the repo root and commit the file it
+  writes to `.changeset/`. It records the version bump and the changelog line; the `Check for Changeset` CI job fails
+  a PR that changes a package without one. Don't bump versions or edit `CHANGELOG.md` by hand. See
+  [Versioning & releases](DEV_GUIDE.md#versioning--releases) in `DEV_GUIDE.md`.
 * **Submit Pull Request:** Submit your pull request to the appropriate branch in the main repository.
 * **Please do not `--force` pushes** - doing so means that reviewers will have to re-review all
   commits in the PR rather than commits since last review.

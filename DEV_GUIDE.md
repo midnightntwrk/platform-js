@@ -44,8 +44,8 @@ Examples: `feat/123-network-id-parsing`, `chore/19-agentic-workflow-setup`, `doc
 
 - Open PRs from these branches → merge into `main` after review and green CI.
 
-- Do **not** bump versions or edit changelogs by hand; [Versioning & releases](#versioning--releases) says how, once
-  [#16](https://github.com/midnightntwrk/platform-js/issues/16) sets up the tooling.
+- Do **not** bump versions or edit changelogs by hand: add a changeset instead
+  ([Versioning & releases](#versioning--releases)).
 
 ---
 
@@ -53,13 +53,15 @@ Examples: `feat/123-network-id-parsing`, `chore/19-agentic-workflow-setup`, `doc
 
 Run these from the repo root.
 
-| Command        | What it does                                         |
-| -------------- | ---------------------------------------------------- |
-| `yarn build`   | Builds all packages (Turbo).                         |
-| `yarn test`    | Runs all tests (Turbo). Builds dependencies first.   |
-| `yarn lint`    | Runs ESLint across the workspace. Warnings fail too. |
-| `yarn clean`   | Removes build output, reports and coverage.          |
-| `yarn package` | Builds, then packs each package with `npm pack`.     |
+| Command                | What it does                                          |
+| ---------------------- | ----------------------------------------------------- |
+| `yarn build`           | Builds all packages (Turbo).                          |
+| `yarn test`            | Runs all tests (Turbo). Builds dependencies first.    |
+| `yarn lint`            | Runs ESLint across the workspace. Warnings fail too.  |
+| `yarn clean`           | Removes build output, reports and coverage.           |
+| `yarn package`         | Builds, then packs each package with `npm pack`.      |
+| `yarn changeset`       | Adds a changeset (asks which packages and bumps).     |
+| `yarn changeset:check` | Lists the pending changesets and the bumps they make. |
 
 There is no `typecheck` or `format` script yet. To type-check by hand, run `yarn run -T tsc -b tsconfig.json` in
 `packages/platform-js/` (`-T` runs a tool installed at the workspace root).
@@ -83,6 +85,11 @@ after `yarn install --immutable`. Tests waits for all three and passes only when
 
 **`Tests` is the status check for `main` to require** (a repo setting, made by a maintainer): a lint error, a type
 error, a failing test or a broken build fails it. Run the same commands locally before you push ([Commands](#commands)).
+
+A second workflow, `Check for Changeset` (`.github/workflows/check-changeset.yml`), runs on every pull request to
+`main`. It fails when the PR changes a package but adds no changeset
+([Versioning & releases](#versioning--releases)). It skips release PRs (`changeset-release/*` branches) and Renovate
+and Dependabot PRs (`renovate/*`, `dependabot/*`), which never carry changesets.
 
 ---
 
@@ -111,6 +118,45 @@ yarn run -T vitest run test/effect/Hex.test.ts
 
 ## Versioning & releases
 
-Versions and changelogs will use [Changesets](https://github.com/changesets/changesets), which is not installed yet.
-[#16](https://github.com/midnightntwrk/platform-js/issues/16) sets it up and settles how we write changesets and cut
-releases. Until then, follow what that issue says.
+Versions and changelogs use [Changesets](https://github.com/changesets/changesets) (CLI `2.31.1`, pinned exactly). A
+changeset is a small Markdown file in `.changeset/` that names the packages a change releases, the
+[semver](https://semver.org/) bump for each, and the line it adds to the changelog. Each package's changelog is its
+own `CHANGELOG.md` (`packages/platform-js/CHANGELOG.md`).
+
+### Adding a changeset
+
+Every PR that changes a package carries a changeset, committed with the change. `Check for Changeset` fails the PR
+without one ([Continuous integration](#continuous-integration)).
+
+1. Run `yarn changeset` at the repo root, pick the packages and bumps, and write the summary.
+2. Commit the new `.changeset/<name>.md` file.
+3. Check it with `yarn changeset status --since=origin/main`.
+
+The file looks like this:
+
+```markdown
+---
+'@midnight-ntwrk/platform-js': minor
+---
+
+Add `NetworkId.fromMoniker`.
+```
+
+Pick the bump:
+
+| Bump    | When                                                                                |
+| ------- | ----------------------------------------------------------------------------------- |
+| `major` | A breaking change to the public API: a removed or renamed export, changed behaviour |
+| `minor` | A new feature that keeps the existing API working                                   |
+| `patch` | A bug fix, or a dependency update, with no API change                               |
+
+For a breaking change, start the summary with `**BREAKING CHANGE:**` and say how to migrate.
+
+A change that releases nothing (docs, tests, CI, tooling) but touches a package folder still needs a changeset: add
+an empty one with `yarn changeset add --empty`. A PR that touches no package needs none.
+
+### Releasing
+
+Not set up yet. Releases (the release PR on `changeset-release/main` and publishing) come with the CD workflow,
+modelled on midnight-wallet: [#54](https://github.com/midnightntwrk/platform-js/issues/54). Until then, don't run
+`yarn changeset version` or `yarn changeset publish`: changesets wait in `.changeset/` for the first release.
