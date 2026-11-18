@@ -85,4 +85,11 @@ describe('Configuration', () => {
       expect(network.isMainNet()).toBe(true);
     });
   });
+
+  describe('service keys', () => {
+    it('keys the Keys and Network services under @midnightntwrk/platform-js', () => {
+      expect(Configuration.Keys.key).toBe('@midnightntwrk/platform-js/Configuration#Keys');
+      expect(Configuration.Network.key).toBe('@midnightntwrk/platform-js/Configuration#Network');
+    });
+  });
 });
