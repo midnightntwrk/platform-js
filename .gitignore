@@ -18,7 +18,6 @@ reports/
 !.yarn/versions
 logs
 .eslintcache
-.rollup.cache
 .DS_Store
 
 # Agent working notes (grill records, plans, handoffs)
