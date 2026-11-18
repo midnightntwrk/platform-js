@@ -3,18 +3,17 @@
   "envMode": "loose",
   "tasks": {
     "dist": {
-      "inputs": ["src/**/*.ts", "tsconfig.json", "tsconfig.build.json", "$TURBO_ROOT$/tsconfig.base.json"],
-      "outputs": ["dist/**", "tsconfig.*.tsbuildinfo"],
+      "inputs": ["src/**/*.ts", "package.json", "tsconfig*.json", "$TURBO_ROOT$/tsconfig.base.json"],
+      "outputs": ["dist/**", "tsconfig.build.tsbuildinfo"],
       "outputLogs": "new-only",
       "dependsOn": ["^dist"]
     },
     "dist:publish": {
       "cache": false,
-      "outputLogs": "new-only",
       "dependsOn": ["^dist:publish"]
     },
     "typecheck": {
-      "inputs": ["src/**/*.ts", "test/**/*.ts", "tsconfig*.json", "$TURBO_ROOT$/tsconfig.base.json"],
+      "inputs": ["src/**/*.ts", "test/**/*.ts", "package.json", "tsconfig*.json", "$TURBO_ROOT$/tsconfig.base.json"],
       "outputLogs": "new-only",
       "dependsOn": ["^dist"]
     },
@@ -35,6 +34,7 @@
         "src/**/*.ts",
         "test/**/*.ts",
         "tsconfig*.json",
+        "vitest.config.ts",
         "$TURBO_ROOT$/tsconfig.base.json",
         "$TURBO_ROOT$/eslint.config.mjs"
       ],
@@ -42,21 +42,10 @@
       "dependsOn": ["^dist"]
     },
     "clean": {
-      "cache": false,
-      "inputs": [],
-      "outputs": [],
-      "outputLogs": "new-only"
+      "cache": false
     },
     "publint": {
-      "inputs": [
-        "src/**/*.ts",
-        "package.json",
-        "tsconfig.json",
-        "tsconfig.build.json",
-        "tsconfig.publish.json",
-        "$TURBO_ROOT$/tsconfig.base.json"
-      ],
-      "outputs": [],
+      "inputs": ["src/**/*.ts", "package.json", "tsconfig*.json", "$TURBO_ROOT$/tsconfig.base.json"],
       "outputLogs": "new-only",
       "dependsOn": ["dist:publish"]
     },
