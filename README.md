@@ -88,7 +88,7 @@ nvm use && corepack enable
 yarn          # install dependencies
 yarn dist     # build all packages
 yarn test     # run the full test suite
-yarn lint     # lint each package
+yarn lint     # lint each package and the root configs
 ```
 
 [`DEV_GUIDE.md`](DEV_GUIDE.md) covers setup, branch naming, single-test commands, testing tiers, CI and releases.

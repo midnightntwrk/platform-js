@@ -59,7 +59,7 @@ Run these from the repo root.
 | `yarn dist:publish`    | Clean `dist/` build, no source or declaration maps.   |
 | `yarn typecheck`       | Type-checks `src/` and the tests.                     |
 | `yarn test`            | Runs all tests (Turbo) from `src/`; no build needed.  |
-| `yarn lint`            | Runs ESLint on each package. Warnings fail too.       |
+| `yarn lint`            | Lints packages and root configs; warnings fail.       |
 | `yarn publint`         | Publish build, then `publint --strict`.               |
 | `yarn package`         | Publish build, then `npm pack` in each package.       |
 | `yarn clean`           | Removes `dist`, coverage, reports and build info.     |

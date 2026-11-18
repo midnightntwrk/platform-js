@@ -41,6 +41,10 @@
       "outputLogs": "new-only",
       "dependsOn": ["^dist"]
     },
+    "//#lint:root": {
+      "inputs": ["eslint.config.mjs", "vitest.config.ts"],
+      "outputLogs": "new-only"
+    },
     "clean": {
       "cache": false
     },

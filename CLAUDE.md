@@ -71,7 +71,7 @@ yarn dist                    # compile each package's src/ to dist/ (turbo)
 yarn dist:publish            # clean dist/ build without source or declaration maps
 yarn typecheck               # type-check src and tests
 yarn test                    # full test suite (turbo), straight from src/, no build needed
-yarn lint                    # eslint in each package (turbo)
+yarn lint                    # eslint in each package, plus root eslint.config.mjs and vitest.config.ts (turbo)
 yarn publint                 # publish build, then publint --strict on the package
 yarn package                 # publish build, then npm pack (the .tgz lands in the package folder)
 yarn clean                   # remove dist, coverage, reports and tsconfig.*.tsbuildinfo
