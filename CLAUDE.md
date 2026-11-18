@@ -69,6 +69,7 @@ yarn                         # install dependencies
 yarn build                   # build all packages (turbo)
 yarn test                    # full test suite (turbo; builds dependencies first)
 yarn lint                    # eslint across the workspace
+yarn changeset status --since=origin/main   # the CI changeset check: fails if a package changed without one
 
 cd packages/platform-js      # the package folder
 yarn run -T vitest run test/effect/Hex.test.ts   # one test file
@@ -95,7 +96,9 @@ property tests. Hard rules load from `.claude/rules/testing.md`; tiers: `DEV_GUI
 
 ## Versioning
 
-Changesets and releases are being set up under #16; follow `DEV_GUIDE.md` → Versioning & releases.
+Every PR that changes a package needs a changeset; CI's `Check for Changeset` fails without one. `yarn changeset`
+is interactive, so an agent writes the `.changeset/<name>.md` file directly (format, bumps and the empty changeset:
+`DEV_GUIDE.md` → Versioning & releases), then runs the changeset check in Build Commands.
 
 ## Coding Standards
 

@@ -14,7 +14,9 @@
     "clean": "turbo run clean",
     "test": "turbo run test",
     "package": "turbo run package",
-    "lint": "eslint --max-warnings 0"
+    "lint": "eslint --max-warnings 0",
+    "changeset": "changeset",
+    "changeset:check": "yarn changeset status --verbose"
   },
   "resolutions": {
     "tar": ">=7.5.11",
@@ -23,6 +25,7 @@
     "glob": ">=13.0.1"
   },
   "devDependencies": {
+    "@changesets/cli": "2.31.1",
     "@effect/build-utils": "^0.8.9",
     "@effect/vitest": "^0.30.0",
     "@eslint/js": "^10.0.1",

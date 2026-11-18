@@ -80,8 +80,8 @@ File paths below are relative to `packages/platform-js/src/`, except `test/…` 
 - The public API is what `packages/platform-js/package.json` `exports` exposes: `.`, `./effect`, `./effect/*`.
   `./effect/internal/*` is blocked (`null`) — internal code is free to change.
 - A new module under `effect/` must also be re-exported from `effect/index.ts`.
-- A removed or changed public signature is a major bump. For changesets, follow `DEV_GUIDE.md` → Versioning & releases
-  until #16 lands.
+- A removed or changed public signature is a major bump. Every PR that changes a package carries a changeset:
+  `DEV_GUIDE.md` → Versioning & releases.
 
 ## Where the patterns live
 
