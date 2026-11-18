@@ -1,0 +1,5 @@
+# actionlint's built-in runner list (1.7.12) predates the GitHub-hosted ubuntu-26.04 image, so it would reject the
+# label as unknown. Drop this entry once an actionlint release lists ubuntu-26.04 itself.
+self-hosted-runner:
+  labels:
+    - ubuntu-26.04

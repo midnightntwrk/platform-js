@@ -98,6 +98,9 @@ lints the workflows with actionlint, checks the publish-mode rule, rehearses a s
 uploading, and installs the packed snapshot into an empty project to import every entry point
 ([Releasing](#releasing)).
 
+Every job runs on `ubuntu-26.04`, a pinned GitHub-hosted image, never `ubuntu-latest`: the image changes only
+when a PR changes the label. A new workflow pins the same label.
+
 ---
 
 ## Testing Tiers

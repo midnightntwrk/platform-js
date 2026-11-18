@@ -17,7 +17,7 @@ jobs:
   version:
     name: Version (release PR)
     if: github.event_name == 'push'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 15
     # Read only: changesets/action pushes the release branch and opens the release PR with the bot token in its env
     # (git through ~/.netrc, the API through octokit), so this job's own token never writes. A push made as the bot,
@@ -145,7 +145,7 @@ jobs:
     name: Publish (stable)
     needs: [version]
     if: needs.version.outputs.mode == 'stable'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 15
     environment: npm-publish-stable
     # The tag push and the Release use the bot token, so the job token only reads.
@@ -214,7 +214,7 @@ jobs:
     name: Publish (canary)
     needs: [version]
     if: needs.version.outputs.mode == 'canary'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 15
     environment: npm-publish-canary
     permissions:
@@ -268,7 +268,7 @@ jobs:
   dry-run:
     name: Publish (dry run)
     if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 15
     permissions:
       contents: read
