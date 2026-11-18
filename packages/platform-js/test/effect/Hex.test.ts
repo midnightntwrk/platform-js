@@ -22,7 +22,7 @@ import * as fc from 'effect/FastCheck';
 import * as Arbitrary from './Arbitrary.js';
 
 describe('Hex', () => {
-  it('should fail', () => { expect(true).toBe(false); });
+  it('should not type-check', () => { const n: number = 'x'; expect(n).toBe('x'); });
   describe('parseHex', () => {
     it('should parse plain hex-encodings', () => fc.assert(
       fc.asyncProperty(Arbitrary.makePlainHexArbitrary('2..=10'), (hex) => Effect.gen(function* () {
