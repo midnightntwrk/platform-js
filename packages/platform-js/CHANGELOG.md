@@ -1,4 +1,6 @@
-# @midnight-ntwrk/platform-js
+# @midnightntwrk/platform-js
+
+Versions up to 3.0.0 were published as `@midnight-ntwrk/platform-js`.
 
 ## 3.0.0
 

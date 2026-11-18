@@ -5,7 +5,7 @@
 > [`midnightntwrk/midnight-sdk`](https://github.com/midnightntwrk/midnight-sdk), and nothing has been released from this
 > repository. Until the first release, treat its issues as placeholders: their scope and details may change.
 
-[`@midnight-ntwrk/platform-js`](https://www.npmjs.com/package/@midnight-ntwrk/platform-js) provides core
+[`@midnightntwrk/platform-js`](https://www.npmjs.com/package/@midnightntwrk/platform-js) provides core
 abstractions, utilities and types for building services and libraries that work with the Midnight blockchain. Other
 Midnight libraries and tools build on it, including [midnight-js](https://github.com/midnightntwrk/midnight-js) and
 [compact-js](https://github.com/midnightntwrk/compact-js).
@@ -16,7 +16,7 @@ It is written in TypeScript with [Effect](https://effect.website/). Values are b
 ## Install
 
 ```shell
-npm install @midnight-ntwrk/platform-js
+npm install @midnightntwrk/platform-js
 ```
 
 The package is ESM only. TypeScript consumers need `moduleResolution` set to `NodeNext`, `Node16` or `Bundler`.
@@ -27,10 +27,10 @@ organisation.
 
 ## Usage
 
-Import the modules from the package root, or one module at a time from `@midnight-ntwrk/platform-js/effect/<Module>`:
+Import the modules from the package root, or one module at a time from `@midnightntwrk/platform-js/effect/<Module>`:
 
 ```ts
-import { Hex, IntegerRange, NetworkId, NetworkIdMoniker } from '@midnight-ntwrk/platform-js';
+import { Hex, IntegerRange, NetworkId, NetworkIdMoniker } from '@midnightntwrk/platform-js';
 import { Either } from 'effect';
 
 // Parse a hex string: Right with its parts, or Left with a ParseError.

@@ -536,9 +536,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@midnight-ntwrk/platform-js-monorepo@workspace:.":
+"@midnightntwrk/platform-js-monorepo@workspace:.":
   version: 0.0.0-use.local
-  resolution: "@midnight-ntwrk/platform-js-monorepo@workspace:."
+  resolution: "@midnightntwrk/platform-js-monorepo@workspace:."
   dependencies:
     "@changesets/cli": "npm:2.31.1"
     "@effect/vitest": "npm:^0.30.0"
@@ -563,9 +563,9 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@midnight-ntwrk/platform-js@workspace:packages/platform-js":
+"@midnightntwrk/platform-js@workspace:packages/platform-js":
   version: 0.0.0-use.local
-  resolution: "@midnight-ntwrk/platform-js@workspace:packages/platform-js"
+  resolution: "@midnightntwrk/platform-js@workspace:packages/platform-js"
   dependencies:
     "@effect/platform": "npm:^0.97.0"
     effect: "npm:^3.22.0"

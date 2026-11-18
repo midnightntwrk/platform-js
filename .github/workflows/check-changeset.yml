@@ -57,9 +57,6 @@ jobs:
           corepack --version
           yarn --version
 
-      # No GitHub Packages token, as in ci.yml: every `@midnight-ntwrk` package in yarn.lock is a workspace package.
-      # `.yarnrc.yml` routes that scope to GitHub Packages with `npmAlwaysAuth`, so the first external `@midnight-ntwrk`
-      # dependency needs a packages-read token (`MIDNIGHTCI_PACKAGES_READ`) here and in ci.yml.
       - name: Install dependencies
         run: yarn install --immutable
 

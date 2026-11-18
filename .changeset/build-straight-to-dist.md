@@ -1,5 +1,5 @@
 ---
-'@midnight-ntwrk/platform-js': major
+'@midnightntwrk/platform-js': major
 ---
 
 **BREAKING CHANGE:** the package is now built with `tsc` straight to `dist/` and published as ESM only. Each entry in
