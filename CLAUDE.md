@@ -59,16 +59,18 @@ The supported agentic flow is in `docs/AgenticWorkflow.md`. It replaces the skil
 
 ## Build Commands
 
-This section is the one agent-facing source for the commands; other agent files point here. Run workspace commands
-from the repo root (the Yarn workspace and Turborepo root, ADR-0001), and single-package commands from the package
-folder.
+This section is the one agent-facing source for the commands; other agent files point here. Run the package scripts
+(`dist`, `typecheck`, `lint`, `test`, `publint`, `package`, `clean`) from the repo root, where turbo runs them in each
+package (the Yarn workspace and Turborepo root, ADR-0001). Run one test file from the package folder with
+`yarn run -T vitest`.
 
 ```bash
 nvm use && corepack enable   # at the repo root
 yarn                         # install dependencies
 yarn dist                    # compile each package's src/ to dist/ (turbo)
+yarn dist:publish            # clean dist/ build without source or declaration maps
 yarn typecheck               # type-check src and tests
-yarn test                    # full test suite (turbo; builds dependencies first)
+yarn test                    # full test suite (turbo), straight from src/, no build needed
 yarn lint                    # eslint in each package (turbo)
 yarn publint                 # publish build, then publint --strict on the package
 yarn package                 # publish build, then npm pack (the .tgz lands in the package folder)
@@ -87,8 +89,8 @@ One package, `packages/platform-js/` (`@midnight-ntwrk/platform-js`, ESM). Modul
 domain type (`Hex`, `NetworkId`, `ContractAddress`, `CoinPublicKey`, `IntegerRange`, `Configuration`, ...), with
 private helpers in `src/effect/internal/`. Errors are `TypeId`-based (`src/effect/ParseError.ts`). `tsc` compiles
 `src/` straight to `dist/` (`tsconfig.build.json`; `tsconfig.publish.json` drops the maps for publishing). Public entry
-points are the `exports` in the package's `package.json`, which point at `dist/` (`types` and `import` conditions,
-ESM only); changing one is a public API change.
+points are the `exports` in the package's `package.json`, which point at `dist/` (`types`, `import` and `default`
+conditions, ESM only); changing one is a public API change.
 
 ## Testing
 
