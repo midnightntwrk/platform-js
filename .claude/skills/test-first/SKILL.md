@@ -14,7 +14,7 @@ implementation. Consult the user on the size of the feedback loop: it may be one
 prepared ahead of time, depending on the task. If unsure, prefer fewer tests per cycle. Inside `/implement`, work one
 test at a time unless the user picks a suite for this ticket.
 
-Commands, layout and known failures (lint, type-check) are in `CLAUDE.md` → Build Commands and Common Gotchas. Run
+Commands, layout and known failures (type-check) are in `CLAUDE.md` → Build Commands and Common Gotchas. Run
 loop commands from `packages/platform-js/` unless a step says otherwise.
 
 ## 0. Choose the test file
