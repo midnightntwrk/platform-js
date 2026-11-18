@@ -10,15 +10,18 @@
     "./package.json": "./package.json",
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
     },
     "./effect": {
       "types": "./dist/effect/index.d.ts",
-      "import": "./dist/effect/index.js"
+      "import": "./dist/effect/index.js",
+      "default": "./dist/effect/index.js"
     },
     "./effect/*": {
       "types": "./dist/effect/*.d.ts",
-      "import": "./dist/effect/*.js"
+      "import": "./dist/effect/*.js",
+      "default": "./dist/effect/*.js"
     },
     "./effect/internal/*": null
   },
@@ -38,13 +41,14 @@
     "typecheck": "tsc -b ./tsconfig.json --noEmit --force",
     "test": "vitest run",
     "lint": "eslint --max-warnings 0",
-    "dist": "tsc -b ./tsconfig.build.json",
+    "dist": "tsc -b ./tsconfig.build.json --force",
     "dist:publish": "rimraf --glob dist 'tsconfig.*.tsbuildinfo' && tsc -b ./tsconfig.publish.json",
-    "clean": "rimraf --glob dist coverage reports 'tsconfig.*.tsbuildinfo'",
+    "clean": "rimraf --glob dist coverage reports 'tsconfig.*.tsbuildinfo' '*.tgz'",
     "publint": "publint --strict",
     "package": "npm pack"
   },
   "files": [
-    "dist/"
+    "dist/",
+    "!dist/**/*.map"
   ]
 }
