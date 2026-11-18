@@ -1,7 +1,7 @@
 name: CD
 
 # Releases to npm from `main`; how the modes, release PR and canaries work is in DEV_GUIDE.md → Releasing.
-# On pull requests only `dry-run` runs, to rehearse a canary publish without uploading anything.
+# On pull requests only `dry-run` runs, to rehearse both publishes without uploading anything.
 on:
   push:
     branches: ['main']
@@ -10,6 +10,8 @@ on:
 
 permissions: {}
 
+# No checkout keeps a credential in .git/config (`persist-credentials: false`): dependency and build scripts must never
+# find a token there. Steps that push get the bot token through their own env.
 jobs:
   # Opens or updates the release PR and picks this push's mode: `stable`, `canary` or `none`.
   version:
@@ -17,9 +19,11 @@ jobs:
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    # Read only: changesets/action pushes the release branch and opens the release PR with the bot token in its env
+    # (git through ~/.netrc, the API through octokit), so this job's own token never writes. A push made as the bot,
+    # not as github-actions[bot], is what starts CI on the release PR.
     permissions:
-      contents: write
-      pull-requests: write
+      contents: read
     outputs:
       mode: ${{ steps.mode.outputs.mode }}
     concurrency:
@@ -27,6 +31,8 @@ jobs:
       cancel-in-progress: false
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       # No `cache: 'yarn'` here: setup-node would call the runner's Yarn 1 before corepack is enabled, and Yarn 1
       # refuses to run under `packageManager: yarn@4`. The Yarn cache is restored below instead.
@@ -46,53 +52,85 @@ jobs:
           restore-keys: |
             yarn-${{ runner.os }}-
 
-      # Before the signing key is loaded, so dependency install scripts never run with it.
+      - name: Check tool versions
+        run: |
+          node --version
+          corepack --version
+          yarn --version
+
       - name: Install dependencies
         run: yarn install --immutable
 
+      # Both detections read the tree as pushed, so they run before changesets/action, which leaves the checkout on
+      # the release branch with its changesets consumed and its versions bumped.
+      # Empty changesets add no `releases`, so a non-empty list means a change to snapshot. On `main` a failing
+      # `changeset status` or an output without a `releases` array is a broken release setup, and fails the job.
+      - name: Detect package-bumping changesets
+        id: bumps
+        run: |
+          set -euo pipefail
+          STATUS_FILE="$RUNNER_TEMP/changeset-status.json"
+          rm -f "$STATUS_FILE"
+          yarn changeset status --output="$STATUS_FILE"
+          HAS_BUMPS=$(node -e '
+            const status = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8"));
+            if (!Array.isArray(status.releases)) {
+              console.error("::error::changeset status output has no releases array");
+              process.exit(1);
+            }
+            process.stdout.write(String(status.releases.length > 0));
+          ' "$STATUS_FILE")
+          echo "hasBumps=${HAS_BUMPS}" >> "$GITHUB_OUTPUT"
+
+      # A version counts as released when its `<name>@<version>` tag is on origin, whatever npm holds. A missing tag
+      # (ls-remote exit 2) means the push carries an unreleased version; any other failure leaves that unknown, and the
+      # step fails rather than guess a mode.
+      - name: Detect an unreleased version
+        id: unreleased
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          FOUND=false
+          for MANIFEST in packages/*/package.json; do
+            TAG=$(node -p "const p = require('./$MANIFEST'); p.private ? '' : p.name + '@' + p.version")
+            [ -n "$TAG" ] || continue
+            STATUS=0
+            git ls-remote --exit-code --tags origin "refs/tags/${TAG}" > /dev/null || STATUS=$?
+            case "$STATUS" in
+              0) echo "Released (tag on origin): ${TAG}" ;;
+              2) echo "Unreleased (no tag on origin): ${TAG}"; FOUND=true ;;
+              *) echo "::error::Could not check origin for tag ${TAG} (git ls-remote exited ${STATUS})"; exit 1 ;;
+            esac
+          done
+          echo "found=${FOUND}" >> "$GITHUB_OUTPUT"
+
+      - name: Resolve publish mode
+        id: mode
+        env:
+          HAS_UNPUBLISHED: ${{ steps.unreleased.outputs.found }}
+          HAS_BUMPS: ${{ steps.bumps.outputs.hasBumps }}
+        run: |
+          set -euo pipefail
+          MODE=$(scripts/resolve-publish-mode.sh)
+          echo "Resolved publish mode: ${MODE}"
+          echo "mode=${MODE}" >> "$GITHUB_OUTPUT"
+
+      # After install, so dependency install scripts never run with the key. It signs the release commit.
       - name: Import GPG key
-        id: gpg
         uses: crazy-max/ghaction-import-gpg@2dc316deee8e90f13e1a351ab510b4d5bc0c82cd # v7.0.0
         with:
           gpg_private_key: ${{ secrets.MIDNIGHTCI_GPG_PRIVATE_KEY }}
           git_user_signingkey: true
           git_commit_gpgsign: true
 
-      - name: Configure git signing
-        env:
-          SIGNING_KEY: ${{ steps.gpg.outputs.fingerprint }}
+      # The import sets the signing key and commit signing; the identity is set here.
+      - name: Configure git identity
         run: |
           git config user.name "MidnightCI"
           git config user.email "midnight-automation+midnightci@iohk.io"
-          git config user.signingkey "$SIGNING_KEY"
-          git config commit.gpgsign true
-          git config tag.gpgSign true
-
-      # Must run before the Changesets action consumes the changesets. Empty changesets add no `releases`, so a
-      # non-empty list means a real change to snapshot.
-      - name: Detect package-bumping changesets
-        id: releases
-        run: |
-          set -uo pipefail   # no -e: a failing `changeset status` is reported below, then counts as no releases
-          rm -f changeset-status.json
-          if ! yarn changeset status --output=changeset-status.json; then
-            echo "::warning::changeset status failed, so this push publishes no canary"
-          fi
-          if [ -f changeset-status.json ]; then
-            COUNT=$(node -p "require('./changeset-status.json').releases.length" 2>/dev/null || echo 0)
-          else
-            COUNT=0
-          fi
-          rm -f changeset-status.json
-          if [ "${COUNT:-0}" -gt 0 ]; then
-            echo "hasReleases=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "hasReleases=false" >> "$GITHUB_OUTPUT"
-          fi
 
       # A bot token, not GITHUB_TOKEN, so pushes to the release PR trigger CI.
       - name: Create or update the release PR
-        id: changesets
         uses: changesets/action@a45c4d594aa4e2c509dc14a9f2b3b67ba3780d0d # v1.9.0
         with:
           title: 'chore: release'
@@ -102,41 +140,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.MIDNIGHTCI_PACKAGES_WRITE }}
 
-      # With no changesets left, only a package version missing from npm (the merged release PR's) means `stable`;
-      # otherwise the push changed no package and there is nothing to approve.
-      - name: Detect an unpublished version
-        id: unpublished
-        if: steps.changesets.outputs.hasChangesets == 'false'
-        run: |
-          set -euo pipefail
-          FOUND=false
-          for MANIFEST in packages/*/package.json; do
-            SPEC=$(node -p "const p = require('./$MANIFEST'); p.private ? '' : p.name + '@' + p.version")
-            if [ -n "$SPEC" ] && [ -z "$(npm view "$SPEC" version 2>/dev/null || true)" ]; then
-              echo "Not on npm yet: $SPEC"
-              FOUND=true
-            fi
-          done
-          echo "found=${FOUND}" >> "$GITHUB_OUTPUT"
-
-      - name: Resolve publish mode
-        id: mode
-        env:
-          HAS_CHANGESETS: ${{ steps.changesets.outputs.hasChangesets }}
-          HAS_RELEASES: ${{ steps.releases.outputs.hasReleases }}
-          HAS_UNPUBLISHED: ${{ steps.unpublished.outputs.found }}
-        run: |
-          set -euo pipefail
-          if [ "$HAS_CHANGESETS" = "false" ] && [ "$HAS_UNPUBLISHED" = "true" ]; then
-            MODE=stable
-          elif [ "$HAS_RELEASES" = "true" ]; then
-            MODE=canary
-          else
-            MODE=none
-          fi
-          echo "Resolved publish mode: ${MODE}"
-          echo "mode=${MODE}" >> "$GITHUB_OUTPUT"
-
   # Publishes under `latest`, pushes the release tag and creates the GitHub Release. Its environment requires reviewers.
   publish-stable:
     name: Publish (stable)
@@ -145,16 +148,19 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     environment: npm-publish-stable
+    # The tag push and the Release use the bot token, so the job token only reads.
     permissions:
-      contents: write # push the release tag
+      contents: read
       id-token: write # npm Trusted Publishing (OIDC) and provenance
     concurrency:
       group: publish-stable-${{ github.ref_name }}
       cancel-in-progress: false
     steps:
+      # Full history: the release is built from the commit that set each version, found with `git log`.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          token: ${{ secrets.MIDNIGHTCI_PACKAGES_WRITE }} # authenticates the release-tag push
+          fetch-depth: 0
+          persist-credentials: false
 
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
@@ -165,6 +171,7 @@ jobs:
       - name: Enable corepack
         run: corepack enable
 
+      # The release script installs from this cache in its own worktree.
       - name: Cache Yarn packages
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
@@ -173,43 +180,36 @@ jobs:
           restore-keys: |
             yarn-${{ runner.os }}-
 
-      # Before the signing key is loaded, so dependency install scripts never run with it.
-      - name: Install dependencies
-        run: yarn install --immutable
+      - name: Check tool versions
+        run: |
+          node --version
+          corepack --version
+          yarn --version
 
+      # Immediately before the release step: the release tags are signed, and nothing else runs with the key.
       - name: Import GPG key
-        id: gpg
         uses: crazy-max/ghaction-import-gpg@2dc316deee8e90f13e1a351ab510b4d5bc0c82cd # v7.0.0
         with:
           gpg_private_key: ${{ secrets.MIDNIGHTCI_GPG_PRIVATE_KEY }}
           git_user_signingkey: true
-          git_commit_gpgsign: true
+          git_tag_gpgsign: true
 
-      - name: Configure git signing
-        env:
-          SIGNING_KEY: ${{ steps.gpg.outputs.fingerprint }}
+      # The import sets the signing key and tag signing; the identity is set here.
+      - name: Configure git identity
         run: |
           git config user.name "MidnightCI"
           git config user.email "midnight-automation+midnightci@iohk.io"
-          git config user.signingkey "$SIGNING_KEY"
-          git config commit.gpgsign true
-          git config tag.gpgSign true
 
-      - name: Build
-        run: yarn dist:publish
-
-      # `changeset publish` runs `npm publish` with OIDC (no token) and provenance; the action then pushes the tag and
-      # creates the GitHub Release from the changelog.
-      - name: Publish and create the GitHub Release
-        uses: changesets/action@a45c4d594aa4e2c509dc14a9f2b3b67ba3780d0d # v1.9.0
-        with:
-          publish: yarn changeset publish
-          setupGitUser: false
+      # Builds each unreleased version at the commit that set it (install scripts off), publishes it with OIDC and
+      # provenance, then pushes its tag and creates its GitHub Release; a re-run finishes a partial release.
+      - name: Publish, tag and create the GitHub Release
         env:
           GITHUB_TOKEN: ${{ secrets.MIDNIGHTCI_PACKAGES_WRITE }}
           NPM_CONFIG_PROVENANCE: 'true'
+        run: scripts/publish-stable.sh
 
-  # Publishes a snapshot under `canary`, never `latest`. Its environment has no reviewers and only scopes npm's OIDC.
+  # Publishes a snapshot under `canary`, never `latest`. Its environment has no reviewers; it exists so npm's Trusted
+  # Publisher can be bound to this job.
   publish-canary:
     name: Publish (canary)
     needs: [version]
@@ -245,7 +245,16 @@ jobs:
           restore-keys: |
             yarn-${{ runner.os }}-
 
+      - name: Check tool versions
+        run: |
+          node --version
+          corepack --version
+          yarn --version
+
+      # No install scripts run on a publish path.
       - name: Install dependencies
+        env:
+          YARN_ENABLE_SCRIPTS: 'false'
         run: yarn install --immutable
 
       - name: Snapshot version and publish the canary
@@ -253,7 +262,9 @@ jobs:
           NPM_CONFIG_PROVENANCE: 'true'
         run: scripts/publish-canary.sh
 
-  # The canary publish with npm's dry run, then the snapshot packed, installed into an empty project and imported.
+  # This job rehearses the release on every pull request without uploading anything: it lints the workflows, checks
+  # the mode table, dry-runs the stable publish, dry-runs a canary publish, then installs the packed snapshot into an
+  # empty project and imports every entry point.
   dry-run:
     name: Publish (dry run)
     if: github.event_name == 'pull_request'
@@ -262,12 +273,20 @@ jobs:
     permissions:
       contents: read
     concurrency:
-      group: ${{ github.workflow }}-dry-run-${{ github.event.pull_request.number }}
+      group: dry-run-${{ github.event.pull_request.number }}
       cancel-in-progress: true
     steps:
+      # Full history, as in publish-stable: the stable dry run finds the commit that set each version.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          fetch-depth: 0
           persist-credentials: false
+
+      # A mistyped `needs`, output or expression evaluates empty, and both publish jobs would skip while CD stays green.
+      - name: Lint the workflows
+        run: |
+          docker run --rm -v "$PWD:/repo" --workdir /repo \
+            rhysd/actionlint@sha256:b1934ee5f1c509618f2508e6eb47ee0d3520686341fec936f3b79331f9315667 -color # 1.7.12
 
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
@@ -284,44 +303,252 @@ jobs:
           restore-keys: |
             yarn-${{ runner.os }}-
 
+      - name: Check tool versions
+        run: |
+          node --version
+          corepack --version
+          yarn --version
+
+      # As on the publish paths: no install scripts.
       - name: Install dependencies
+        env:
+          YARN_ENABLE_SCRIPTS: 'false'
         run: yarn install --immutable
 
-      # Without a pending changeset there is no snapshot, and the rehearsal would test the current version instead.
-      - name: Add a throwaway patch changeset
+      # An unreleased version wins over a pending bump; any flag other than exactly `true` or `false` is an error.
+      - name: Check the publish mode table
         run: |
-          printf -- "---\n'@midnightntwrk/platform-js': patch\n---\n\nDry-run snapshot.\n" > .changeset/zzz-dry-run.md
+          set -euo pipefail
+          FAILED=0
+          expect() {
+            local want="$1" got status=0
+            shift
+            got=$(env "$@" scripts/resolve-publish-mode.sh 2> /dev/null) || status=$?
+            if [ "$want" = error ]; then
+              if [ "$status" -eq 0 ]; then
+                echo "::error::$* printed '${got}'; expected a failure"; FAILED=1
+              fi
+            elif [ "$status" -ne 0 ] || [ "$got" != "$want" ]; then
+              echo "::error::$* gave '${got}' (exit ${status}); expected '${want}'"; FAILED=1
+            fi
+          }
+          expect stable HAS_UNPUBLISHED=true HAS_BUMPS=true
+          expect stable HAS_UNPUBLISHED=true HAS_BUMPS=false
+          expect canary HAS_UNPUBLISHED=false HAS_BUMPS=true
+          expect none HAS_UNPUBLISHED=false HAS_BUMPS=false
+          expect error HAS_UNPUBLISHED= HAS_BUMPS=false
+          expect error HAS_UNPUBLISHED=false HAS_BUMPS=
+          expect error HAS_UNPUBLISHED=yes HAS_BUMPS=false
+          expect error HAS_UNPUBLISHED=false HAS_BUMPS=TRUE
+          expect error -u HAS_UNPUBLISHED HAS_BUMPS=false
+          expect error HAS_UNPUBLISHED=false -u HAS_BUMPS
+          exit "$FAILED"
 
+      # npm rejects a provenance publish whose `repository.url` does not match the repository that built it.
+      - name: Check each package's repository URL
+        run: |
+          # shellcheck disable=SC2016 # `${...}` inside the single-quoted script is a JavaScript template literal
+          node -e '
+            const fs = require("fs");
+            const path = require("path");
+            const expected = `git+https://github.com/${process.env.GITHUB_REPOSITORY}.git`;
+            const wrong = fs
+              .readdirSync("packages")
+              .map((dir) => path.join("packages", dir, "package.json"))
+              .filter((file) => fs.existsSync(file))
+              .map((file) => ({ file, pkg: JSON.parse(fs.readFileSync(file, "utf8")) }))
+              .filter(({ pkg }) => !pkg.private)
+              .filter(({ pkg }) => (typeof pkg.repository === "string" ? pkg.repository : pkg.repository?.url) !== expected);
+            wrong.forEach(({ file, pkg }) =>
+              console.error(`::error::${file}: repository.url is ${JSON.stringify(pkg.repository?.url ?? pkg.repository)}; expected ${expected}`));
+            process.exit(wrong.length > 0 ? 1 : 0);
+          '
+
+      # Both rehearsals need a pending bump: without one there is no release commit and no snapshot, and they would test
+      # the current version instead. Written outside the checkout, so each rehearsal adds it to its own tree.
+      - name: Write a throwaway patch changeset
+        env:
+          CHANGESET_FILE: ${{ runner.temp }}/zzz-dry-run.md
+        run: |
+          # shellcheck disable=SC2016 # `${...}` inside the single-quoted script is a JavaScript template literal
+          node -e '
+            const fs = require("fs");
+            const path = require("path");
+            const names = fs
+              .readdirSync("packages")
+              .map((dir) => path.join("packages", dir, "package.json"))
+              .filter((file) => fs.existsSync(file))
+              .map((file) => JSON.parse(fs.readFileSync(file, "utf8")))
+              .filter((pkg) => !pkg.private)
+              .map((pkg) => pkg.name);
+            if (names.length === 0) {
+              console.error("::error::No public packages under packages/");
+              process.exit(1);
+            }
+            const lines = ["---", ...names.map((name) => `${JSON.stringify(name)}: patch`), "---", "", "Dry-run snapshot.", ""];
+            fs.writeFileSync(process.env.CHANGESET_FILE, lines.join("\n"));
+          '
+          cat "$CHANGESET_FILE"
+
+      # The stable path runs on a local release commit (the changeset versioned and committed, as the release PR
+      # would merge it) in a separate worktree, so its new version has no tag on origin and the whole path runs:
+      # build at that commit, `changeset publish`, tag and Release. DRY_RUN pushes no tag and creates no Release, and
+      # npm's dry run uploads nothing. The checkout the canary uses is left untouched.
+      - name: Publish a stable release (dry run)
+        env:
+          REHEARSAL: ${{ runner.temp }}/stable-rehearsal
+          CHANGESET_FILE: ${{ runner.temp }}/zzz-dry-run.md
+          STABLE_LOG: ${{ runner.temp }}/stable-publish.log
+          DRY_RUN: 'true'
+          npm_config_dry_run: 'true'
+          GH_TOKEN: ${{ github.token }} # read-only: lets `gh release view` check for an existing Release
+        run: |
+          set -euo pipefail
+          REPO="$PWD"
+          git worktree add --detach "$REHEARSAL" HEAD
+          cd "$REHEARSAL"
+          # The release script installs from `<worktree>/.yarn/cache`; point it at the restored cache.
+          mkdir -p .yarn
+          ln -s "$REPO/.yarn/cache" .yarn/cache
+          YARN_ENABLE_SCRIPTS=false yarn install --immutable
+          cp "$CHANGESET_FILE" .changeset/
+          yarn changeset version
+          git add -A
+          git -c user.name=dry-run -c user.email=dry-run@invalid -c commit.gpgsign=false \
+            commit --quiet -m "chore: release (dry run)"
+          "$REPO/scripts/publish-stable.sh" 2>&1 | tee "$STABLE_LOG"
+          # shellcheck disable=SC2016 # `${...}` inside the single-quoted script is a JavaScript template literal
+          SPECS=$(node -e '
+            const fs = require("fs");
+            const path = require("path");
+            fs.readdirSync("packages")
+              .map((dir) => path.join("packages", dir, "package.json"))
+              .filter((file) => fs.existsSync(file))
+              .map((file) => JSON.parse(fs.readFileSync(file, "utf8")))
+              .filter((pkg) => !pkg.private)
+              .forEach((pkg) => console.log(`${pkg.name} ${pkg.version}`));
+          ')
+          while read -r NAME VERSION; do
+            for EXPECTED in "Publishing \"${NAME}\" at \"${VERSION}\"" "Dry run: would create tag ${NAME}@${VERSION}"; do
+              if ! grep -qF "$EXPECTED" "$STABLE_LOG"; then
+                echo "::error::The stable dry run did not print: ${EXPECTED}"; exit 1
+              fi
+            done
+          done <<< "$SPECS"
+
+      - name: Add the throwaway changeset to the checkout
+        env:
+          CHANGESET_FILE: ${{ runner.temp }}/zzz-dry-run.md
+        run: cp "$CHANGESET_FILE" .changeset/
+
+      # Changesets keeps npm's own output to itself, so the log shows its canary-tag notice and the published list.
       - name: Snapshot version and publish the canary (dry run)
         env:
           npm_config_dry_run: 'true'
-        run: scripts/publish-canary.sh
-
-      - name: Pack the snapshot
-        run: yarn package
-
-      - name: Install the tarball and import every entry point
-        env:
-          CONSUMER: ${{ runner.temp }}/consumer
+          PUBLISH_LOG: ${{ runner.temp }}/canary-publish.log
         run: |
           set -euo pipefail
-          TARBALLS=("$PWD"/packages/platform-js/*.tgz)
-          if [ "${#TARBALLS[@]}" -ne 1 ]; then
-            echo "::error::Expected one tarball, found ${#TARBALLS[@]}"; exit 1
+          if [ "$(npm config get dry-run)" != "true" ]; then
+            echo "::error::npm is not in dry-run mode"; exit 1
           fi
-          TARBALL="${TARBALLS[0]}"
-          case "$TARBALL" in
-            *-canary.*) ;;
-            *) echo "::error::Expected a canary snapshot, got $(basename "$TARBALL")"; exit 1 ;;
-          esac
+          scripts/publish-canary.sh 2>&1 | tee "$PUBLISH_LOG"
+
+      # `npm pack` only: the canary step has already built `dist/` with `dist:publish`.
+      - name: Pack the snapshot
+        env:
+          TARBALL_DIR: ${{ runner.temp }}/tarballs
+        run: |
+          set -euo pipefail
+          mkdir -p "$TARBALL_DIR"
+          DIRS=$(node -e '
+            const fs = require("fs");
+            const path = require("path");
+            fs.readdirSync("packages")
+              .map((dir) => path.join("packages", dir))
+              .filter((dir) => fs.existsSync(path.join(dir, "package.json")))
+              .filter((dir) => !JSON.parse(fs.readFileSync(path.join(dir, "package.json"), "utf8")).private)
+              .forEach((dir) => console.log(dir));
+          ')
+          while IFS= read -r DIR; do
+            (cd "$DIR" && npm pack --pack-destination "$TARBALL_DIR")
+          done <<< "$DIRS"
+
+      # Every public package went through the dry-run canary publish with a real snapshot version, is still absent from
+      # npm, and installs; the platform-js export map serves every public module and hides `effect/internal`.
+      - name: Install the tarballs and check the entry points
+        env:
+          CONSUMER: ${{ runner.temp }}/consumer
+          TARBALL_DIR: ${{ runner.temp }}/tarballs
+          PUBLISH_LOG: ${{ runner.temp }}/canary-publish.log
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          if ! grep -qF 'Packages will be released under the canary tag' "$PUBLISH_LOG"; then
+            echo "::error::The canary publish did not run under the canary tag"; exit 1
+          fi
+          # shellcheck disable=SC2016 # `${...}` inside the single-quoted script is a JavaScript template literal
+          SPECS=$(node -e '
+            const fs = require("fs");
+            const path = require("path");
+            fs.readdirSync("packages")
+              .map((dir) => path.join("packages", dir, "package.json"))
+              .filter((file) => fs.existsSync(file))
+              .map((file) => JSON.parse(fs.readFileSync(file, "utf8")))
+              .filter((pkg) => !pkg.private)
+              .forEach((pkg) => console.log(`${pkg.name} ${pkg.version}`));
+          ')
+          TARBALLS=("$TARBALL_DIR"/*.tgz)
+          COUNT=0
+          while read -r NAME VERSION; do
+            COUNT=$((COUNT + 1))
+            case "$VERSION" in
+              0.0.0-*) echo "::error::${NAME}@${VERSION} is a 0.0.0 snapshot, not a calculated version"; exit 1 ;;
+              *-canary.*) ;;
+              *) echo "::error::${NAME}@${VERSION} is not a canary snapshot"; exit 1 ;;
+            esac
+            if ! grep -qF "${NAME}@${VERSION}" "$PUBLISH_LOG"; then
+              echo "::error::The canary publish did not list ${NAME}@${VERSION}"; exit 1
+            fi
+            # Unreleased means empty output or E404; anything else is an upload the dry run should have stopped.
+            STATUS=0
+            OUT=$(npm view "${NAME}@${VERSION}" version --json 2> "$RUNNER_TEMP/npm-view.err") || STATUS=$?
+            if [ "$STATUS" -eq 0 ] && [[ "$OUT" =~ [^[:space:]] ]]; then
+              echo "::error::${NAME}@${VERSION} is on npm; the dry run uploaded it"; exit 1
+            fi
+            if [ "$STATUS" -ne 0 ] && ! grep -q 'E404' "$RUNNER_TEMP/npm-view.err" && ! grep -q 'E404' <<< "$OUT"; then
+              echo "::error::Could not check npm for ${NAME}@${VERSION} (npm view exited ${STATUS})"
+              cat "$RUNNER_TEMP/npm-view.err"; exit 1
+            fi
+            TARBALL="$TARBALL_DIR/$(sed 's/^@//; s/\//-/' <<< "$NAME")-${VERSION}.tgz"
+            if [ ! -f "$TARBALL" ]; then
+              echo "::error::No tarball for ${NAME}@${VERSION} (expected $(basename "$TARBALL"))"; exit 1
+            fi
+          done <<< "$SPECS"
+          if [ "${#TARBALLS[@]}" -ne "$COUNT" ]; then
+            echo "::error::Expected ${COUNT} tarballs, found ${#TARBALLS[@]}"; exit 1
+          fi
           mkdir -p "$CONSUMER"
           cd "$CONSUMER"
           npm init -y > /dev/null
-          npm pkg set type=module
-          npm install --no-audit --no-fund "$TARBALL"
-          node --input-type=module -e "
-            await import('@midnightntwrk/platform-js');
-            await import('@midnightntwrk/platform-js/effect');
-            await import('@midnightntwrk/platform-js/effect/Hex');
-          "
-          echo "Installed and imported $(basename "$TARBALL")"
+          npm install --no-audit --no-fund "${TARBALLS[@]}"
+          # shellcheck disable=SC2016 # `${...}` inside the single-quoted script is a JavaScript template literal
+          node --input-type=module -e '
+            import { readdirSync } from "node:fs";
+            const pkg = "@midnightntwrk/platform-js";
+            const dist = `node_modules/${pkg}/dist/effect`;
+            const jsModules = (dir) => readdirSync(dir).filter((f) => f.endsWith(".js")).map((f) => f.slice(0, -3));
+            const specifiers = [pkg, `${pkg}/effect`, ...jsModules(dist).map((name) => `${pkg}/effect/${name}`)];
+            for (const specifier of specifiers) {
+              await import(specifier);
+              console.log(`Imported ${specifier}`);
+            }
+            const internal = jsModules(`${dist}/internal`);
+            if (internal.length === 0) throw new Error(`${dist}/internal has no modules to check`);
+            const hidden = `${pkg}/effect/internal/${internal[0]}`;
+            const error = await import(hidden).then(() => undefined, (e) => e);
+            if (error?.code !== "ERR_PACKAGE_PATH_NOT_EXPORTED") {
+              throw new Error(`${hidden} must not resolve; got ${error?.code ?? "a module"}`);
+            }
+            console.log(`Not exported, as expected: ${hidden}`);
+          '
+          echo "Installed and imported: $(basename -a "${TARBALLS[@]}" | tr '\n' ' ')"
