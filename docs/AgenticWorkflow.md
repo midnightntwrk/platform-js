@@ -92,7 +92,7 @@ wraps the `tdd` step that `/implement` calls, so each behaviour stops at the gat
 flowchart TD
   F["/implement #123<br/>fetches the issue, states its title"] --> NEXT{"Next behaviour<br/>from the acceptance criteria"}
   NEXT --> T["Write the test<br/>(test-first skill);<br/>stub any new export"]
-  T --> RED{"Fails on an assertion,<br/>no new type errors?"}
+  T --> RED{"Fails on an assertion,<br/>no type errors?"}
   RED -->|"no: type error, bad import"| T
   RED -->|yes| GATE["GATE: you review<br/>the failing test;<br/>its version is recorded"]
   GATE -->|changes asked| T
@@ -109,9 +109,8 @@ flowchart TD
   CR --> COMMIT["Commit on the branch<br/>(diff shown, you approve)"]
 ```
 
-- The type-check is `yarn run -T tsc -b tsconfig.json`, run from `packages/platform-js/`. The check step reports
-  failures that predate the change rather than blocking on them; which ones are known today is listed in
-  [`DEV_GUIDE.md` → Known failures today](../DEV_GUIDE.md#known-failures-today).
+- The type-check is `yarn run -T tsc -b tsconfig.json`, run from `packages/platform-js/`. It must show no errors, and
+  CI fails a PR on any type error ([`DEV_GUIDE.md` → Continuous integration](../DEV_GUIDE.md#continuous-integration)).
 - Because of the gate, `/implement` is not run unattended.
 
 ## From PR to done

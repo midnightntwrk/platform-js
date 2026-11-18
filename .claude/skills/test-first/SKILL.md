@@ -14,8 +14,8 @@ implementation. Consult the user on the size of the feedback loop: it may be one
 prepared ahead of time, depending on the task. If unsure, prefer fewer tests per cycle. Inside `/implement`, work one
 test at a time unless the user picks a suite for this ticket.
 
-Commands are in `CLAUDE.md` → Build Commands; the known type-check errors are in Common Gotchas. Run
-loop commands from `packages/platform-js/` unless a step says otherwise.
+Commands are in `CLAUDE.md` → Build Commands. Run loop commands from `packages/platform-js/` unless a step says
+otherwise.
 
 ## 0. Choose the test file
 
@@ -41,8 +41,7 @@ yarn run -T tsc -b tsconfig.json
 ```
 
 Confirm the test fails **for the expected reason**: a failed assertion on the behavior under test. A type error, bad
-import, or setup crash is not red; fix the test harness first. `tsc` may show only the known errors listed in
-`CLAUDE.md` → Common Gotchas; any other type error is yours.
+import, or setup crash is not red; fix the test harness first. `tsc` must show no errors: any type error is yours.
 
 ## 4. GATE: stop for user review
 
@@ -60,7 +59,7 @@ The minimum code that makes the test pass. Follow the repo's functional rules (`
 
 ## 6. Observe GREEN
 
-Re-run both commands from step 3. The test passes and `tsc` shows only the known errors.
+Re-run both commands from step 3. The test passes and `tsc` shows no errors.
 
 Check the test is unchanged since the gate: `git diff <commit> -- test/` is empty, or each `git hash-object` matches.
 If not, go back to step 4 and get approval again.

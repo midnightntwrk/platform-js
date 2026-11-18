@@ -53,24 +53,36 @@ Examples: `feat/123-network-id-parsing`, `chore/19-agentic-workflow-setup`, `doc
 
 Run these from the repo root.
 
-| Command        | What it does                                       |
-| -------------- | -------------------------------------------------- |
-| `yarn build`   | Builds all packages (Turbo).                       |
-| `yarn test`    | Runs all tests (Turbo). Builds dependencies first. |
-| `yarn lint`    | Runs ESLint across the workspace.                  |
-| `yarn clean`   | Removes build output, reports and coverage.        |
-| `yarn package` | Builds, then packs each package with `npm pack`.   |
+| Command        | What it does                                         |
+| -------------- | ---------------------------------------------------- |
+| `yarn build`   | Builds all packages (Turbo).                         |
+| `yarn test`    | Runs all tests (Turbo). Builds dependencies first.   |
+| `yarn lint`    | Runs ESLint across the workspace. Warnings fail too. |
+| `yarn clean`   | Removes build output, reports and coverage.          |
+| `yarn package` | Builds, then packs each package with `npm pack`.     |
 
 There is no `typecheck` or `format` script yet. To type-check by hand, run `yarn run -T tsc -b tsconfig.json` in
 `packages/platform-js/` (`-T` runs a tool installed at the workspace root).
 
 ### Known failures today
 
-These predate the current work. Other docs point here; update this list when one is fixed.
+None today: build, tests, lint and the type-check are clean on `main`, so any failure comes from your change.
 
-- **The type-check reports five known errors**, all TS2345 in `test/effect/NetworkId.test.ts` (lines 30, 37, 38, 44
-  and 45): "Argument of type 'string' is not assignable to parameter of type 'NetworkIdInput'". Any other type error
-  comes from your change.
+### Continuous integration
+
+The `CI` workflow (`.github/workflows/ci.yml`) runs on every pull request, on every merge queue entry (`merge_group`),
+on every push to `main`, and by hand (`workflow_dispatch`). Build, General Checks and Unit Tests run side by side, each
+after `yarn install --immutable`. Tests waits for all three and passes only when all three succeed:
+
+| Job            | Runs                                                         |
+| -------------- | ------------------------------------------------------------ |
+| Build          | `yarn build`                                                 |
+| General Checks | the type-check, then `yarn lint`                             |
+| Unit Tests     | `yarn test`                                                  |
+| Tests          | waits for the three jobs above; passes only when all succeed |
+
+**`Tests` is the status check for `main` to require** (a repo setting, made by a maintainer): a lint error, a type
+error, a failing test or a broken build fails it. Run the same commands locally before you push ([Commands](#commands)).
 
 ---
 

@@ -109,10 +109,9 @@ touched; full rationale and worked examples: `docs/CodingConventions.md`.
 - **Tests import the package by name** (`@midnight-ntwrk/platform-js/effect/Hex`), through the `./effect/*` export.
   `./effect/internal/*` is blocked, so tests can't import internals; a new `effect/` module is also re-exported from
   `src/effect/index.ts`.
-- **The type-check has five known errors**, all from before the agent setup: `yarn run -T tsc -b tsconfig.json` (in
-  `packages/platform-js/`) reports TS2345 in `test/effect/NetworkId.test.ts` at lines 30, 37, 38, 44 and 45
-  ("Argument of type 'string' is not assignable to parameter of type 'NetworkIdInput'"). Any other type error is yours
-  to fix.
+- **The type-check is clean**, and CI's `General Checks` job fails on any type error: every error
+  `yarn run -T tsc -b tsconfig.json` (in `packages/platform-js/`) reports is yours to fix. CI jobs:
+  `DEV_GUIDE.md` → Continuous integration.
 - **TypeScript stays on 6.0** (`~6.0.x`): typescript-eslint supports only `<6.1.0`; don't bump to 6.1+ or 7 without
   revisiting [ADR-0002](docs/decisions/0002-stay-on-typescript-6.md).
 - **Turbo's cache can be stale** after branch switches or rebases: bypass with `--force` (`yarn build --force`).

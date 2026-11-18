@@ -1,0 +1,176 @@
+name: CI
+
+on:
+  workflow_dispatch:
+  pull_request:
+  merge_group:
+  push:
+    branches: ['main']
+
+concurrency:
+  # Each pull request (by number) or ref gets its own group, per event, so runs of different events never cancel
+  # each other.
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  # Only pull request runs are replaced by a newer push; every commit on `main` gets a full result.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions: {}
+
+# Build, General Checks and Unit Tests run side by side: the package's exports point at `src/`, so the type-check needs
+# no build first, and `yarn test` builds what it needs itself. `Tests` is the check for `main` to require; it passes
+# only when every job in its `needs` succeeds, and a job added to `needs` is checked automatically. Every job shares a
+# 15-minute timeout: a test that loops synchronously can't be stopped by vitest's own timeout, and without this bound
+# it would hold the runner for GitHub's 6-hour default.
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # No `cache: 'yarn'` here: setup-node would call the runner's Yarn 1 before corepack is enabled, and Yarn 1
+      # refuses to run under `packageManager: yarn@4`. The Yarn cache is restored below instead.
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: '.nvmrc'
+
+      - name: Enable corepack
+        run: corepack enable
+
+      # `.yarnrc.yml` sets `enableGlobalCache: false`, so Yarn keeps its cache in the project.
+      - name: Cache Yarn packages
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .yarn/cache
+          key: yarn-${{ runner.os }}-${{ hashFiles('yarn.lock') }}
+          restore-keys: |
+            yarn-${{ runner.os }}-
+
+      - name: Check tool versions
+        run: |
+          node --version
+          corepack --version
+          yarn --version
+
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      - name: Build
+        run: yarn build
+
+  general-checks:
+    name: General Checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # No `cache: 'yarn'` here: setup-node would call the runner's Yarn 1 before corepack is enabled, and Yarn 1
+      # refuses to run under `packageManager: yarn@4`. The Yarn cache is restored below instead.
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: '.nvmrc'
+
+      - name: Enable corepack
+        run: corepack enable
+
+      # `.yarnrc.yml` sets `enableGlobalCache: false`, so Yarn keeps its cache in the project.
+      - name: Cache Yarn packages
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .yarn/cache
+          key: yarn-${{ runner.os }}-${{ hashFiles('yarn.lock') }}
+          restore-keys: |
+            yarn-${{ runner.os }}-
+
+      - name: Check tool versions
+        run: |
+          node --version
+          corepack --version
+          yarn --version
+
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      # Type-checks src and tests together. There is no `typecheck` script yet, so this calls tsc directly.
+      - name: Run typecheck
+        working-directory: packages/platform-js
+        run: yarn run -T tsc -b tsconfig.json
+
+      # Lint still runs when the type-check fails, so one run reports both.
+      - name: Run linter
+        if: ${{ !cancelled() }}
+        run: yarn lint
+
+  test-unit:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # No `cache: 'yarn'` here: setup-node would call the runner's Yarn 1 before corepack is enabled, and Yarn 1
+      # refuses to run under `packageManager: yarn@4`. The Yarn cache is restored below instead.
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: '.nvmrc'
+
+      - name: Enable corepack
+        run: corepack enable
+
+      # `.yarnrc.yml` sets `enableGlobalCache: false`, so Yarn keeps its cache in the project.
+      - name: Cache Yarn packages
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .yarn/cache
+          key: yarn-${{ runner.os }}-${{ hashFiles('yarn.lock') }}
+          restore-keys: |
+            yarn-${{ runner.os }}-
+
+      - name: Check tool versions
+        run: |
+          node --version
+          corepack --version
+          yarn --version
+
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      - name: Run unit tests
+        run: yarn test
+
+  tests:
+    name: Tests
+    needs: [build, general-checks, test-unit]
+    # always(): a failed or cancelled job must fail this check, not skip it, because a skipped required check passes.
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Aggregate results
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+        run: |
+          set -euo pipefail
+          errors=$(jq -r '
+            if length == 0 then "::error::No jobs in needs; nothing was checked."
+            else to_entries[] | select(.value.result != "success")
+              | "::error::\(.key) was \(.value.result); expected success."
+            end' <<<"$NEEDS")
+          if [ -n "$errors" ]; then
+            echo "$errors"
+            exit 1
+          fi
