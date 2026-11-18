@@ -5,62 +5,105 @@
 > [`midnightntwrk/midnight-sdk`](https://github.com/midnightntwrk/midnight-sdk), and nothing has been released from this
 > repository. Until the first release, treat its issues as placeholders: their scope and details may change.
 
-This GitHub repository should be used as a template when creating a new Midnight GitHub repository.
-The template is configured with default repository settings and a set of default files that are expected to exist in all Midnight GitHub repositories.
+[`@midnight-ntwrk/platform-js`](https://www.npmjs.com/package/@midnight-ntwrk/platform-js) provides core
+abstractions, utilities and types for building services and libraries that work with the Midnight blockchain. Other
+Midnight libraries and tools build on it, including [midnight-js](https://github.com/midnightntwrk/midnight-js) and
+[compact-js](https://github.com/midnightntwrk/compact-js).
+
+It is written in TypeScript with [Effect](https://effect.website/). Values are branded types (a plain type, such as
+`string`, tagged so that only a validated value fits), and parsing fails with a typed `ParseError`.
+
+## Install
+
+```shell
+npm install @midnight-ntwrk/platform-js
+```
+
+Versions up to 3.0.0 were published from [`midnightntwrk/midnight-sdk`](https://github.com/midnightntwrk/midnight-sdk).
+With the first release from this repository, the package moves to the `@midnightntwrk` scope, matching the GitHub
+organisation.
+
+## Usage
+
+Import the modules from the package root, or one module at a time from `@midnight-ntwrk/platform-js/effect/<Module>`:
+
+```ts
+import { Hex, IntegerRange, NetworkId, NetworkIdMoniker } from '@midnight-ntwrk/platform-js';
+import { Either } from 'effect';
+
+// Parse a hex string: Right with its parts, or Left with a ParseError.
+const parsed = Hex.parseHex('0xdeadbeef');
+if (Either.isRight(parsed)) {
+  parsed.right.hasPrefix; // true
+  parsed.right.byteChars; // 'deadbeef'
+}
+
+// Brand constructors validate their input and throw if it is invalid.
+const plain = Hex.PlainHex('deadbeef');
+Hex.PlainHex('0xdeadbeef'); // throws: a prefixed string is not PlainHex
+
+// Network IDs.
+const preview = NetworkId.make(NetworkIdMoniker.NetworkIdMoniker('preview'));
+NetworkId.equals(preview, NetworkId.MainNet); // false
+
+// Integer ranges.
+const byte = IntegerRange.inclusive([0, 255]);
+IntegerRange.contains(byte, 256); // false
+```
+
+## Modules
+
+| Module             | What it holds                                                                      |
+| ------------------ | ---------------------------------------------------------------------------------- |
+| `Hex`              | Hex-encoded strings, with or without a `0x` prefix, and a parser for them          |
+| `NetworkId`        | Midnight network identifiers, including `MainNet`                                  |
+| `NetworkIdMoniker` | The validated name of a Midnight network, such as `preview`                        |
+| `ContractAddress`  | Hex-encoded contract addresses, 32 bytes long                                      |
+| `CoinPublicKey`    | Public keys that can receive Zswap coins, as hex or Bech32m                        |
+| `SigningKey`       | Signing keys, tagged with their signature scheme (`schnorr` or `ecdsa`)            |
+| `DomainSeparator`  | Hex-encoded token domain separators, 32 bytes long                                 |
+| `IntegerRange`     | Integer ranges, inclusive or exclusive of their maximum                            |
+| `Configuration`    | Effect services and a layer that read configured keys and the network              |
+| `ParseError`       | The typed error returned when a string fails to parse                              |
+
+## Repository layout
+
+- [`packages/platform-js/`](packages/platform-js/): the package. Modules live in `src/effect/`, one per domain type,
+  and tests in `test/`.
+- [`docs/`](docs/): coding conventions, the agentic workflow and the Claude Code setup.
+- [`docs/decisions/`](docs/decisions/): architectural decision records (ADRs).
+
+The repository is a Yarn 4 and Turborepo workspace
+([ADR-0001](docs/decisions/0001-turborepo-workspace-with-packages-folder.md)).
+
+## Development
+
+You need Node.js (the version is pinned in [`.nvmrc`](.nvmrc)) and Yarn 4 (through Corepack). From the repository
+root:
+
+```shell
+nvm use && corepack enable
+yarn          # install dependencies
+yarn build    # build all packages
+yarn test     # run the full test suite
+yarn lint     # lint the workspace
+```
+
+[`DEV_GUIDE.md`](DEV_GUIDE.md) covers setup, branch naming, single-test commands, testing tiers, CI and releases.
 
 ## Contributing and documentation
 
 - [`CONTRIBUTING.md`](CONTRIBUTING.md): how to contribute, with links to the repository guides.
+- [`DEV_GUIDE.md`](DEV_GUIDE.md): setup, commands, testing and releases.
+- [`docs/CodingConventions.md`](docs/CodingConventions.md): the functional programming conventions the code follows.
+- [`docs/decisions/`](docs/decisions/): why the repository is built the way it is.
+- [`SECURITY.md`](SECURITY.md): how to report a security issue.
+- [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md): the code of conduct.
 - [`packages/platform-js/README.md`](packages/platform-js/README.md): the platform-js package.
 
-### LICENSE
+## Licence
 
-Apache 2.0.
-
-### README.md
-
-Provides a brief description for users and developers who want to understand the purpose, setup, and usage of the repository.
-
-### SECURITY.md
-
-Provides a brief description of the Midnight Foundation's security policy and how to properly disclose security issues.
-
-### CONTRIBUTING.md
-
-Provides guidelines for how people can contribute to the Midnight project.
-
-### CODEOWNERS
-
-Defines repository ownership rules.
-
-### ISSUE_TEMPLATE
-
-Provides templates for reporting various types of issues, such as: bug report, feature request, task and documentation improvement.
-
-### PULL_REQUEST_TEMPLATE
-
-Provides a template for a pull request.
-
-### CLA Assistant
-
-The Midnight Foundation appreciates contributions, and like many other open source projects asks contributors to sign a contributor
-License Agreement before accepting contributions. We use CLA assistant (https://github.com/cla-assistant/cla-assistant) to streamline the CLA
-signing process, enabling contributors to sign our CLAs directly within a GitHub pull request.
-
-### Dependabot
-
-The Midnight Foundation uses GitHub Dependabot feature to keep our projects dependencies up-to-date and address potential security vulnerabilities.
-
-### Checkmarx
-
-The Midnight Foundation uses Checkmarx for application security (AppSec) to identify and fix security vulnerabilities.
-All repositories are scanned with Checkmarx's suite of tools including: Static Application Security Testing (SAST), Infrastructure as Code (IaC), Software Composition Analysis (SCA), API Security, Container Security and Supply Chain Scans (SCS).
-
-### Unito
-
-Facilitates two-way data synchronization, automated workflows and streamline processes between: Jira, GitHub issues and Github project Kanban board.
-
-# TODO - New Repo Owner
+[Apache 2.0](LICENSE).
 
 ### Software Package Data Exchange (SPDX)
 Include the following Software Package Data Exchange (SPDX) short-form identifier in a comment at the top headers of each source code file.
