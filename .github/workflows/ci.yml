@@ -1,0 +1,175 @@
+name: CI
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: ['**']
+  push:
+    branches: ['main']
+
+concurrency:
+  # The event is part of the group so a manual run on a pull request's branch neither cancels the pull request's run
+  # nor is cancelled by it; each still replaces an older run of its own event on the same branch.
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+permissions: {}
+
+# Build, General Checks and Unit Tests run side by side: the package's exports point at `src/`, so the type-check needs
+# no build first, and `yarn test` builds what it needs itself. `Tests` is the one check `main` requires; it passes only
+# when all three succeed, so a job added here must also be added to its `needs` and its check.
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # No `cache: 'yarn'` here: setup-node would call the runner's Yarn 1 before corepack is enabled, and Yarn 1
+      # refuses to run under `packageManager: yarn@4`. The Yarn cache is restored below instead.
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: '.nvmrc'
+
+      - name: Enable corepack
+        run: corepack enable
+
+      # `.yarnrc.yml` sets `enableGlobalCache: false`, so Yarn keeps its cache in the project.
+      - name: Cache Yarn packages
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .yarn/cache
+          key: yarn-${{ runner.os }}-${{ hashFiles('yarn.lock') }}
+          restore-keys: |
+            yarn-${{ runner.os }}-
+
+      - name: Check tool versions
+        run: |
+          node --version
+          corepack --version
+          yarn --version
+
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      - name: Build
+        run: yarn build
+
+  general-checks:
+    name: General Checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # No `cache: 'yarn'` here: setup-node would call the runner's Yarn 1 before corepack is enabled, and Yarn 1
+      # refuses to run under `packageManager: yarn@4`. The Yarn cache is restored below instead.
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: '.nvmrc'
+
+      - name: Enable corepack
+        run: corepack enable
+
+      # `.yarnrc.yml` sets `enableGlobalCache: false`, so Yarn keeps its cache in the project.
+      - name: Cache Yarn packages
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .yarn/cache
+          key: yarn-${{ runner.os }}-${{ hashFiles('yarn.lock') }}
+          restore-keys: |
+            yarn-${{ runner.os }}-
+
+      - name: Check tool versions
+        run: |
+          node --version
+          corepack --version
+          yarn --version
+
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      # Type-checks src and tests together. There is no `typecheck` script yet, so this calls tsc directly.
+      - name: Run typecheck
+        working-directory: packages/platform-js
+        run: yarn run -T tsc -b tsconfig.json
+
+      # ESLint runs Prettier as a rule, so this is also the format check.
+      - name: Run linter
+        run: yarn lint
+
+  test-unit:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    # A test that loops synchronously cannot be stopped by vitest's own timeout; without this bound it would hold the
+    # runner for GitHub's 6-hour default.
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # No `cache: 'yarn'` here: setup-node would call the runner's Yarn 1 before corepack is enabled, and Yarn 1
+      # refuses to run under `packageManager: yarn@4`. The Yarn cache is restored below instead.
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: '.nvmrc'
+
+      - name: Enable corepack
+        run: corepack enable
+
+      # `.yarnrc.yml` sets `enableGlobalCache: false`, so Yarn keeps its cache in the project.
+      - name: Cache Yarn packages
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .yarn/cache
+          key: yarn-${{ runner.os }}-${{ hashFiles('yarn.lock') }}
+          restore-keys: |
+            yarn-${{ runner.os }}-
+
+      - name: Check tool versions
+        run: |
+          node --version
+          corepack --version
+          yarn --version
+
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      - name: Run unit tests
+        run: yarn test
+
+  tests:
+    name: Tests
+    needs: [build, general-checks, test-unit]
+    # always(): a failed or cancelled job must fail this check, not skip it, because a skipped required check passes.
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Aggregate results
+        env:
+          BUILD: ${{ needs.build.result }}
+          GENERAL: ${{ needs.general-checks.result }}
+          UNIT: ${{ needs.test-unit.result }}
+        run: |
+          echo "build=$BUILD general=$GENERAL unit=$UNIT"
+          fail=0
+          for pair in "Build:$BUILD" "General Checks:$GENERAL" "Unit Tests:$UNIT"; do
+            if [ "${pair#*:}" != "success" ]; then
+              echo "::error::${pair%%:*} was ${pair#*:}; expected success."
+              fail=1
+            fi
+          done
+          exit "$fail"

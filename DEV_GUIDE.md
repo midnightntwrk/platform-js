@@ -66,11 +66,25 @@ There is no `typecheck` or `format` script yet. To type-check by hand, run `yarn
 
 ### Known failures today
 
-These predate the current work. Other docs point here; update this list when one is fixed.
+Failures that predate the current work are listed here, so other docs can point to it. Today the list is empty.
 
-- **The type-check reports five known errors**, all TS2345 in `test/effect/NetworkId.test.ts` (lines 30, 37, 38, 44
-  and 45): "Argument of type 'string' is not assignable to parameter of type 'NetworkIdInput'". Any other type error
-  comes from your change.
+None. Build, tests, lint and the type-check are all clean on `main`, and [CI](#continuous-integration) keeps them so:
+any failure comes from your change.
+
+### Continuous integration
+
+The `CI` workflow (`.github/workflows/ci.yml`) runs on every pull request, on every push to `main`, and by hand
+(`workflow_dispatch`). Its jobs run side by side, each after `yarn install --immutable`:
+
+| Job            | Runs                                              |
+| -------------- | ------------------------------------------------- |
+| Build          | `yarn build`                                      |
+| General Checks | the type-check, then `yarn lint`                  |
+| Unit Tests     | `yarn test`                                       |
+| Tests          | passes only when the three jobs above all succeed |
+
+**`Tests` is the status check for `main` to require** (a repo setting, made by a maintainer): a lint error, a type
+error, a failing test or a broken build fails it. Run the same commands locally before you push ([Commands](#commands)).
 
 ---
 

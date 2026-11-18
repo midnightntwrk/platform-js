@@ -15,6 +15,7 @@
 
 import { describe, expect,it } from '@effect/vitest';
 import * as NetworkId from '@midnight-ntwrk/platform-js/effect/NetworkId';
+import * as NetworkIdMoniker from '@midnight-ntwrk/platform-js/effect/NetworkIdMoniker';
 import * as fc from 'effect/FastCheck';
 
 import * as Arbitrary from './Arbitrary.js';
@@ -27,22 +28,22 @@ describe('NetworkId', () => {
     
     it('should return false for any named network identifier', () => fc.assert(
       fc.property(Arbitrary.makeNetworkIdArbitrary(), (networkId) => {
-        expect(NetworkId.make(networkId).isMainNet()).toBe(false);
+        expect(NetworkId.make(NetworkIdMoniker.NetworkIdMoniker(networkId)).isMainNet()).toBe(false);
       })
     ));
   });
 
   describe('equals', () => {
     it('should return true for two network identifiers equal by name', () => {
-      const a = NetworkId.make('hosky-dev01');
-      const b = NetworkId.make('hosky-dev01');
+      const a = NetworkId.make(NetworkIdMoniker.NetworkIdMoniker('hosky-dev01'));
+      const b = NetworkId.make(NetworkIdMoniker.NetworkIdMoniker('hosky-dev01'));
 
       expect(NetworkId.equals(a, b)).toBe(true);
     });
 
     it('should return false for two network identifiers that differ by name', () => {
-      const a = NetworkId.make('hosky-dev01');
-      const b = NetworkId.make('hosky-dev02');
+      const a = NetworkId.make(NetworkIdMoniker.NetworkIdMoniker('hosky-dev01'));
+      const b = NetworkId.make(NetworkIdMoniker.NetworkIdMoniker('hosky-dev02'));
 
       expect(NetworkId.equals(a, b)).toBe(false);
     });
