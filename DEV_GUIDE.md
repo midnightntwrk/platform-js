@@ -53,35 +53,33 @@ Examples: `feat/123-network-id-parsing`, `chore/19-agentic-workflow-setup`, `doc
 
 Run these from the repo root.
 
-| Command        | What it does                                       |
-| -------------- | -------------------------------------------------- |
-| `yarn build`   | Builds all packages (Turbo).                       |
-| `yarn test`    | Runs all tests (Turbo). Builds dependencies first. |
-| `yarn lint`    | Runs ESLint across the workspace.                  |
-| `yarn clean`   | Removes build output, reports and coverage.        |
-| `yarn package` | Builds, then packs each package with `npm pack`.   |
+| Command        | What it does                                         |
+| -------------- | ---------------------------------------------------- |
+| `yarn build`   | Builds all packages (Turbo).                         |
+| `yarn test`    | Runs all tests (Turbo). Builds dependencies first.   |
+| `yarn lint`    | Runs ESLint across the workspace. Warnings fail too. |
+| `yarn clean`   | Removes build output, reports and coverage.          |
+| `yarn package` | Builds, then packs each package with `npm pack`.     |
 
 There is no `typecheck` or `format` script yet. To type-check by hand, run `yarn run -T tsc -b tsconfig.json` in
 `packages/platform-js/` (`-T` runs a tool installed at the workspace root).
 
 ### Known failures today
 
-Failures that predate the current work are listed here, so other docs can point to it. Today the list is empty.
-
-None. Build, tests, lint and the type-check are all clean on `main`, and [CI](#continuous-integration) keeps them so:
-any failure comes from your change.
+None today: build, tests, lint and the type-check are clean on `main`, so any failure comes from your change.
 
 ### Continuous integration
 
-The `CI` workflow (`.github/workflows/ci.yml`) runs on every pull request, on every push to `main`, and by hand
-(`workflow_dispatch`). Its jobs run side by side, each after `yarn install --immutable`:
+The `CI` workflow (`.github/workflows/ci.yml`) runs on every pull request, on every merge queue entry (`merge_group`),
+on every push to `main`, and by hand (`workflow_dispatch`). Build, General Checks and Unit Tests run side by side, each
+after `yarn install --immutable`. Tests waits for all three and passes only when all three succeed:
 
-| Job            | Runs                                              |
-| -------------- | ------------------------------------------------- |
-| Build          | `yarn build`                                      |
-| General Checks | the type-check, then `yarn lint`                  |
-| Unit Tests     | `yarn test`                                       |
-| Tests          | passes only when the three jobs above all succeed |
+| Job            | Runs                                                         |
+| -------------- | ------------------------------------------------------------ |
+| Build          | `yarn build`                                                 |
+| General Checks | the type-check, then `yarn lint`                             |
+| Unit Tests     | `yarn test`                                                  |
+| Tests          | waits for the three jobs above; passes only when all succeed |
 
 **`Tests` is the status check for `main` to require** (a repo setting, made by a maintainer): a lint error, a type
 error, a failing test or a broken build fails it. Run the same commands locally before you push ([Commands](#commands)).
