@@ -416,7 +416,8 @@ jobs:
           git add -A
           git -c user.name=dry-run -c user.email=dry-run@invalid -c commit.gpgsign=false \
             commit --quiet -m "chore: release (dry run)"
-          "$REPO/scripts/publish-stable.sh" 2>&1 | tee "$STABLE_LOG"
+          # Changesets colours its output on Actions; the log is plain text, so the checks below match it.
+          "$REPO/scripts/publish-stable.sh" 2>&1 | sed -E 's/\x1b\[[0-9;]*m//g' | tee "$STABLE_LOG"
           # shellcheck disable=SC2016 # `${...}` inside the single-quoted script is a JavaScript template literal
           SPECS=$(node -e '
             const fs = require("fs");
@@ -451,7 +452,8 @@ jobs:
           if [ "$(npm config get dry-run)" != "true" ]; then
             echo "::error::npm is not in dry-run mode"; exit 1
           fi
-          scripts/publish-canary.sh 2>&1 | tee "$PUBLISH_LOG"
+          # Changesets colours its output on Actions; the log is plain text, so the next step's checks match it.
+          scripts/publish-canary.sh 2>&1 | sed -E 's/\x1b\[[0-9;]*m//g' | tee "$PUBLISH_LOG"
 
       # `npm pack` only: the canary step has already built `dist/` with `dist:publish`.
       - name: Pack the snapshot
