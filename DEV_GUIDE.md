@@ -159,6 +159,69 @@ an empty one with `yarn changeset add --empty`. A PR that touches no package nee
 
 ### Releasing
 
-Not set up yet. Releases (the release PR on `changeset-release/main` and publishing) come with the CD workflow,
-modelled on midnight-wallet: [#54](https://github.com/midnightntwrk/platform-js/issues/54). Until then, don't run
-`yarn changeset version` or `yarn changeset publish`: changesets wait in `.changeset/` for the first release.
+The `CD` workflow (`.github/workflows/cd.yml`) releases `@midnightntwrk/platform-js` to npm from `main`, modelled on
+midnight-wallet's. It publishes to the `@midnightntwrk` scope only, with no alias scope. Never run `yarn changeset
+version` or `yarn changeset publish` by hand: the workflow does both.
+
+On every push to `main`, the `version` job reads the pending changesets and picks one mode:
+
+| Mode     | When                                                                 | What happens                                      |
+| -------- | -------------------------------------------------------------------- | ------------------------------------------------- |
+| `stable` | No changesets are left and the package version is not on npm yet     | Publish that version under `latest`               |
+| `canary` | A pending changeset bumps the package                                | Publish a snapshot under `canary`, never `latest` |
+| `none`   | Only empty changesets are pending, or none and the version is on npm | Publish nothing                                   |
+
+`stable` is the push that merges the release PR. A push that changes no package and brings no changeset is `none`, so
+it asks no one for approval. The workflow does not wait for `CI` on the same push: what reaches `main` has already
+passed the required `Tests` check on its PR.
+
+**The release PR.** While changesets are pending, the job opens or updates one PR, `chore: release`, from the
+`changeset-release/main` branch. It bumps the version, writes `CHANGELOG.md` and deletes the consumed changesets. Each
+new merge to `main` regenerates it, so it always shows the next release. Closing it unmerged does not stop it: the next
+push opens it again.
+
+**Stable release.** Merging the release PR triggers `publish-stable`. It waits for a reviewer to approve the
+`npm-publish-stable` environment, then publishes under `latest`, pushes the `@midnightntwrk/platform-js@<version>` git
+tag and creates the GitHub Release from the changelog.
+
+**Canary build.** Every merge that brings a package-bumping changeset publishes a canary at once, with no approval. Its
+version is the next release plus a snapshot suffix: `<next version>-canary.<UTC timestamp>-<short sha>`, for example
+`4.0.0-canary.20261118164023-12fd0e2`. A canary is a real test of the release path (build, pack, publish, install)
+before a stable release, and lets other repos try a change early. Install the newest one with:
+
+```bash
+yarn add @midnightntwrk/platform-js@canary
+npm view @midnightntwrk/platform-js dist-tags   # which version each tag points at
+```
+
+Pin the exact canary version for anything that must not move.
+
+**Dry run on every PR.** The `Publish (dry run)` job runs the canary publish (`scripts/publish-canary.sh`) with
+`npm_config_dry_run=true`, so it takes the same path and stops before the upload. It first adds a throwaway `patch`
+changeset, so there is always a snapshot to test. It then packs the snapshot, installs the tarball into an empty
+project and imports each entry point. The tarball lives only on the runner. Run the same rehearsal locally, in a
+throwaway clone, because the script rewrites versions and deletes changesets (with no pending changeset, it tests the
+current version instead of a snapshot):
+
+```bash
+git clone . /tmp/platform-js-dry-run && cd /tmp/platform-js-dry-run
+nvm use && corepack enable
+yarn install --immutable
+npm_config_dry_run=true scripts/publish-canary.sh
+yarn package   # the .tgz lands in packages/platform-js/
+```
+
+Both publish jobs use npm Trusted Publishing (OIDC: GitHub proves the job's identity to npm, so no npm token is
+stored) and publish with provenance. The dry run cannot test that login or the upload; the first canary from `main`
+is what proves them, before any stable release.
+
+A maintainer sets up, once, in this order:
+
+1. The GitHub environments: `npm-publish-stable` with required reviewers, `npm-publish-canary` with none.
+2. The package on npmjs. npm only lets you add a Trusted Publisher to a package that already exists, so the first
+   version is published by hand with a maintainer's npm login: run the dry-run commands above without
+   `npm_config_dry_run=true`, which publishes a canary under `canary`. npm points `latest` at a package's first
+   version whatever the tag, so `latest` shows this canary until the first stable release moves it.
+3. Two Trusted Publishers on the package, one per environment: repository `midnightntwrk/platform-js`, workflow
+   `cd.yml`, environment `npm-publish-stable` or `npm-publish-canary`. npm expires a new Trusted Publisher that has
+   not published within 2 days, so merge a package-bumping change soon after, and check that its canary publishes.
