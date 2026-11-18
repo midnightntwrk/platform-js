@@ -40,7 +40,7 @@ export default tseslint.config(
       'import-x/resolver': {
         typescript: {
           alwaysTryTypes: false,
-          project: ['packages/*/tsconfig.json']
+          project: ['tsconfig.json']
         }
       }
     },
@@ -108,6 +108,27 @@ export default tseslint.config(
           ]
         }
       ],
+    }
+  },
+  {
+    files: ['**/test/**/*.ts'],
+    rules: {
+      // Flat config replaces the whole rule option, so the dist pattern from the block above is repeated here.
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['**/dist/**', './dist/**', '../dist/**'],
+              message: 'Direct imports from dist folders are not allowed. Use source files instead.'
+            },
+            {
+              group: ['**/src/effect/internal/**'],
+              message: 'Tests import public modules, not src/effect/internal/.'
+            }
+          ]
+        }
+      ]
     }
   },
   prettierConfig
