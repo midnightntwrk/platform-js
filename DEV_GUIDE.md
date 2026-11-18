@@ -157,6 +157,6 @@ an empty one with `yarn changeset add --empty`. A PR that touches no package nee
 
 ### Releasing
 
-Not set up yet. Releases (the release PR on `changeset-release/main` and publishing) come with the CI/CD rebuild,
-modelled on midnight-wallet. Until then, don't run `yarn changeset version` or `yarn changeset publish`: changesets
-wait in `.changeset/` for the first release.
+Not set up yet. Releases (the release PR on `changeset-release/main` and publishing) come with the CD workflow,
+modelled on midnight-wallet: [#54](https://github.com/midnightntwrk/platform-js/issues/54). Until then, don't run
+`yarn changeset version` or `yarn changeset publish`: changesets wait in `.changeset/` for the first release.
