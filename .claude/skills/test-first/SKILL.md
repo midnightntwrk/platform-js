@@ -33,12 +33,9 @@ One behavior, precise assertions: exactly what was designed in step 1.
 ## 3. Observe RED
 
 For a new export, first add a stub with the final signature that returns a wrong value or `Effect.die(...)`, so red is
-a failed assertion, not "is not a function". Then run:
-
-```bash
-yarn run -T vitest run test/effect/<Module>.test.ts   # in packages/platform-js/
-yarn typecheck                                         # at the repo root
-```
+a failed assertion, not "is not a function". Then run both commands from `CLAUDE.md` → Build Commands: the one test
+file (`# one test file`, in `packages/platform-js/`) for your test, then the type-check (`yarn typecheck`, at the repo
+root).
 
 Confirm the test fails **for the expected reason**: a failed assertion on the behavior under test. A type error, bad
 import, or setup crash is not red; fix the test harness first. `tsc` must show no errors: any type error is yours.
@@ -80,7 +77,7 @@ yarn lint
 yarn test
 ```
 
-Add `--force` (`yarn test --force`) when `vitest.config.ts` changed: turbo's cache does not track it.
+Turbo's cache can be stale after a branch switch or rebase: then add `--force` (`yarn test --force`).
 
 ## If the implementation cannot pass the test as written
 
