@@ -111,6 +111,8 @@ touched; full rationale and worked examples: `docs/CodingConventions.md`.
   `packages/platform-js/`) reports TS2345 in `test/effect/NetworkId.test.ts` at lines 30, 37, 38, 44 and 45
   ("Argument of type 'string' is not assignable to parameter of type 'NetworkIdInput'"). Any other type error is yours
   to fix.
+- **TypeScript stays on 6.0** (`~6.0.x`): typescript-eslint supports only `<6.1.0`; don't bump to 6.1+ or 7 without
+  revisiting [ADR-0002](docs/decisions/0002-stay-on-typescript-6.md).
 - **Turbo's cache can be stale** after branch switches or rebases: bypass with `--force` (`yarn build --force`).
 - **Effect skills** in `.claude/skills/effect-*` come from two places. `effect-ts` is vendored Effect v3 guidance from
   Claude-Matrix (MIT), not managed by a CLI: edit it only with `.claude/skills/effect-ts/ATTRIBUTION.md` updated.
