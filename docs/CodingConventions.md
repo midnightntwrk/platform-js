@@ -638,8 +638,7 @@ When a module import would clash with a local export, rename the import with a t
 (`import * as Hex_ from './Hex.js'` in `CoinPublicKey.ts`, which exports its own `Hex`).
 
 **Import aliases** — Effect modules that shadow JS globals should be imported under an alias. This is a convention
-only: nothing enforces it (TypeScript 7 is in use and the Effect language service is not configured), so reviewers
-check it.
+only: nothing enforces it (the Effect language service is not configured yet, see #46), so reviewers check it.
 
 | Module     | Alias       |
 | ---------- | ----------- |

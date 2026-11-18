@@ -66,7 +66,7 @@ nvm use && corepack enable   # at the repo root
 yarn                         # install dependencies
 yarn build                   # build all packages (turbo)
 yarn test                    # full test suite (turbo; builds dependencies first)
-yarn lint                    # eslint across the workspace (see Common Gotchas)
+yarn lint                    # eslint across the workspace
 
 cd packages/platform-js      # the package folder
 yarn run -T vitest run test/effect/Hex.test.ts   # one test file
@@ -107,12 +107,12 @@ touched; full rationale and worked examples: `docs/CodingConventions.md`.
 - **Tests import the package by name** (`@midnight-ntwrk/platform-js/effect/Hex`), through the `./effect/*` export.
   `./effect/internal/*` is blocked, so tests can't import internals; a new `effect/` module is also re-exported from
   `src/effect/index.ts`.
-- **`yarn lint` fails today**: typescript-eslint doesn't support TypeScript 7, so lint gives no coverage. The
-  type-check is the gate.
 - **The type-check has five known errors**, all from before the agent setup: `yarn run -T tsc -b tsconfig.json` (in
   `packages/platform-js/`) reports TS2345 in `test/effect/NetworkId.test.ts` at lines 30, 37, 38, 44 and 45
   ("Argument of type 'string' is not assignable to parameter of type 'NetworkIdInput'"). Any other type error is yours
   to fix.
+- **TypeScript stays on 6.0** (`~6.0.x`): typescript-eslint supports only `<6.1.0`; don't bump to 6.1+ or 7 without
+  revisiting [ADR-0002](docs/decisions/0002-stay-on-typescript-6.md).
 - **Turbo's cache can be stale** after branch switches or rebases: bypass with `--force` (`yarn build --force`).
 - **Effect skills** in `.claude/skills/effect-*` come from two places. `effect-ts` is vendored Effect v3 guidance from
   Claude-Matrix (MIT), not managed by a CLI: edit it only with `.claude/skills/effect-ts/ATTRIBUTION.md` updated.

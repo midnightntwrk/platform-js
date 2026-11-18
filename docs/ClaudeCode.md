@@ -173,9 +173,8 @@ Two skill names mean something specific in this repo:
 
 ## Hooks
 
-The repo has no hooks of its own yet. Format-on-edit and verify-on-stop hooks are a follow-up once the toolchain
-settles: the workspace has no `format` or `typecheck` scripts today, it uses TypeScript 7, and the Effect language
-service is not set up.
+The repo has no hooks of its own yet. Format-on-edit and verify-on-stop hooks are a follow-up: the workspace has no
+`format` or `typecheck` scripts today, and the Effect language service is not set up.
 
 The `shielded-core-rules` plugin does add hooks. At session start, one tells Claude to load the Shielded rules. Before
 each Bash call, two others block `gh pr create` or `gh issue create` without the `bot:ai-assisted` label, and block
