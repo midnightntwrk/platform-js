@@ -16,7 +16,6 @@ reports/
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
-logs
 .eslintcache
 .DS_Store
 
