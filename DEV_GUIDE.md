@@ -56,9 +56,9 @@ Run these from the repo root.
 | Command                | What it does                                          |
 | ---------------------- | ----------------------------------------------------- |
 | `yarn dist`            | Compiles each package's `src/` to `dist/` (Turbo).    |
-| `yarn dist:publish`    | Clean build of `dist/` without source maps.           |
+| `yarn dist:publish`    | Clean `dist/` build, no source or declaration maps.   |
 | `yarn typecheck`       | Type-checks `src/` and the tests.                     |
-| `yarn test`            | Runs all tests (Turbo). Builds dependencies first.    |
+| `yarn test`            | Runs all tests (Turbo) from `src/`; no build needed.  |
 | `yarn lint`            | Runs ESLint on each package. Warnings fail too.       |
 | `yarn publint`         | Publish build, then `publint --strict`.               |
 | `yarn package`         | Publish build, then `npm pack` in each package.       |
@@ -80,7 +80,7 @@ after `yarn install --immutable`. Tests waits for all three and passes only when
 
 | Job            | Runs                                                         |
 | -------------- | ------------------------------------------------------------ |
-| Build          | `yarn dist`                                                  |
+| Build          | `yarn dist`, then `yarn publint`                             |
 | General Checks | `yarn typecheck`, then `yarn lint`                           |
 | Unit Tests     | `yarn test`                                                  |
 | Tests          | waits for the three jobs above; passes only when all succeed |
