@@ -2,31 +2,56 @@
   "$schema": "https://turbo.build/schema.v2.json",
   "envMode": "loose",
   "tasks": {
-    "build": {
-      "dependsOn": ["^build"],
+    "dist": {
+      "inputs": ["src/**/*.ts", "package.json", "tsconfig*.json", "$TURBO_ROOT$/tsconfig.base.json"],
+      "outputs": ["dist/**", "tsconfig.build.tsbuildinfo"],
       "outputLogs": "new-only",
-      "inputs": ["src/**/*.ts", "!src/**/*.test.ts"],
-      "outputs": ["dist/**", "build/**"]
+      "dependsOn": ["^dist"]
+    },
+    "dist:publish": {
+      "cache": false,
+      "dependsOn": ["^dist:publish"]
+    },
+    "typecheck": {
+      "inputs": ["src/**/*.ts", "test/**/*.ts", "package.json", "tsconfig*.json", "$TURBO_ROOT$/tsconfig.base.json"],
+      "outputLogs": "new-only",
+      "dependsOn": ["^dist"]
+    },
+    "test": {
+      "inputs": [
+        "src/**/*.ts",
+        "test/**/*.ts",
+        "tsconfig*.json",
+        "$TURBO_ROOT$/tsconfig.base.json",
+        "vitest.config.ts"
+      ],
+      "outputs": ["coverage/**", "reports/**"],
+      "outputLogs": "new-only",
+      "dependsOn": ["^dist"]
+    },
+    "lint": {
+      "inputs": [
+        "src/**/*.ts",
+        "test/**/*.ts",
+        "tsconfig*.json",
+        "vitest.config.ts",
+        "$TURBO_ROOT$/tsconfig.base.json",
+        "$TURBO_ROOT$/eslint.config.mjs"
+      ],
+      "outputLogs": "new-only",
+      "dependsOn": ["^dist"]
     },
     "clean": {
       "cache": false
     },
-    "clean-build": {
-      "cache": false,
-      "dependsOn": [
-        "clean",
-        "build"
-      ]
-    },
-    "test": {
+    "publint": {
+      "inputs": ["src/**/*.ts", "package.json", "tsconfig*.json", "$TURBO_ROOT$/tsconfig.base.json"],
       "outputLogs": "new-only",
-      "dependsOn": ["^build"],
-      "inputs": ["src/**/*.ts", "test/**/*.ts"],
-      "outputs": ["reports/**", "coverage/**", "logs/**"]
+      "dependsOn": ["dist:publish"]
     },
     "package": {
       "cache": false,
-      "dependsOn": ["build"]
+      "dependsOn": ["dist:publish"]
     }
   }
 }

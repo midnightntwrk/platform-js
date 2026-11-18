@@ -616,12 +616,12 @@ platform-js is an Effect library: its public API is Effect modules (`@midnight-n
 callers are expected to use Effect.
 
 - **Public modules** (`src/effect/*.ts`): types, constructors, guards and services, each with JSDoc. The package
-  `exports` map publishes them through the `./effect/*` wildcard, so a new module is importable by path
-  (`@midnight-ntwrk/platform-js/effect/Hex`) without touching `package.json`. Also re-export each new module from
-  `src/effect/index.ts` as a namespace (`export * as Hex from './Hex.js';`), keeping the list sorted
+  `exports` map publishes their compiled `dist/` files through the `./effect/*` wildcard, so a new module is
+  importable by path (`@midnight-ntwrk/platform-js/effect/Hex`) without touching `package.json`. Also re-export each
+  new module from `src/effect/index.ts` as a namespace (`export * as Hex from './Hex.js';`), keeping the list sorted
 - **Internal modules** (`src/effect/internal/*.ts`): implementation, marked `/** @internal */`, removed from the
-  emitted types by `stripInternal`, and blocked from import by the package `exports` map, so callers and tests import
-  the public module instead
+  emitted types by `stripInternal`, and blocked from import by the package `exports` map, so callers import the public
+  module instead; tests, which import from `src/`, also import the public module
 - **Public re-export**: a public module re-exports the internal function with its full type
   (`export const parseHex: (...) => ... = internal.parseHex;` in `Hex.ts`)
 

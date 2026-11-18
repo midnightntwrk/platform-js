@@ -14,10 +14,10 @@
  */
 
 import { describe, expect,it } from '@effect/vitest';
-import * as NetworkId from '@midnight-ntwrk/platform-js/effect/NetworkId';
-import * as NetworkIdMoniker from '@midnight-ntwrk/platform-js/effect/NetworkIdMoniker';
 import * as fc from 'effect/FastCheck';
 
+import * as NetworkId from '../../src/effect/NetworkId.js';
+import * as NetworkIdMoniker from '../../src/effect/NetworkIdMoniker.js';
 import * as Arbitrary from './Arbitrary.js';
 
 describe('NetworkId', () => {

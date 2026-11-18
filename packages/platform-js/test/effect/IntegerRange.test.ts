@@ -14,7 +14,8 @@
  */
 
 import { describe, expect,it } from '@effect/vitest';
-import * as IntegerRange from '@midnight-ntwrk/platform-js/effect/IntegerRange';
+
+import * as IntegerRange from '../../src/effect/IntegerRange.js';
 
 describe('IntegerRange', () => {
   describe('from', () => {

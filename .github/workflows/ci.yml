@@ -16,11 +16,11 @@ concurrency:
 
 permissions: {}
 
-# Build, General Checks and Unit Tests run side by side: the package's exports point at `src/`, so the type-check needs
-# no build first, and `yarn test` builds what it needs itself. `Tests` is the check for `main` to require; it passes
-# only when every job in its `needs` succeeds, and a job added to `needs` is checked automatically. Every job shares a
-# 15-minute timeout: a test that loops synchronously can't be stopped by vitest's own timeout, and without this bound
-# it would hold the runner for GitHub's 6-hour default.
+# Build, General Checks and Unit Tests run side by side: tests, the type-check and lint all read `src/` directly, so
+# no job needs a build first.
+# `Tests` is the check for `main` to require; it passes only when every job in its `needs` succeeds, and a job added
+# to `needs` is checked automatically. Every job shares a 15-minute timeout: a test that loops synchronously can't be
+# stopped by vitest's own timeout, and without this bound it would hold the runner for GitHub's 6-hour default.
 jobs:
   build:
     name: Build
@@ -61,7 +61,10 @@ jobs:
         run: yarn install --immutable
 
       - name: Build
-        run: yarn build
+        run: yarn dist
+
+      - name: Check the publish build
+        run: yarn publint
 
   general-checks:
     name: General Checks
@@ -101,10 +104,8 @@ jobs:
       - name: Install dependencies
         run: yarn install --immutable
 
-      # Type-checks src and tests together. There is no `typecheck` script yet, so this calls tsc directly.
       - name: Run typecheck
-        working-directory: packages/platform-js
-        run: yarn run -T tsc -b tsconfig.json
+        run: yarn typecheck
 
       # Lint still runs when the type-check fails, so one run reports both.
       - name: Run linter

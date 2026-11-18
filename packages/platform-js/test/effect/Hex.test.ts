@@ -14,11 +14,11 @@
  */
 
 import { describe, expect,it } from '@effect/vitest';
-import * as Hex from '@midnight-ntwrk/platform-js/effect/Hex';
-import * as ParseError from '@midnight-ntwrk/platform-js/effect/ParseError';
 import { Effect } from 'effect';
 import * as fc from 'effect/FastCheck';
 
+import * as Hex from '../../src/effect/Hex.js';
+import * as ParseError from '../../src/effect/ParseError.js';
 import * as Arbitrary from './Arbitrary.js';
 
 describe('Hex', () => {

@@ -1,8 +1,8 @@
 node_modules/
 dist/
-build/
 .turbo
 *.tsbuildinfo
+packages/*/*.tgz
 .direnv/
 .idea/
 .env
