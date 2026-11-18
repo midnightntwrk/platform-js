@@ -1,6 +1,7 @@
 {
   "name": "@midnight-ntwrk/platform-js-monorepo",
   "private": true,
+  "type": "module",
   "packageManager": "yarn@4.18.0",
   "engines": {
     "node": ">=22"
