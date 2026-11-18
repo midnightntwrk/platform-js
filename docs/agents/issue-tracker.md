@@ -13,6 +13,9 @@ operations.
   skill wants a label that doesn't exist, stop and ask; a missing label is a request to SRE, not a `gh label create`.
 - **No closing keywords**: link issues with a plain `#123`, never `Closes`/`Fixes`/`Resolves`. Issues are closed by hand
   after QA.
+- **No checkboxes**: write acceptance criteria, tasks and every other list in an issue body as plain `-` bullets, never
+  `- [ ]`, as midnight-wallet does. Nobody ticks them, so they only show as unfinished work. This overrides the
+  `- [ ]` template in Matt's `/to-tickets` skill.
 
 ## Conventions
 
