@@ -5,7 +5,7 @@
     "build": {
       "dependsOn": ["^build"],
       "outputLogs": "new-only",
-      "inputs": ["src/**/*.ts", "!src/**/*.test.ts"],
+      "inputs": ["src/**/*.ts"],
       "outputs": ["dist/**", "build/**"]
     },
     "clean": {
@@ -22,7 +22,7 @@
       "outputLogs": "new-only",
       "dependsOn": ["^build"],
       "inputs": ["src/**/*.ts", "test/**/*.ts"],
-      "outputs": ["reports/**", "coverage/**", "logs/**"]
+      "outputs": ["reports/**", "coverage/**"]
     },
     "package": {
       "cache": false,
