@@ -12,9 +12,6 @@ export default tseslint.config(
     ignores: [
       '**/dist/**',
       '**/build/**',
-      '**/.rollup.cache/**',
-      '**/gen/**',
-      '**/generated/**',
       '**/*.d.ts',
       '**/node_modules/**',
       '**/.yarn/**',
@@ -22,8 +19,6 @@ export default tseslint.config(
       '.repos/**',
       '.agents/**',
       '**/coverage/**',
-      '**/tmp/**',
-      '**/temp/**',
       '**/reports/**',
       '**/*.json'
     ]
