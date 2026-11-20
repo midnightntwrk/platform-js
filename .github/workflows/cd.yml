@@ -260,6 +260,8 @@ jobs:
       - name: Snapshot version and publish the canary
         env:
           NPM_CONFIG_PROVENANCE: 'true'
+          # First publish only: npm needs the package to exist before a Trusted Publisher can be added. Remove after.
+          NODE_AUTH_TOKEN: ${{ secrets.MIDNIGHTCI_NPMJS_TOKEN }}
         run: scripts/publish-canary.sh
 
   # This job rehearses the release on every pull request without uploading anything: it lints the workflows, checks
