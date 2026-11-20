@@ -265,7 +265,9 @@ environment unprotected.
    `npm login` (a maintainer's account with publish rights on `@midnightntwrk`). Then run the local rehearsal above,
    in a clone of the branch that adds the CD workflow (its scripts are not on `main` yet), without
    `npm_config_dry_run=true`: it publishes a canary under `canary`. npm points `latest` at a package's first version
-   whatever the tag, so `latest` shows this canary until the first stable release moves it.
+   whatever the tag, so `latest` shows this canary until the first stable release moves it. The first version of
+   `@midnightntwrk/platform-js` went out another way: the canary job published it once with a temporary org npm token
+   (#75), removed again once the Trusted Publishers were set up (#76).
 4. Two Trusted Publishers on the package, one per environment: repository `midnightntwrk/platform-js`, workflow
    `cd.yml`, environment `npm-publish-stable` or `npm-publish-canary`. npm expires a new Trusted Publisher that has
    not published within 2 days, so merge the CD workflow soon after, and check that the canary from its merge
