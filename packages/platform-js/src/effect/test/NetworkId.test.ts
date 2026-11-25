@@ -23,6 +23,12 @@ import * as Arbitrary from './Arbitrary.ts';
 
 const monikerArbitrary = Arbitrary.makeNetworkIdArbitrary().map(NetworkIdMoniker.NetworkIdMoniker);
 
+/** Pairs of monikers, half of them the same moniker twice: two independent draws are almost never equal. */
+const monikerPairArbitrary = fc.oneof(
+  monikerArbitrary.map((moniker) => [moniker, moniker] as const),
+  fc.tuple(monikerArbitrary, monikerArbitrary),
+);
+
 describe('NetworkId', () => {
   describe('isMainNet', () => {
     it('should return true for MainNet', () => {
@@ -103,7 +109,7 @@ describe('NetworkId', () => {
 
     it('should agree with Equivalence', () =>
       fc.assert(
-        fc.property(monikerArbitrary, monikerArbitrary, (first, second) => {
+        fc.property(monikerPairArbitrary, ([first, second]) => {
           const a = NetworkId.make(first);
           const b = NetworkId.make(second);
 

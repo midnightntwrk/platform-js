@@ -135,7 +135,7 @@ describe('Configuration', () => {
       vi.unstubAllEnvs();
     });
 
-    const readWith = (json: unknown) =>
+    const readKeysFromEnvAndJson = (json: unknown) =>
       Configuration.Keys.pipe(
         Effect.provide(Configuration.layer),
         Effect.withConfigProvider(Configuration.configProvider(json)),
@@ -143,7 +143,7 @@ describe('Configuration', () => {
 
     it.effect('reads values from the JSON when no environment variable is set', () =>
       Effect.gen(function* () {
-        const keys = yield* readWith({ keys: { coinPublic: COIN_PUBLIC, signing: SIGNING } });
+        const keys = yield* readKeysFromEnvAndJson({ keys: { coinPublic: COIN_PUBLIC, signing: SIGNING } });
         expect(keys.coinPublicKey).toBe(COIN_PUBLIC);
         expect(keys.getSigningKey()).toEqual(Option.some({ tag: 'schnorr', value: SIGNING }));
       }),
@@ -153,7 +153,9 @@ describe('Configuration', () => {
       Effect.gen(function* () {
         vi.stubEnv('KEYS_COIN_PUBLIC', 'abcd');
         vi.stubEnv('KEYS_SIGNING_KIND', 'ecdsa');
-        const keys = yield* readWith({ keys: { coinPublic: COIN_PUBLIC, signing: SIGNING, signingKind: 'schnorr' } });
+        const keys = yield* readKeysFromEnvAndJson({
+          keys: { coinPublic: COIN_PUBLIC, signing: SIGNING, signingKind: 'schnorr' },
+        });
         expect(keys.coinPublicKey).toBe('abcd');
         expect(keys.getSigningKey()).toEqual(Option.some({ tag: 'ecdsa', value: SIGNING }));
       }),

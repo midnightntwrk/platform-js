@@ -68,7 +68,7 @@ describe('Hex', () => {
     it.effect('should fail with a ParseError for an invalid hex-encoding', () =>
       Effect.gen(function* () {
         const error = yield* Effect.flip(Hex.parseHex('HOSKYA'));
-        expect(ParseError.isParseError(error)).toBeTruthy();
+        expect(ParseError.isParseError(error)).toBe(true);
         expect(error).toMatchObject({
           message: "Invalid hex-digit 'H' found in source string at index 0",
         });
@@ -131,6 +131,12 @@ describe('Hex', () => {
           expect(Hex.PrefixedHex.either(hex)).toEqual(Either.left([{ message: prefixRequired(hex) }]));
         }),
       ));
+
+    it('should reject a prefixed string that is not hex with the parse error message', () => {
+      expect(Hex.PrefixedHex.either('0xzz')).toEqual(
+        Either.left([{ message: "Invalid hex-digit 'z' found in source string at index 2", meta: expect.anything() }]),
+      );
+    });
   });
 
   describe('ConstrainedPlainHex', () => {
@@ -194,6 +200,12 @@ describe('Hex', () => {
 
     it('should reject plain hex within the byte length', () => {
       expect(TwoToFourBytes.either('abcd')).toEqual(Either.left([{ message: prefixRequired('abcd') }]));
+    });
+
+    it('should reject a prefixed string that is not hex before checking the byte length', () => {
+      expect(TwoToFourBytes.either('0xabc')).toEqual(
+        Either.left([{ message: "Last byte of source string '0xabc' is incomplete", meta: expect.anything() }]),
+      );
     });
   });
 });

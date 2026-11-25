@@ -69,6 +69,7 @@ paths:
 - Expected failures: `const error = yield* Effect.flip(...)`, then assert its guard (`ParseError.isParseError`) and
   its message. With an `Exit`, get the error with `Cause.failureOption` and assert the same. `Exit.isFailure` alone is
   not enough: a defect or interrupt passes it too. Never try/catch around a thrown Effect.
-- Brand rejections: use `Brand.either(x)` with `Either.isLeft` and check the error, or
-  `expect(() => Brand(x)).toThrowError(/…/)` with a message or class. Never a bare `toThrow()` /
-  `toThrowError()`, and never `expect(() => Effect.runSync(...)).toThrow()`.
+- Brand rejections: a brand constructor throws its `BrandErrors` array, not an `Error`, so `toThrowError(/…/)` never
+  matches it. Assert the errors themselves: `expect(Brand.either(x)).toEqual(Either.left([{ message: '…' }]))`, or,
+  to check the constructor throws, `expect(() => Brand(x)).toThrow(expect.arrayContaining([{ message: '…' }]))`.
+  Never a bare `toThrow()` / `toThrowError()`, and never `expect(() => Effect.runSync(...)).toThrow()`.

@@ -1,4 +1,5 @@
 /*
+ * This file is part of platform-js.
  * Copyright (C) 2025 Midnight Foundation
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -62,7 +63,7 @@ describe('CoinPublicKey', () => {
   });
 
   describe('make', () => {
-    // Brands are erased at runtime, so which of Hex or Bech32m `make` picked cannot be observed here.
+    // Brands are erased at runtime: this checks the value `make` returns, not which brand it carries.
     it('should return plain hex unchanged', () =>
       fc.assert(
         fc.property(Arbitrary.makePlainHexArbitrary('1..=64'), (hex) => {

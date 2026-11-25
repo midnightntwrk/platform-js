@@ -30,11 +30,6 @@ export const makePrefixedHexArbitrary: (
   inputOrRange: IntegerRange.IntegerRangeInput | IntegerRange.IntegerRange,
 ) => fc.Arbitrary<string> = (inputOrRange) => fc.stringMatching(hexRegExp(inputOrRange, { includePrefix: true }));
 
-export const makeHexArbitrary: (
-  inputOrRange: IntegerRange.IntegerRangeInput | IntegerRange.IntegerRange,
-) => fc.Arbitrary<string> = (inputOrRange) =>
-  fc.oneof(makePlainHexArbitrary(inputOrRange), makePrefixedHexArbitrary(inputOrRange));
-
 type HexRegExpOptions = {
   readonly includePrefix?: boolean;
 };
