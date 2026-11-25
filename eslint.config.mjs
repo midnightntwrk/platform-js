@@ -97,15 +97,32 @@ export default tseslint.config(
       'import-x/no-extraneous-dependencies': 'off',
       'max-classes-per-file': 'off',
       'lines-between-class-members': 'off',
-      // Relative imports name the .ts source; tsc rewrites them to .js on emit (rewriteRelativeImportExtensions).
+      // Relative paths name the .ts source (tsc rewrites them, rewriteRelativeImportExtensions). Flat config replaces
+      // the whole rule option: a later block that sets no-restricted-syntax must repeat these entries.
       'no-restricted-syntax': [
         'error',
-        ...['ImportDeclaration', 'ExportNamedDeclaration', 'ExportAllDeclaration', 'ImportExpression'].map(
-          (node) => ({
-            selector: `${node}[source.value=/^\\.{1,2}\\/.*\\.js$/]`,
-            message: 'Relative imports end in .ts, not .js: tsc rewrites them to .js when it compiles.'
-          })
-        )
+        {
+          selector:
+            ':matches(ImportDeclaration, ExportNamedDeclaration, ExportAllDeclaration, ImportExpression, TSImportType)' +
+            '[source.value=/^\\.{1,2}\\/.*\\.js$/]',
+          message: 'Relative import and export paths end in .ts, not .js: tsc rewrites them to .js when it compiles.'
+        },
+        {
+          selector:
+            "ImportExpression[source.type='TemplateLiteral'][source.expressions.length=0]" +
+            '[source.quasis.0.value.raw=/^\\.{1,2}\\/.*\\.js$/]',
+          message: 'Relative import and export paths end in .ts, not .js: tsc rewrites them to .js when it compiles.'
+        },
+        {
+          selector: 'TSModuleDeclaration[id.value=/^\\.{1,2}\\/.*\\.js$/]',
+          message: 'Relative import and export paths end in .ts, not .js: tsc rewrites them to .js when it compiles.'
+        },
+        {
+          selector:
+            "CallExpression[callee.object.name='vi'][callee.property.name=/^(mock|importActual|importMock|doMock)$/]" +
+            '[arguments.0.value=/^\\.{1,2}\\/.*\\.js$/]',
+          message: 'Relative import and export paths end in .ts, not .js: tsc rewrites them to .js when it compiles.'
+        }
       ],
       'no-restricted-imports': [
         'error',
