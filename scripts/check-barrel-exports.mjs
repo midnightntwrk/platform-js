@@ -15,56 +15,143 @@
 // @ts-check
 
 // Checks platform-js's barrel files against its sources. The package's `exports` map is wildcard-based
-// (`./effect/*`, with `./effect/internal/*` set to null), so a module is public as soon as it exists in src/effect/,
-// and the barrels are what must keep up:
-//   1. every module in src/effect/ (internal/ aside) is re-exported from src/effect/index.ts;
+// (`./effect/*`, with `./effect/internal/*` set to null), so a module is public as soon as it exists under
+// src/effect/, at any depth, and the barrels are what must keep up:
+//   1. every module under src/effect/, at any depth, outside internal/ is re-exported from src/effect/index.ts by its
+//      relative path, since the `./effect/*` wildcard already makes each such module public;
 //   2. src/index.ts re-exports ./effect/index.ts;
 //   3. no barrel re-exports anything from internal/, which is private.
+// The barrels are parsed with the TypeScript compiler, so a re-export inside a comment or a string never counts.
+//
+// Usage: check-barrel-exports.mjs [--src <dir>]   (default: packages/platform-js/src)
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { parseArgs } from 'node:util';
+
+import ts from 'typescript';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const srcDir = path.join(repoRoot, 'packages/platform-js/src');
+
+const { values } = parseArgs({ options: { src: { type: 'string' } } });
+const srcDir = values.src === undefined ? path.join(repoRoot, 'packages/platform-js/src') : path.resolve(values.src);
 const effectDir = path.join(srcDir, 'effect');
 
-const BARRELS = ['index.ts', 'effect/index.ts'];
+const ROOT_BARREL = 'index.ts';
+const EFFECT_BARREL = 'effect/index.ts';
 
 /**
- * The module specifiers a file re-exports from: `export * from`, `export * as X from` and `export { ... } from`.
+ * The text of a module specifier node, or undefined when it is absent or not a string literal.
  *
- * @param {string} source
+ * @param {ts.Expression | undefined} specifier
+ * @returns {string | undefined}
+ */
+const specifierText = (specifier) =>
+  specifier !== undefined && ts.isStringLiteral(specifier) ? specifier.text : undefined;
+
+/**
+ * The local names an import declaration binds: default, namespace and named (type-only included).
+ *
+ * @param {ts.ImportDeclaration} declaration
  * @returns {string[]}
  */
-const reExportSpecifiers = (source) =>
-  [...source.matchAll(/^\s*export\s+(?:type\s+)?(?:\*(?:\s+as\s+\w+)?|\{[^}]*\})\s+from\s+['"]([^'"]+)['"]/gm)].map(
-    (match) => match[1],
-  );
+const importedNames = (declaration) => {
+  const clause = declaration.importClause;
+  if (clause === undefined) return [];
+  const bindings = clause.namedBindings;
+  return [
+    ...(clause.name === undefined ? [] : [clause.name.text]),
+    ...(bindings === undefined
+      ? []
+      : ts.isNamespaceImport(bindings)
+        ? [bindings.name.text]
+        : bindings.elements.map((element) => element.name.text)),
+  ];
+};
 
-/** @param {string} barrel */
-const specifiersOf = (barrel) => reExportSpecifiers(fs.readFileSync(path.join(srcDir, barrel), 'utf8'));
+/**
+ * Every module specifier a file re-exports: the specifier of each top-level `export … from` declaration, plus the
+ * specifier of each top-level import whose bound name a specifier-less `export { … }` in the same file re-exports.
+ *
+ * @param {ts.SourceFile} sourceFile
+ * @returns {string[]}
+ */
+const reExportSpecifiers = (sourceFile) => {
+  const statements = sourceFile.statements;
+  const exportDeclarations = statements.filter(ts.isExportDeclaration);
+  const fromSpecifiers = exportDeclarations.flatMap((declaration) => {
+    const text = specifierText(declaration.moduleSpecifier);
+    return text === undefined ? [] : [text];
+  });
+  const locallyExportedNames = new Set(
+    exportDeclarations
+      .filter((declaration) => declaration.moduleSpecifier === undefined)
+      .flatMap((declaration) =>
+        declaration.exportClause !== undefined && ts.isNamedExports(declaration.exportClause)
+          ? declaration.exportClause.elements.map((element) => (element.propertyName ?? element.name).text)
+          : [],
+      ),
+  );
+  const importSpecifiers = statements.filter(ts.isImportDeclaration).flatMap((declaration) => {
+    const text = specifierText(declaration.moduleSpecifier);
+    return text !== undefined && importedNames(declaration).some((name) => locallyExportedNames.has(name))
+      ? [text]
+      : [];
+  });
+  return [...fromSpecifiers, ...importSpecifiers];
+};
+
+/**
+ * Reads and parses a barrel once, returning the specifiers it re-exports.
+ *
+ * @param {string} barrel path relative to the src directory
+ * @returns {string[]}
+ */
+const specifiersOf = (barrel) => {
+  const fileName = path.join(srcDir, barrel);
+  return reExportSpecifiers(
+    ts.createSourceFile(fileName, fs.readFileSync(fileName, 'utf8'), ts.ScriptTarget.Latest, true),
+  );
+};
 
 /** @param {string} specifier */
-const isInternal = (specifier) => /(^|\/)internal(\/|$)/.test(specifier);
+const isInternal = (specifier) => specifier.split('/').includes('internal');
 
-const effectModules = fs
-  .readdirSync(effectDir, { withFileTypes: true })
-  .filter((entry) => entry.isFile() && entry.name.endsWith('.ts') && !entry.name.endsWith('.d.ts'))
-  .map((entry) => entry.name)
-  .filter((name) => name !== 'index.ts')
+/**
+ * The `.ts` modules (not `.d.ts`) under a directory, as `/`-separated paths relative to `effectDir`, skipping every
+ * `internal/` folder at any depth.
+ *
+ * @param {string} relDir `/`-separated path relative to `effectDir`, empty for `effectDir` itself
+ * @returns {string[]}
+ */
+const modulesUnder = (relDir) =>
+  fs.readdirSync(path.join(effectDir, relDir), { withFileTypes: true }).flatMap((entry) => {
+    const relPath = relDir === '' ? entry.name : `${relDir}/${entry.name}`;
+    if (entry.isDirectory()) return entry.name === 'internal' ? [] : modulesUnder(relPath);
+    return entry.isFile() && entry.name.endsWith('.ts') && !entry.name.endsWith('.d.ts') ? [relPath] : [];
+  });
+
+const effectModules = modulesUnder('')
+  .filter((relPath) => relPath !== 'index.ts')
   .sort();
 
-const effectIndexSpecifiers = new Set(specifiersOf('effect/index.ts'));
+const rootSpecifiers = specifiersOf(ROOT_BARREL);
+const effectSpecifiers = specifiersOf(EFFECT_BARREL);
+const effectSpecifierSet = new Set(effectSpecifiers);
+
+/** @type {ReadonlyArray<readonly [string, string[]]>} */
+const barrels = [
+  [ROOT_BARREL, rootSpecifiers],
+  [EFFECT_BARREL, effectSpecifiers],
+];
 
 const problems = [
   ...effectModules
-    .filter((name) => !effectIndexSpecifiers.has(`./${name}`))
-    .map((name) => `src/effect/${name} is not re-exported from src/effect/index.ts`),
-  ...(specifiersOf('index.ts').includes('./effect/index.ts') ? [] : ['src/index.ts does not re-export ./effect/index.ts']),
-  ...BARRELS.flatMap((barrel) =>
-    specifiersOf(barrel)
-      .filter(isInternal)
-      .map((specifier) => `src/${barrel} re-exports ${specifier}, which is internal`),
+    .filter((relPath) => !effectSpecifierSet.has(`./${relPath}`))
+    .map((relPath) => `src/effect/${relPath} is not re-exported from src/effect/index.ts`),
+  ...(rootSpecifiers.includes('./effect/index.ts') ? [] : ['src/index.ts does not re-export ./effect/index.ts']),
+  ...barrels.flatMap(([barrel, specifiers]) =>
+    specifiers.filter(isInternal).map((specifier) => `src/${barrel} re-exports ${specifier}, which is internal`),
   ),
 ];
 
