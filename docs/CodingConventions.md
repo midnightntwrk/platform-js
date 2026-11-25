@@ -616,9 +616,10 @@ platform-js is an Effect library: its public API is Effect modules (`@midnightnt
 callers are expected to use Effect.
 
 - **Public modules** (`src/effect/*.ts`): types, constructors, guards and services, each with JSDoc. The package
-  `exports` map publishes their compiled `dist/` files through the `./effect/*` wildcard, so a new module is
-  importable by path (`@midnightntwrk/platform-js/effect/Hex`) without touching `package.json`. Also re-export each
-  new module from `src/effect/index.ts` as a namespace (`export * as Hex from './Hex.js';`), keeping the list sorted
+  `exports` map publishes them through the `./effect/*` wildcard (the `.ts` source under the
+  `@midnightntwrk/platform-js/source` condition, the compiled `dist/` files otherwise), so a new module is importable
+  by path (`@midnightntwrk/platform-js/effect/Hex`) without touching `package.json`. Also re-export each new module
+  from `src/effect/index.ts` as a namespace (`export * as Hex from './Hex.ts';`), keeping the list sorted
 - **Internal modules** (`src/effect/internal/*.ts`): implementation, marked `/** @internal */`, removed from the
   emitted types by `stripInternal`, and blocked from import by the package `exports` map, so callers import the public
   module instead; tests, which import from `src/`, also import the public module
@@ -635,7 +636,11 @@ import { dual } from 'effect/Function';
 
 Both this and the barrel form (`import { Brand } from 'effect'`) appear in the code; prefer the module path in new code.
 When a module import would clash with a local export, rename the import with a trailing underscore
-(`import * as Hex_ from './Hex.js'` in `CoinPublicKey.ts`, which exports its own `Hex`).
+(`import * as Hex_ from './Hex.ts'` in `CoinPublicKey.ts`, which exports its own `Hex`).
+
+**Relative imports end in `.ts`** — `import * as Hex from './Hex.ts'`, never `./Hex.js`. `tsc` rewrites them to `.js`
+when it compiles (`rewriteRelativeImportExtensions`), and lint rejects a relative import or export ending in `.js`
+([ADR-0003](decisions/0003-typescript-source-as-source-of-truth.md)).
 
 **Import aliases** — Effect modules that shadow JS globals should be imported under an alias. This is a convention
 only: nothing enforces it (the Effect language service is not configured yet, see #46), so reviewers check it.

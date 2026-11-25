@@ -19,7 +19,7 @@ import { dual } from 'effect/Function';
 import { type Inspectable,NodeInspectSymbol } from 'effect/Inspectable';
 import { hasProperty } from 'effect/Predicate';
 
-import * as NetworkIdMoniker from './NetworkIdMoniker.js';
+import * as NetworkIdMoniker from './NetworkIdMoniker.ts';
 
 const MAINNET_MONIKER = NetworkIdMoniker.NetworkIdMoniker('main');
 

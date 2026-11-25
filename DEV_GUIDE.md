@@ -56,7 +56,7 @@ Run these from the repo root.
 | Command                | What it does                                          |
 | ---------------------- | ----------------------------------------------------- |
 | `yarn dist`            | Compiles each package's `src/` to `dist/` (Turbo).    |
-| `yarn dist:publish`    | Clean `dist/` build, no source or declaration maps.   |
+| `yarn dist:publish`    | Clean `dist/`: declaration maps, no source maps.      |
 | `yarn typecheck`       | Type-checks `src/` and the tests.                     |
 | `yarn test`            | Runs all tests (Turbo) from `src/`; no build needed.  |
 | `yarn lint`            | Lints packages and root configs; warnings fail.       |
@@ -110,7 +110,7 @@ Today there are **unit tests only**. They are pure: no Docker, network or other 
 - Files are named `*.test.ts` and live in `packages/platform-js/test/` (for example `test/effect/Hex.test.ts`).
 - They use [`@effect/vitest`](https://github.com/Effect-TS/effect/tree/main/packages/vitest) (`it.effect`) and property
   tests from `effect/FastCheck`.
-- Tests import from `src/` by relative path, for example `../../src/effect/Hex.js`, so they need no build first.
+- Tests import from `src/` by relative path, for example `../../src/effect/Hex.ts`, so they need no build first.
 
 Run every test from the repo root:
 

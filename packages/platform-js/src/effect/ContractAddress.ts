@@ -15,7 +15,7 @@
 
 import { Brand } from 'effect';
 
-import * as Hex from './Hex.js';
+import * as Hex from './Hex.ts';
 
 /**
  * A plain hex-encoded contract address, 32 bytes in length.

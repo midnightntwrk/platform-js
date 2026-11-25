@@ -16,8 +16,8 @@
 import { describe, expect,it } from '@effect/vitest';
 import * as fc from 'effect/FastCheck';
 
-import * as ContractAddress from '../../src/effect/ContractAddress.js';
-import * as Arbitrary from './Arbitrary.js';
+import * as ContractAddress from '../../src/effect/ContractAddress.ts';
+import * as Arbitrary from './Arbitrary.ts';
 
 describe('ContractAddress', () => {
     it('should parse plain addresses', () => fc.assert(

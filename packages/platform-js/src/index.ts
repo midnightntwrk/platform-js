@@ -13,4 +13,4 @@
  * limitations under the License.
  */
 
-export * from './effect/index.js';
+export * from './effect/index.ts';

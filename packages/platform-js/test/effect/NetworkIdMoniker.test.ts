@@ -16,8 +16,8 @@
 import { describe, expect,it } from '@effect/vitest';
 import * as fc from 'effect/FastCheck';
 
-import * as NetworkIdMoniker from '../../src/effect/NetworkIdMoniker.js';
-import * as Arbitrary from './Arbitrary.js';
+import * as NetworkIdMoniker from '../../src/effect/NetworkIdMoniker.ts';
+import * as Arbitrary from './Arbitrary.ts';
 
 describe('NetworkIdMoniker', () => {
   it('should not throw for valid identifiers', () => fc.assert(
