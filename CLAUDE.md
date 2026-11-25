@@ -94,9 +94,8 @@ ships only `dist/` (`.js` and `.d.ts`).
 The `.ts` source is the source of truth: relative imports end in `.ts`, and `tsc` rewrites them to `.js`
 ([ADR-0003](docs/decisions/0003-typescript-source-as-source-of-truth.md)). Public entry points are the `exports` in
 the package's `package.json`, which point at `dist/` (`types`, `import` and `default` conditions, ESM only); changing
-one is a public API change. A `typesVersions` map gives consumers on
-`node10` resolution, which ignores `exports`, the same `effect` and `effect/*` types
-([ADR-0004](docs/decisions/0004-keep-node10-subpath-types.md)).
+one is a public API change. `typesVersions` mirrors `effect` and `effect/*` for `node10` consumers, which ignore
+`exports` ([ADR-0004](docs/decisions/0004-keep-node10-subpath-types.md)).
 
 ## Testing
 
