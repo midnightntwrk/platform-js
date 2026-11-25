@@ -4,7 +4,7 @@
   "type": "module",
   "packageManager": "yarn@4.18.0",
   "engines": {
-    "node": ">=22"
+    "node": "^22.22.2 || >=24.15.0"
   },
   "workspaces": [
     "packages/*"

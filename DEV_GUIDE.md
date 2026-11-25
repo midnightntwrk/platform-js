@@ -10,7 +10,8 @@ the commands you can run, and how tests are organised.
 
 ## Local setup
 
-You need Node 22 or later. The exact version is pinned in [`.nvmrc`](.nvmrc).
+You need Node 22.22.2 or later on 22, or 24.15.0 or later (`engines` in the root `package.json`). The exact version is
+pinned in [`.nvmrc`](.nvmrc).
 
 ```bash
 nvm use && corepack enable
