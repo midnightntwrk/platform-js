@@ -1,0 +1,17 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "composite": false,
+    "declaration": false,
+    "declarationMap": false,
+    "sourceMap": false,
+    "noEmit": true
+  },
+  "include": [
+    "vitest.config.ts",
+    "vitest.outputs.ts",
+    "vitest.tooling.config.ts",
+    "packages/*/vitest.config.ts",
+    "test/tooling/**/*.ts"
+  ]
+}

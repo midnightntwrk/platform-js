@@ -2,7 +2,7 @@
 # It is important that we ignore the "packages" directory, but if we do that in the
 # standard .prettierignore then vscode fails to format.
 #
-# This file is ONLY used by the root tasks.
+# This file is ONLY used by the root tasks, which also pass .gitignore, so git-ignored files are skipped as well.
 #
 
 dist/
@@ -14,12 +14,10 @@ reports/
 .yarn/
 packages/
 
-# Third-party skills are vendored, not ours to reformat — keep in sync with .prettierignore
+# Node scripts and the ESLint config stay hand-formatted — keep in sync with .prettierignore
+*.mjs
+# All of .claude/: vendored third-party skills, and repo-owned rules and settings that keep their hand wrapping — keep in
+# sync with .prettierignore
 .claude/
 # Rewritten by the skills CLI on every install or update — keep in sync with .prettierignore
 skills-lock.json
-
-# Git-ignored local folders: agent notes, effect-v3-to-v4 source clones, the skills CLI working directory
-.scratch/
-.repos/
-.agents/
