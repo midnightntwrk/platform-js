@@ -55,6 +55,28 @@ const relativeJsPathRestrictions = [
   }
 ];
 
+const testInternalMessage = 'Tests import public modules, not internal/.';
+// Tests sit in src/<folder>/test/ (ADR-0006), so `../internal/x.ts` reaches a private helper. no-restricted-imports
+// sees only static imports; these catch the same path loaded at run time.
+const testInternalRestrictions = [
+  {
+    selector: 'ImportExpression[source.value=/\\/internal\\//]',
+    message: testInternalMessage
+  },
+  {
+    selector:
+      "ImportExpression[source.type='TemplateLiteral'][source.expressions.length=0]" +
+      '[source.quasis.0.value.raw=/\\/internal\\//]',
+    message: testInternalMessage
+  },
+  {
+    selector:
+      "CallExpression[callee.object.name='vi'][callee.property.name=/^(mock|importActual|importMock|doMock)$/]" +
+      '[arguments.0.value=/\\/internal\\//]',
+    message: testInternalMessage
+  }
+];
+
 export default tseslint.config(
   {
     ignores: [
@@ -162,7 +184,9 @@ export default tseslint.config(
   {
     files: ['**/test/**/*.ts'],
     rules: {
-      // Flat config replaces the whole rule option, so the dist pattern from the block above is repeated here.
+      // Flat config replaces the whole rule option, so the `.js` path rules and the dist pattern from the block above
+      // are repeated here.
+      'no-restricted-syntax': ['error', ...relativeJsPathRestrictions, ...testInternalRestrictions],
       'no-restricted-imports': [
         'error',
         {
@@ -172,9 +196,8 @@ export default tseslint.config(
               message: 'Direct imports from dist folders are not allowed. Use source files instead.'
             },
             {
-              // Tests sit in src/<folder>/test/ (ADR-0006), so `../internal/x.ts` reaches a private helper too.
-              group: ['**/src/effect/internal/**', '**/internal/**'],
-              message: 'Tests import public modules, not src/effect/internal/.'
+              group: ['**/internal/**'],
+              message: testInternalMessage
             }
           ]
         }

@@ -14,6 +14,16 @@ SRC_PROBE='packages/platform-js/src/effect/Probe.ts'
 TEST_PROBE='packages/platform-js/src/effect/test/Probe.test.ts'
 failures=0
 
+# The test cases prove the guard only if eslint lints the probe as a test file: one in a `test/` folder under a
+# package's `src/`. A probe anywhere else would pass or fail under the source rules instead.
+case "$TEST_PROBE" in
+  packages/*/src/*/test/*.test.ts) ;;
+  *)
+    echo "TEST_PROBE (${TEST_PROBE}) must be a *.test.ts file in a test/ folder under packages/*/src/" >&2
+    exit 1
+    ;;
+esac
+
 report() {
   local verdict="$1"
   local name="$2"

@@ -21,13 +21,21 @@ const eslint = new ESLint({ cwd: repoRoot });
 
 const testFile = 'packages/platform-js/src/effect/test/Fixture.test.ts';
 
-/** The `no-restricted-imports` messages the root ESLint config reports for `code` at `filePath`. */
-const restrictedImports = async (code: string, filePath = testFile): Promise<readonly string[]> => {
+const internalMessage = 'Tests import public modules, not internal/.';
+
+/** The messages the root ESLint config reports under `ruleId` for `code` at `filePath`. */
+const ruleMessages = async (ruleId: string, code: string, filePath = testFile): Promise<readonly string[]> => {
   const [result] = await eslint.lintText(code, { filePath });
-  return (result?.messages ?? [])
-    .filter((message) => message.ruleId === 'no-restricted-imports')
-    .map((message) => message.message);
+  return (result?.messages ?? []).filter((message) => message.ruleId === ruleId).map((message) => message.message);
 };
+
+/** The `no-restricted-imports` messages the root ESLint config reports for `code` at `filePath`. */
+const restrictedImports = (code: string, filePath = testFile): Promise<readonly string[]> =>
+  ruleMessages('no-restricted-imports', code, filePath);
+
+/** The `no-restricted-syntax` messages the root ESLint config reports for `code` at `filePath`. */
+const restrictedSyntax = (code: string, filePath = testFile): Promise<readonly string[]> =>
+  ruleMessages('no-restricted-syntax', code, filePath);
 
 describe('eslint test import rules', () => {
   it.each([
@@ -36,12 +44,36 @@ describe('eslint test import rules', () => {
     ["import * as internal from '../../internal/hex.ts';", '../../internal/hex.ts'],
   ])('should reject an import of internal/ from a test: %s', async (code, specifier) => {
     expect(await restrictedImports(code)).toEqual([
-      `'${specifier}' import is restricted from being used by a pattern. Tests import public modules, not src/effect/internal/.`,
+      `'${specifier}' import is restricted from being used by a pattern. ${internalMessage}`,
     ]);
+  });
+
+  it.each([
+    "await import('../internal/hex.ts');",
+    'await import(`../internal/hex.ts`);',
+    "vi.mock('../internal/hex.ts');",
+    "vi.doMock('../internal/hex.ts');",
+    "await vi.importActual('../internal/hex.ts');",
+    "await vi.importMock('../internal/hex.ts');",
+  ])('should reject a dynamic load of internal/ from a test: %s', async (code) => {
+    expect(await restrictedSyntax(code)).toEqual([internalMessage]);
   });
 
   it('should allow an import of a public module from a test', async () => {
     expect(await restrictedImports("import * as Hex from '../Hex.ts';")).toEqual([]);
+  });
+
+  it.each(["await import('../Hex.ts');", "vi.mock('../Hex.ts');", "await vi.importActual('../Hex.ts');"])(
+    'should allow a dynamic load of a public module from a test: %s',
+    async (code) => {
+      expect(await restrictedSyntax(code)).toEqual([]);
+    },
+  );
+
+  it('should still reject a relative .js path in a test', async () => {
+    expect(await restrictedSyntax("vi.mock('../Hex.js');")).toEqual([
+      'Relative import and export paths end in .ts, not .js: tsc rewrites them to .js when it compiles.',
+    ]);
   });
 
   it('should allow a public module to import internal/', async () => {
@@ -50,6 +82,12 @@ describe('eslint test import rules', () => {
         "import * as internal from './internal/hex.ts';",
         'packages/platform-js/src/effect/Hex.ts',
       ),
+    ).toEqual([]);
+  });
+
+  it('should allow a public module to load internal/ dynamically', async () => {
+    expect(
+      await restrictedSyntax("await import('./internal/hex.ts');", 'packages/platform-js/src/effect/Hex.ts'),
     ).toEqual([]);
   });
 });
