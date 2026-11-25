@@ -20,6 +20,8 @@ npm install @midnightntwrk/platform-js
 ```
 
 The package is ESM only. TypeScript consumers should set `moduleResolution` to `NodeNext`, `Node16` or `Bundler`.
+A CommonJS project (no `"type": "module"`) must use `NodeNext` on TypeScript 5.8 or later, or `Bundler`: under
+`Node16`, or `NodeNext` before 5.8, TypeScript rejects importing an ES module from CommonJS (TS1479).
 Projects still on `node10` (`"moduleResolution": "node"`) get the types for `effect` and `effect/*` subpaths through
 `typesVersions`, but TypeScript 6.0 deprecates `node10`, so plan to move off it.
 

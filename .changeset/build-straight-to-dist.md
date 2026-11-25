@@ -9,4 +9,5 @@ folders are gone; `typesVersions` now maps `effect` and `effect/*` into `dist/` 
 on the old `node10` module resolution still get the types for `effect` and `effect/*` subpaths. `NodeNext`, `Node16`
 or `Bundler` is still the recommended setting: TypeScript 6.0 deprecates `node10`. Imports through the package's
 exported paths need no change; code that imported files by their location inside the package must use the exported
-paths.
+paths. A CommonJS TypeScript project must use `NodeNext` on TypeScript 5.8 or later, or `Bundler`: under `Node16`, or
+`NodeNext` before 5.8, TypeScript reports TS1479 for an ES module imported from CommonJS.
