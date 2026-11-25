@@ -14,20 +14,61 @@
  */
 
 import { describe, expect, it } from '@effect/vitest';
+import * as Either from 'effect/Either';
 import * as fc from 'effect/FastCheck';
 
 import * as NetworkIdMoniker from '../NetworkIdMoniker.ts';
 import * as Arbitrary from './Arbitrary.ts';
 
-describe('NetworkIdMoniker', () => {
-  it('should not throw for valid identifiers', () =>
-    fc.assert(
-      fc.property(Arbitrary.makeNetworkIdArbitrary(), (networkId) => {
-        expect(() => NetworkIdMoniker.NetworkIdMoniker(networkId)).not.toThrow();
-      }),
-    ));
+const invalid = (source: string) => `Source string '${source}' is not a valid network identifier`;
 
-  it.each(['hosky!dev', 'hosky_dev_01', '!@£&^*'])('should throw for invalid identifiers (%s)', (networkId) => {
-    expect(() => NetworkIdMoniker.NetworkIdMoniker(networkId)).toThrow();
+/** Strings of letters, digits and `-` with at least one other character in them. */
+const invalidMonikerArbitrary = fc
+  .tuple(
+    fc.stringMatching(/^[a-zA-Z0-9-]{0,8}$/),
+    fc.string({ minLength: 1, maxLength: 1 }).filter((c) => !/^[a-zA-Z0-9-]$/.test(c)),
+    fc.stringMatching(/^[a-zA-Z0-9-]{0,8}$/),
+  )
+  .map(([before, bad, after]) => `${before}${bad}${after}`);
+
+describe('NetworkIdMoniker', () => {
+  describe('NetworkIdMoniker', () => {
+    it('should accept valid identifiers', () =>
+      fc.assert(
+        fc.property(Arbitrary.makeNetworkIdArbitrary(), (networkId) => {
+          expect(NetworkIdMoniker.NetworkIdMoniker(networkId)).toBe(networkId);
+        }),
+      ));
+
+    it('should accept any non-empty mix of ASCII letters, digits and hyphens', () =>
+      fc.assert(
+        fc.property(fc.stringMatching(/^[a-zA-Z0-9-]{1,32}$/), (moniker) => {
+          expect(NetworkIdMoniker.NetworkIdMoniker.either(moniker)).toEqual(Either.right(moniker));
+        }),
+      ));
+
+    it.each(['hosky!dev', 'hosky_dev_01', '!@£&^*', '', 'hosky dev'])(
+      'should reject invalid identifiers (%o)',
+      (networkId) => {
+        expect(NetworkIdMoniker.NetworkIdMoniker.either(networkId)).toEqual(
+          Either.left([{ message: invalid(networkId) }]),
+        );
+      },
+    );
+
+    it('should reject any identifier holding another character', () =>
+      fc.assert(
+        fc.property(invalidMonikerArbitrary, (networkId) => {
+          expect(NetworkIdMoniker.NetworkIdMoniker.either(networkId)).toEqual(
+            Either.left([{ message: invalid(networkId) }]),
+          );
+        }),
+      ));
+
+    it('should throw the brand errors from the constructor', () => {
+      expect(() => NetworkIdMoniker.NetworkIdMoniker('hosky!dev')).toThrow(
+        expect.arrayContaining([{ message: invalid('hosky!dev') }]),
+      );
+    });
   });
 });
