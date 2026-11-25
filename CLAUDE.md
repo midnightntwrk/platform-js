@@ -68,7 +68,7 @@ package (the Yarn workspace and Turborepo root, ADR-0001). Run one test file fro
 nvm use && corepack enable   # at the repo root
 yarn                         # install dependencies
 yarn dist                    # compile each package's src/ to dist/ (turbo)
-yarn dist:publish            # clean dist/ build with declaration maps, without source maps
+yarn dist:publish            # clean dist/ build without source or declaration maps
 yarn typecheck               # type-check src and tests
 yarn test                    # full test suite (turbo), straight from src/, no build needed
 yarn lint                    # eslint in each package, plus root eslint.config.mjs and vitest.config.ts (turbo)
@@ -88,13 +88,13 @@ There is no `format` script yet. `-T` runs a tool installed at the workspace roo
 One package, `packages/platform-js/` (`@midnightntwrk/platform-js`, ESM). Modules live in `src/effect/`, one per
 domain type (`Hex`, `NetworkId`, `ContractAddress`, `CoinPublicKey`, `IntegerRange`, `Configuration`, ...), with
 private helpers in `src/effect/internal/`. Errors are `TypeId`-based (`src/effect/ParseError.ts`). `tsc` compiles
-`src/` straight to `dist/` (`tsconfig.build.json`; `tsconfig.publish.json` drops the source maps for publishing and
-keeps the declaration maps).
+`src/` straight to `dist/` (`tsconfig.build.json`; `tsconfig.publish.json` drops the maps for publishing). The package
+ships only `dist/` (`.js` and `.d.ts`).
 
-The `.ts` source is the source of truth: relative imports end in `.ts`, and `tsc` rewrites them to `.js`. Public entry
-points are the `exports` in the package's `package.json` (ESM only). Each has an opt-in source condition first, then
-`types`, `import` and `default` pointing at `dist/`. Changing one is a public API change. Details:
-[ADR-0003](docs/decisions/0003-typescript-source-as-source-of-truth.md). A `typesVersions` map gives consumers on
+The `.ts` source is the source of truth: relative imports end in `.ts`, and `tsc` rewrites them to `.js`
+([ADR-0003](docs/decisions/0003-typescript-source-as-source-of-truth.md)). Public entry points are the `exports` in
+the package's `package.json`, which point at `dist/` (`types`, `import` and `default` conditions, ESM only); changing
+one is a public API change. A `typesVersions` map gives consumers on
 `node10` resolution, which ignores `exports`, the same `effect` and `effect/*` types
 ([ADR-0004](docs/decisions/0004-keep-node10-subpath-types.md)).
 

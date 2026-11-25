@@ -8,90 +8,82 @@ Technical Story: [#67](https://github.com/midnightntwrk/platform-js/issues/67)
 ## Context and Problem Statement
 
 `@midnightntwrk/platform-js` is written in TypeScript and compiled by `tsc` to `dist/`. Its source imported siblings
-as `./Hex.js`, and every entry in the package `exports` pointed only at `dist/`, the way midnight-wallet does. In
-wallet's monorepo that means a package has to be built before another package, a test or an editor sees a change to
-it. Should the `.ts` source, rather than the compiled `dist/`, be what the code imports and what tools resolve to?
+as `./Hex.js`, naming a compiled file that doesn't exist until a build, the way midnight-wallet does. Should the source
+import the `.ts` files it actually sits next to, and should the published package expose that source to consumers?
 
 ## Decision Drivers
 
-- The file you edit should be the file that is imported and resolved, with no build step in between.
-- Consumers that don't opt in must see no change: same `dist/` code, same `.d.ts` types.
+- The file you edit should be the file you import.
+- Consumers must get the same package as before: compiled `.js` and `.d.ts`, nothing they have to compile.
 - publint `--strict` must pass: every file an export points at must be in the tarball.
-- A custom export condition must not clash with another package's condition, including other `@midnightntwrk`
-  packages.
+- No build machinery for a need the repo doesn't have: no package here consumes platform-js by name.
 - TypeScript stays on 6.0 ([ADR-0002](0002-stay-on-typescript-6.md)).
 
 ## Considered Options
 
-- `.ts` imports and a source-first export condition, shipping `src/`
-- `.ts` imports, with the `types` condition pointing at the `.ts` source
-- Keep wallet's layout: `.js` imports and `dist/`-only exports
+- `.ts` imports, shipping only `dist/`
+- `.ts` imports plus a source export condition, shipping `src/`
+- `.ts` imports plus a source export condition used only inside the repo, stripped at publish
+- Keep wallet's layout: `.js` imports
 
 ## Decision Outcome
 
-Chosen option: "`.ts` imports and a source-first export condition, shipping `src/`", because it makes the `.ts` file
-the one you edit, import and resolve inside the repo, while consumers without the condition get exactly what they got
-before.
+Chosen option: "`.ts` imports, shipping only `dist/`", because it makes the `.ts` file the one you edit and import,
+while the published package stays the compiled `.js` and `.d.ts` consumers already get.
 
 - **Imports:** relative imports end in `.ts` (`import * as Hex from './Hex.ts'`, `export * as Hex from './Hex.ts'`).
   `rewriteRelativeImportExtensions` (TypeScript 5.7+) allows them and rewrites them to `.js` in the emitted `.js`
-  files. The emitted `.d.ts` files keep the `.ts` paths (`export * as Hex from './Hex.ts'`): TypeScript resolves such a
-  path to the sibling `.d.ts`, and a consumer type-checks cleanly against them on TypeScript 4.9, 5.0, 5.6 and 6.0,
-  with `skipLibCheck` off. `erasableSyntaxOnly` keeps the source runnable with types stripped. An ESLint
-  `no-restricted-syntax` rule in the root `eslint.config.mjs` rejects relative import and export sources ending in
-  `.js`.
-- **Exports:** each of `.`, `./effect` and `./effect/*` has four conditions, in this order:
-  `@midnightntwrk/platform-js/source` (the `.ts` in `src/`), `types`, `import` and `default` (all in `dist/`).
-  `./effect/internal/*` stays `null`. The top-level `main`, `module` and `types` fields stay on `dist/` for resolvers
-  that ignore `exports`.
-- **Opting in:** only tools that ask for the condition pick it: TypeScript through `customConditions` (set in
-  `tsconfig.base.json`, so TypeScript inside the repo resolves the package to its source), Vite and Vitest through
-  `resolve.conditions`, Node through `--conditions`. Everyone else falls through to `types`, `import` and `default`.
-  A TypeScript consumer that opts in also needs `allowImportingTsExtensions` or `rewriteRelativeImportExtensions`,
-  because the source it then type-checks has `.ts` imports.
-- **Condition name:** `@midnightntwrk/platform-js/source`, scoped to the package. A bare `source` could clash with a
-  dependency that defines the same condition, and an org-wide `@midnightntwrk/source` would make a project opt in to
-  every `@midnightntwrk` package's source at once. Prior art, all scoped and source-first: Zod (`@zod/source`), Colin
-  McDonnell's [live types essay](https://colinhacks.com/essays/live-types-typescript-monorepo)
-  (`@colinhacks/source`), [Nx](https://nx.dev/docs/kb/testing-without-building-dependencies) (`@myorg/source`),
-  TanStack Query (`@tanstack/custom-condition`).
-- **Tarball:** `files` is `["dist/", "src/", "!dist/**/*.js.map"]`. `src/` ships because the source condition points
-  at it. `tsconfig.publish.json` emits declaration maps, so "Go to definition" in a consumer's editor lands in the
-  shipped `.ts`; source maps (`*.js.map`) stay off.
+  files. `erasableSyntaxOnly` keeps the source runnable with types stripped. An ESLint `no-restricted-syntax` rule in
+  the root `eslint.config.mjs` rejects relative import and export sources ending in `.js`.
+- **`.d.ts` paths:** the emitted `.d.ts` files keep the `.ts` paths (`export * as Hex from './Hex.ts'`). TypeScript
+  resolves such a path to the sibling `.d.ts` in `dist/`, never to `src/`. A consumer of a tarball holding only `.js`
+  and `.d.ts` type-checks cleanly, with `skipLibCheck: false`, on TypeScript 5.9 and 6.0 under `node10`, `nodenext`
+  and `bundler`; TypeScript 4.9, 5.0 and 5.6 also read the `.d.ts` files without errors.
+- **Package:** `exports` keeps `types`, `import` and `default`, all in `dist/`. `files` is
+  `["dist/", "!dist/**/*.map"]`, and `tsconfig.publish.json` emits no source or declaration maps, so the tarball holds
+  `.js`, `.d.ts`, `package.json`, `LICENSE` and `README.md`.
 
 ### Positive Consequences
 
-- Inside the repo, nothing needs a build before an editor, a test or (later) another package sees a change.
-- Consumers without the condition get the same compiled `dist/` and `.d.ts` as before: a `minor` bump.
-- "Go to definition" from an installed package lands in real source, not a `.d.ts`.
+- The source imports files that exist; no import names a build output.
+- Consumers see no change.
+- Nothing extra to build, ship or keep in step.
 
 ### Negative Consequences
 
-- The tarball is larger: it carries `src/` and declaration maps.
-- Node does not strip types from files under `node_modules` (`ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING`), so an
-  installed consumer that runs `node --conditions=@midnightntwrk/platform-js/source` fails. The condition is for
-  TypeScript, bundlers, and packages linked inside a workspace, whose real path is outside `node_modules`.
+- A tool that reads `.d.ts` files without TypeScript's resolution could trip on the `.ts` paths. None is known; if one
+  turns up, a post-build rewrite of `dist/**/*.d.ts` fixes it without changing the package layout.
 - Source must stay erasable: no `enum`, no runtime `namespace`, no parameter properties.
 - The layout differs from midnight-wallet's.
+- A future workspace package that wants to consume platform-js without a build needs a source condition then; this
+  decision doesn't provide one.
 
 ## Pros and Cons of the Options
 
-### `.ts` imports and a source-first export condition, shipping `src/`
+### `.ts` imports, shipping only `dist/`
 
-- Good, because the `.ts` file is what is edited, imported and resolved inside the repo.
-- Good, because consumers without the condition get compiled `.d.ts`, which type-checks faster and doesn't depend on
-  their compiler options.
-- Good, because the condition is opt-in and scoped, so it can't be picked by accident.
-- Bad, because `src/` must ship for publint and for the condition to resolve.
+- Good, because the `.ts` file is what is edited and imported.
+- Good, because the published package is unchanged.
+- Bad, because nothing outside the package can resolve its source without a build.
 
-### `.ts` imports, with the `types` condition pointing at the `.ts` source
+### `.ts` imports plus a source export condition, shipping `src/`
 
-- Good, because no custom condition is needed.
-- Bad, because every consumer type-checks the package's source with their own compiler options, which may reject it.
-- Bad, because type-checking source is slower than reading `.d.ts`.
+A condition such as `@midnightntwrk/platform-js/source`, first in each `exports` entry, pointing at `src/*.ts`, with
+`src/` and declaration maps in the tarball so "Go to definition" lands in source. Prior art: Zod (`@zod/source`),
+[Nx](https://nx.dev/docs/kb/testing-without-building-dependencies), TanStack Query.
 
-### Keep wallet's layout: `.js` imports and `dist/`-only exports
+- Good, because tools that opt in resolve the package to its source with no build.
+- Bad, because every consumer downloads `src/` and the maps, though only those who opt in use them.
+- Bad, because a consumer that opts in also needs `allowImportingTsExtensions`, and Node won't strip types under
+  `node_modules`, so it serves TypeScript and bundlers only.
+- Bad, because nothing in this repo or outside it uses it today.
+
+### `.ts` imports plus a source condition used only inside the repo, stripped at publish
+
+- Good, because the repo gets source resolution and the tarball stays `dist/` only.
+- Bad, because publishing needs a step that rewrites `package.json`, for a condition nothing in the repo uses yet.
+
+### Keep wallet's layout: `.js` imports
 
 - Good, because it matches midnight-wallet and needs no change.
-- Bad, because a package must be built before anything else sees a change to it.
 - Bad, because `.js` imports name files that don't exist until a build.

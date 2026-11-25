@@ -13,7 +13,6 @@
     "moduleResolution": "NodeNext",
     "rewriteRelativeImportExtensions": true,
     "erasableSyntaxOnly": true,
-    "customConditions": ["@midnightntwrk/platform-js/source"],
     "types": ["vitest/globals", "node"]
   },
 }

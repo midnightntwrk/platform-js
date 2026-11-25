@@ -56,7 +56,7 @@ Run these from the repo root.
 | Command                | What it does                                          |
 | ---------------------- | ----------------------------------------------------- |
 | `yarn dist`            | Compiles each package's `src/` to `dist/` (Turbo).    |
-| `yarn dist:publish`    | Clean `dist/`: declaration maps, no source maps.      |
+| `yarn dist:publish`    | Clean `dist/` build, no source or declaration maps.   |
 | `yarn typecheck`       | Type-checks `src/` and the tests.                     |
 | `yarn test`            | Runs all tests (Turbo) from `src/`; no build needed.  |
 | `yarn lint`            | Lints packages and root configs; warnings fail.       |

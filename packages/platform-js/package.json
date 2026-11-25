@@ -15,19 +15,16 @@
   "exports": {
     "./package.json": "./package.json",
     ".": {
-      "@midnightntwrk/platform-js/source": "./src/index.ts",
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
     },
     "./effect": {
-      "@midnightntwrk/platform-js/source": "./src/effect/index.ts",
       "types": "./dist/effect/index.d.ts",
       "import": "./dist/effect/index.js",
       "default": "./dist/effect/index.js"
     },
     "./effect/*": {
-      "@midnightntwrk/platform-js/source": "./src/effect/*.ts",
       "types": "./dist/effect/*.d.ts",
       "import": "./dist/effect/*.js",
       "default": "./dist/effect/*.js"
@@ -58,7 +55,6 @@
   },
   "files": [
     "dist/",
-    "src/",
-    "!dist/**/*.js.map"
+    "!dist/**/*.map"
   ]
 }

@@ -78,9 +78,8 @@ File paths below are relative to `packages/platform-js/src/`, except `test/…` 
 ## Public API and changesets
 
 - The public API is what `packages/platform-js/package.json` `exports` exposes: `.`, `./effect`, `./effect/*`, each
-  with four conditions in order: `@midnightntwrk/platform-js/source` (the `.ts` in `src/`), then `types`, `import`
-  and `default` (the compiled file in `dist/`). `./effect/internal/*` is blocked (`null`) — internal code is free to
-  change. `typesVersions` mirrors `effect` and `effect/*` for `node10` consumers; keep it in step with `exports`.
+  mapped to its compiled file in `dist/` (`types`, `import` and `default`). `./effect/internal/*` is blocked (`null`)
+  — internal code is free to change. `typesVersions` mirrors `effect` and `effect/*` for `node10` consumers; keep it in step with `exports`.
 - Relative imports end in `.ts` (`import * as Hex from './Hex.ts'`); lint rejects `.js`. Source stays erasable
   (`erasableSyntaxOnly`): no `enum`, no runtime `namespace`, no parameter properties.
 - A new module under `effect/` must also be re-exported from `effect/index.ts`.
