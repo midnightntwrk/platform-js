@@ -127,7 +127,8 @@ Run these from the repo root.
 | `yarn changeset`       | Adds a changeset (asks which packages and bumps).     |
 | `yarn changeset:check` | Lists the pending changesets and the bumps they make. |
 
-Prettier's settings are in `.prettierrc.json`, the same as midnight-wallet's. It formats `ts`, `js`, `json`, `yaml`,
+Prettier's settings are in `.prettierrc.json`: midnight-wallet's, plus `jsdocCapitalizeDescription: false`, which keeps
+`@category` tags lowercase (`.claude/rules/functional-style.md`). It formats `ts`, `js`, `json`, `yaml`,
 `yml` and `md` files, so `scripts/*.mjs` stay hand-formatted. The package scripts read `.prettierignore`; the root
 scripts read `.prettierignore.root`, which also leaves out `packages/`.
 

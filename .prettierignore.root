@@ -18,3 +18,8 @@ packages/
 .claude/
 # Rewritten by the skills CLI on every install or update — keep in sync with .prettierignore
 skills-lock.json
+
+# Git-ignored local folders: agent notes, effect-v3-to-v4 source clones, the skills CLI working directory
+.scratch/
+.repos/
+.agents/
