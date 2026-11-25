@@ -62,6 +62,7 @@
     "eslint-config-prettier": "catalog:",
     "eslint-import-resolver-typescript": "catalog:",
     "eslint-plugin-import-x": "catalog:",
+    "eslint-plugin-jsdoc": "catalog:",
     "eslint-plugin-simple-import-sort": "catalog:",
     "eslint-plugin-unused-imports": "catalog:",
     "prettier": "catalog:",

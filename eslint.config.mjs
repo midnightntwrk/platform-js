@@ -4,8 +4,26 @@ import js from '@eslint/js';
 import tseslint from 'typescript-eslint';
 import prettierConfig from 'eslint-config-prettier';
 import importPlugin from 'eslint-plugin-import-x';
+import jsdoc from 'eslint-plugin-jsdoc';
 import simpleImportSort from 'eslint-plugin-simple-import-sort';
 import unusedImports from 'eslint-plugin-unused-imports';
+
+// Exported declarations that must carry a JSDoc block with a description. A `declare namespace` is not among them.
+const documentedExportContexts = [
+  'ExportNamedDeclaration > FunctionDeclaration',
+  'ExportNamedDeclaration > VariableDeclaration',
+  'ExportNamedDeclaration > TSTypeAliasDeclaration',
+  'ExportNamedDeclaration > TSInterfaceDeclaration',
+  'ExportNamedDeclaration > TSEnumDeclaration',
+  'ExportNamedDeclaration > ClassDeclaration'
+];
+// Exports whose parameters a lint can see: written as a function. One built by a call (dual, Brand.refined) or
+// assigned from another binding (`= internal.parseHex`) is not among them.
+const functionExportContexts = [
+  'ExportNamedDeclaration > FunctionDeclaration',
+  'ExportNamedDeclaration > VariableDeclaration > VariableDeclarator > ArrowFunctionExpression',
+  'ExportNamedDeclaration > VariableDeclaration > VariableDeclarator > FunctionExpression'
+];
 
 export default tseslint.config(
   {
@@ -152,6 +170,57 @@ export default tseslint.config(
             {
               group: ['**/src/effect/internal/**'],
               message: 'Tests import public modules, not src/effect/internal/.'
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    // .claude/rules/functional-style.md → Public API documentation, as far as a lint can see it. ADR-0005 lists what
+    // it can't see.
+    files: ['packages/*/src/**/*.ts'],
+    ignores: ['packages/*/src/**/internal/**', 'packages/*/src/**/index.ts'],
+    plugins: { jsdoc },
+    settings: { jsdoc: { mode: 'typescript' } },
+    rules: {
+      'jsdoc/require-jsdoc': [
+        'error',
+        {
+          require: { FunctionDeclaration: false },
+          contexts: documentedExportContexts
+        }
+      ],
+      'jsdoc/require-description': [
+        'error',
+        {
+          contexts: documentedExportContexts
+        }
+      ],
+      'jsdoc/require-param': [
+        'error',
+        {
+          contexts: functionExportContexts
+        }
+      ],
+      'jsdoc/require-returns': [
+        'error',
+        {
+          contexts: functionExportContexts
+        }
+      ],
+      // Checked per export: jsdoc/no-missing-syntax would pass a whole file on a single @category. The context is the
+      // bare ExportNamedDeclaration, which holds the JSDoc block: a child selector (`ExportNamedDeclaration > ...`)
+      // never matches here. It also covers exports inside a `declare namespace`, but not the namespace itself: the
+      // same-named type's JSDoc covers that.
+      'jsdoc/no-restricted-syntax': [
+        'error',
+        {
+          contexts: [
+            {
+              context: 'ExportNamedDeclaration[declaration.type!="TSModuleDeclaration"]',
+              comment: 'JsdocBlock:not(:has(JsdocTag[tag="category"]))',
+              message: 'Every export needs a @category tag (.claude/rules/functional-style.md).'
             }
           ]
         }

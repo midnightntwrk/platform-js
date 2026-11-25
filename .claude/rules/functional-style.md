@@ -82,6 +82,8 @@ File paths below are relative to `packages/platform-js/src/`, except `test/…` 
 - A `declare namespace` merged with a documented type of the same name gets no JSDoc of its own (hover would show it
   twice); its members keep theirs.
 - Mark everything in `effect/internal/` with `/** @internal */`.
+- `yarn lint` checks only part of this (`eslint-plugin-jsdoc`). A clean lint is not a clean doc: check by hand what
+  `docs/decisions/0005-lint-public-api-jsdoc.md` lists as unchecked.
 
 ## Public API and changesets
 
