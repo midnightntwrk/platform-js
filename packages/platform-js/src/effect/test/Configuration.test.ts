@@ -24,10 +24,14 @@ import * as NetworkId from '../NetworkId.ts';
 import * as NetworkIdMoniker from '../NetworkIdMoniker.ts';
 
 const COIN_PUBLIC = '0102';
+// A coin public key that is not plain hex loads as Bech32m, unchecked.
+const COIN_PUBLIC_BECH32M = 'mn_shield-cpk_test1qypqxpq9qcrsszg2pvxq6rs0zqg3yyc5z5tpwxqergd3c8g7rusqnvnx3d';
 // A valid signing key value is plain hex, 32 to 35 bytes in length.
 const SIGNING = 'a1'.repeat(32);
 
 const fromJson = (json: unknown) => Effect.withConfigProvider(ConfigProvider.fromJson(json));
+
+const fromEnvAndJson = (json: unknown) => Effect.withConfigProvider(Configuration.configProvider(json));
 
 const readKeys = (json: unknown) => Configuration.Keys.pipe(Effect.provide(Configuration.layer), fromJson(json));
 
@@ -39,6 +43,13 @@ describe('Configuration', () => {
       Effect.gen(function* () {
         const keys = yield* readKeys({ keys: { coinPublic: COIN_PUBLIC } });
         expect(keys.coinPublicKey).toBe(COIN_PUBLIC);
+      }),
+    );
+
+    it.effect('reads a coin public key that is not plain hex as the same string', () =>
+      Effect.gen(function* () {
+        const keys = yield* readKeys({ keys: { coinPublic: COIN_PUBLIC_BECH32M } });
+        expect(keys.coinPublicKey).toBe(COIN_PUBLIC_BECH32M);
       }),
     );
 
@@ -136,10 +147,10 @@ describe('Configuration', () => {
     });
 
     const readKeysFromEnvAndJson = (json: unknown) =>
-      Configuration.Keys.pipe(
-        Effect.provide(Configuration.layer),
-        Effect.withConfigProvider(Configuration.configProvider(json)),
-      );
+      Configuration.Keys.pipe(Effect.provide(Configuration.layer), fromEnvAndJson(json));
+
+    const readNetworkFromEnvAndJson = (json: unknown) =>
+      Configuration.Network.pipe(Effect.provide(Configuration.layer), fromEnvAndJson(json));
 
     it.effect('reads values from the JSON when no environment variable is set', () =>
       Effect.gen(function* () {
@@ -164,12 +175,7 @@ describe('Configuration', () => {
     it.effect('reads a top-level key from its bare environment name', () =>
       Effect.gen(function* () {
         vi.stubEnv('NETWORK', 'hosky-dev01');
-        const network = yield* Configuration.Network.pipe(
-          Effect.provide(Configuration.layer),
-          Effect.withConfigProvider(
-            Configuration.configProvider({ keys: { coinPublic: COIN_PUBLIC }, network: 'testnet' }),
-          ),
-        );
+        const network = yield* readNetworkFromEnvAndJson({ keys: { coinPublic: COIN_PUBLIC }, network: 'testnet' });
         expect(network.toString()).toBe('hosky-dev01');
       }),
     );

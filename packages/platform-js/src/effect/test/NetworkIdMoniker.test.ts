@@ -18,11 +18,10 @@ import * as Either from 'effect/Either';
 import * as fc from 'effect/FastCheck';
 
 import * as NetworkIdMoniker from '../NetworkIdMoniker.ts';
-import * as Arbitrary from './Arbitrary.ts';
 
 const invalid = (source: string) => `Source string '${source}' is not a valid network identifier`;
 
-/** Strings of letters, digits and `-` with at least one other character in them. */
+/** Strings of letters, digits and `-` with exactly one other character in them. */
 const invalidMonikerArbitrary = fc
   .tuple(
     fc.stringMatching(/^[a-zA-Z0-9-]{0,8}$/),
@@ -33,16 +32,10 @@ const invalidMonikerArbitrary = fc
 
 describe('NetworkIdMoniker', () => {
   describe('NetworkIdMoniker', () => {
-    it('should accept valid identifiers', () =>
-      fc.assert(
-        fc.property(Arbitrary.makeNetworkIdArbitrary(), (networkId) => {
-          expect(NetworkIdMoniker.NetworkIdMoniker(networkId)).toBe(networkId);
-        }),
-      ));
-
     it('should accept any non-empty mix of ASCII letters, digits and hyphens', () =>
       fc.assert(
         fc.property(fc.stringMatching(/^[a-zA-Z0-9-]{1,32}$/), (moniker) => {
+          expect(NetworkIdMoniker.NetworkIdMoniker(moniker)).toBe(moniker);
           expect(NetworkIdMoniker.NetworkIdMoniker.either(moniker)).toEqual(Either.right(moniker));
         }),
       ));

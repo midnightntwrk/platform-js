@@ -57,6 +57,13 @@ describe('ParseError', () => {
       expect(ParseError.isParseError(new ParseError.ParseError({ message: 'Not hex', source: 'zz' }))).toBe(true);
     });
 
+    it('should return true for any value carrying the ParseError type id, however it was built', () => {
+      const foreign = { [Symbol.for('platform-js/effect/ParseError')]: Symbol.for('platform-js/effect/ParseError') };
+
+      expect(foreign).not.toBeInstanceOf(ParseError.ParseError);
+      expect(ParseError.isParseError(foreign)).toBe(true);
+    });
+
     it.each([
       [new Error('Not hex')],
       [{ _tag: 'ParseError', message: 'Not hex', source: 'zz' }],

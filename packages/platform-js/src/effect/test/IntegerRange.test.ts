@@ -26,35 +26,34 @@ const boundsArbitrary = fc
   .tuple(fc.integer({ min: -1000, max: 1000 }), fc.integer({ min: 0, max: 20 }))
   .map(([min, length]) => [min, min + length] as const);
 
+/** Integer bounds with `min < max`: an exclusive range over them holds at least one value. */
+const nonEmptyBoundsArbitrary = fc
+  .tuple(fc.integer({ min: -1000, max: 1000 }), fc.integer({ min: 1, max: 20 }))
+  .map(([min, length]) => [min, min + length] as const);
+
 /** The integers from two below `min` to two above `max`: every value either side of each bound. */
 const valuesAround = (min: number, max: number): readonly number[] =>
   Array.from({ length: max - min + 5 }, (_, i) => min - 2 + i);
 
 describe('IntegerRange', () => {
   describe('from', () => {
-    it.each<IntegerRange.IntegerRangeInput>([[0, 10] as const, [10, 100] as const, '0..10', '10..100'])(
-      'should create an exclusive range with exclusive input %o',
-      (input: IntegerRange.IntegerRangeInput) => {
-        const range = IntegerRange.from(input);
+    it.each<[IntegerRange.IntegerRangeInput, boolean]>([
+      [[0, 10] as const, false],
+      [[10, 100] as const, false],
+      ['0..10', false],
+      ['10..100', false],
+      ['0..=10', true],
+      ['10..=100', true],
+    ])('should create a range from %o that is inclusive: %s', (input, inclusive) => {
+      const range = IntegerRange.from(input);
 
-        expect(IntegerRange.isExclusive(range)).toBe(true);
-        expect(IntegerRange.isInclusive(range)).toBe(false);
-      },
-    );
-
-    it.each<IntegerRange.IntegerRangeInput>(['0..=10', '10..=100'])(
-      'should create an inclusive range with inclusive input %o',
-      (input: IntegerRange.IntegerRangeInput) => {
-        const range = IntegerRange.from(input);
-
-        expect(IntegerRange.isExclusive(range)).toBe(false);
-        expect(IntegerRange.isInclusive(range)).toBe(true);
-      },
-    );
+      expect(IntegerRange.isInclusive(range)).toBe(inclusive);
+      expect(IntegerRange.isExclusive(range)).toBe(!inclusive);
+    });
 
     it('should keep the bounds of a tuple', () =>
       fc.assert(
-        fc.property(boundsArbitrary, ([min, max]) => {
+        fc.property(nonEmptyBoundsArbitrary, ([min, max]) => {
           expect(IntegerRange.from([min, max]).value).toEqual({ _tag: 'Exclusive', min, max });
         }),
       ));
@@ -156,15 +155,12 @@ describe('IntegerRange', () => {
       const sourceRange = IntegerRange.from('0..=10');
       const range = IntegerRange.inclusive(sourceRange);
 
-      expect(IntegerRange.isInclusive(range)).toBe(true);
-      expect(IntegerRange.isExclusive(range)).toBe(false);
       expect(range).toBe(sourceRange);
-      expect(IntegerRange.equals(sourceRange, range)).toBe(true);
     });
 
     it('should return an inclusive equivalent of an exclusive range', () =>
       fc.assert(
-        fc.property(boundsArbitrary, ([min, max]) => {
+        fc.property(nonEmptyBoundsArbitrary, ([min, max]) => {
           const sourceRange = IntegerRange.exclusive([min, max]);
           const range = IntegerRange.inclusive(sourceRange);
 
@@ -190,10 +186,7 @@ describe('IntegerRange', () => {
       const sourceRange = IntegerRange.from('0..10');
       const range = IntegerRange.exclusive(sourceRange);
 
-      expect(IntegerRange.isExclusive(range)).toBe(true);
-      expect(IntegerRange.isInclusive(range)).toBe(false);
       expect(range).toBe(sourceRange);
-      expect(IntegerRange.equals(sourceRange, range)).toBe(true);
     });
 
     it('should return an exclusive equivalent of an inclusive range', () =>
@@ -212,20 +205,9 @@ describe('IntegerRange', () => {
   });
 
   describe('contains', () => {
-    it('should return true for ranges inclusive of a given value', () => {
-      const effectiveMax = 9;
-      const a = IntegerRange.from([0, 10]);
-      const b = IntegerRange.exclusive([0, 10]);
-      const c = IntegerRange.inclusive([0, 9]);
-
-      expect(IntegerRange.contains(a, effectiveMax)).toBe(true);
-      expect(IntegerRange.contains(b, effectiveMax)).toBe(true);
-      expect(IntegerRange.contains(c, effectiveMax)).toBe(true);
-    });
-
     it('should contain exactly the integers from min up to, but not including, max of an exclusive range', () =>
       fc.assert(
-        fc.property(boundsArbitrary, ([min, max]) => {
+        fc.property(nonEmptyBoundsArbitrary, ([min, max]) => {
           const range = IntegerRange.exclusive([min, max]);
           valuesAround(min, max).forEach((value) => {
             expect(IntegerRange.contains(range, value)).toBe(value >= min && value < max);

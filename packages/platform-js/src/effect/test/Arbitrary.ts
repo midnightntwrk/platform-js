@@ -22,10 +22,22 @@ import * as IntegerRange from '../IntegerRange.ts';
 export const makeNetworkIdArbitrary: () => fc.Arbitrary<string> = () =>
   fc.stringMatching(/^(dev|test)-[0-9a-fA-F]{4,8}-0[1-9]$/);
 
+/**
+ * Plain hex strings (no `0x` prefix) whose byte length lies in `inputOrRange`.
+ *
+ * A range that holds 0 can yield `''`, which the hex brands reject: give a minimum of at least 1 for values they
+ * accept.
+ */
 export const makePlainHexArbitrary: (
   inputOrRange: IntegerRange.IntegerRangeInput | IntegerRange.IntegerRange,
 ) => fc.Arbitrary<string> = (inputOrRange) => fc.stringMatching(hexRegExp(inputOrRange));
 
+/**
+ * `0x`-prefixed hex strings whose byte length lies in `inputOrRange`.
+ *
+ * A range that holds 0 can yield `'0x'`, which the hex brands reject: give a minimum of at least 1 for values they
+ * accept.
+ */
 export const makePrefixedHexArbitrary: (
   inputOrRange: IntegerRange.IntegerRangeInput | IntegerRange.IntegerRange,
 ) => fc.Arbitrary<string> = (inputOrRange) => fc.stringMatching(hexRegExp(inputOrRange, { includePrefix: true }));

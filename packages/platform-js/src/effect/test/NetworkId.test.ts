@@ -23,6 +23,9 @@ import * as Arbitrary from './Arbitrary.ts';
 
 const monikerArbitrary = Arbitrary.makeNetworkIdArbitrary().map(NetworkIdMoniker.NetworkIdMoniker);
 
+/** The network identifier named by `moniker`, which must be a valid moniker. */
+const named = (moniker: string) => NetworkId.make(NetworkIdMoniker.NetworkIdMoniker(moniker));
+
 /** Pairs of monikers, half of them the same moniker twice: two independent draws are almost never equal. */
 const monikerPairArbitrary = fc.oneof(
   monikerArbitrary.map((moniker) => [moniker, moniker] as const),
@@ -41,8 +44,8 @@ describe('NetworkId', () => {
 
     it('should return false for any named network identifier', () =>
       fc.assert(
-        fc.property(Arbitrary.makeNetworkIdArbitrary(), (networkId) => {
-          expect(NetworkId.make(NetworkIdMoniker.NetworkIdMoniker(networkId)).isMainNet()).toBe(false);
+        fc.property(monikerArbitrary, (moniker) => {
+          expect(NetworkId.make(moniker).isMainNet()).toBe(false);
         }),
       ));
   });
@@ -67,7 +70,7 @@ describe('NetworkId', () => {
   describe('isNetworkId', () => {
     it('should return true for network identifiers', () => {
       expect(NetworkId.isNetworkId(NetworkId.MainNet)).toBe(true);
-      expect(NetworkId.isNetworkId(NetworkId.make(NetworkIdMoniker.NetworkIdMoniker('hosky-dev01')))).toBe(true);
+      expect(NetworkId.isNetworkId(named('hosky-dev01'))).toBe(true);
     });
 
     it.each([['hosky-dev01'], [{ moniker: 'hosky-dev01' }], [null], [undefined]])(
@@ -80,15 +83,15 @@ describe('NetworkId', () => {
 
   describe('equals', () => {
     it('should return true for two network identifiers equal by name', () => {
-      const a = NetworkId.make(NetworkIdMoniker.NetworkIdMoniker('hosky-dev01'));
-      const b = NetworkId.make(NetworkIdMoniker.NetworkIdMoniker('hosky-dev01'));
+      const a = named('hosky-dev01');
+      const b = named('hosky-dev01');
 
       expect(NetworkId.equals(a, b)).toBe(true);
     });
 
     it('should return false for two network identifiers that differ by name', () => {
-      const a = NetworkId.make(NetworkIdMoniker.NetworkIdMoniker('hosky-dev01'));
-      const b = NetworkId.make(NetworkIdMoniker.NetworkIdMoniker('hosky-dev02'));
+      const a = named('hosky-dev01');
+      const b = named('hosky-dev02');
 
       expect(NetworkId.equals(a, b)).toBe(false);
     });
@@ -101,9 +104,9 @@ describe('NetworkId', () => {
       ));
 
     it('should compare data-last', () => {
-      const a = NetworkId.make(NetworkIdMoniker.NetworkIdMoniker('hosky-dev01'));
+      const a = named('hosky-dev01');
 
-      expect(NetworkId.equals(NetworkId.make(NetworkIdMoniker.NetworkIdMoniker('hosky-dev01')))(a)).toBe(true);
+      expect(NetworkId.equals(named('hosky-dev01'))(a)).toBe(true);
       expect(NetworkId.equals(NetworkId.MainNet)(a)).toBe(false);
     });
 
@@ -132,7 +135,7 @@ describe('NetworkId', () => {
     });
 
     it('should serialise and inspect as its moniker', () => {
-      const networkId = NetworkId.make(NetworkIdMoniker.NetworkIdMoniker('hosky-dev01'));
+      const networkId = named('hosky-dev01');
       const json = { _id: 'NetworkId', moniker: 'hosky-dev01' };
 
       expect(networkId.toJSON()).toEqual(json);
