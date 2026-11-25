@@ -128,6 +128,10 @@ touched; full rationale and worked examples: `docs/CodingConventions.md`.
   reports is yours to fix. CI jobs: `DEV_GUIDE.md` → Continuous integration.
 - **TypeScript stays on 6.0** (`~6.0.x`): typescript-eslint supports only `<6.1.0`; don't bump to 6.1+ or 7 without
   revisiting [ADR-0002](docs/decisions/0002-stay-on-typescript-6.md).
+- **Dev tool versions live in the Yarn catalog** (`.yarnrc.yml`), and the root `devDependencies` say `"catalog:"`.
+  Never write `catalog:` in `packages/*/package.json`: npm packs and publishes the package, and would ship the
+  `catalog:` value unresolved. Keep the root `effect` range equal to the package's. Rule and reason: `DEV_GUIDE.md` →
+  Dependency versions.
 - **Turbo's cache can be stale** after branch switches or rebases: bypass with `--force` (`yarn dist --force`).
 - **Effect skills** in `.claude/skills/effect-*` come from two places. `effect-ts` is vendored Effect v3 guidance from
   Claude-Matrix (MIT), not managed by a CLI: edit it only with `.claude/skills/effect-ts/ATTRIBUTION.md` updated.

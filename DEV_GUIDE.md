@@ -23,6 +23,31 @@ The repo root is a Yarn 4 workspace, built with Turborepo. Packages live in `pac
 
 ---
 
+## Dependency versions
+
+Root dev tooling versions live in one place: the Yarn [catalog](https://yarnpkg.com/features/catalogs) in
+[`.yarnrc.yml`](.yarnrc.yml). The root `package.json` lists each tool in `devDependencies` as `"catalog:"`, and Yarn
+reads the version from the catalog.
+
+- **Add or bump a dev tool:** set its version under `catalog:` in `.yarnrc.yml`, write `"catalog:"` in the root
+  `devDependencies`, then run `yarn` and commit `yarn.lock`.
+- **A dev tool only one package uses** still goes in the root `devDependencies`, through the catalog. Package scripts
+  call it directly; to run it by hand from a package folder, use `yarn run -T`.
+- **No `catalog:` in a published package**, in any dependency field (`dependencies`, `peerDependencies`,
+  `devDependencies`): write inline ranges there. Only Yarn swaps `catalog:` for a real range when it packs, and this
+  repo packs and publishes with npm: `yarn package` and the CD dry run use `npm pack`, and Changesets 2.x publishes
+  with `npm publish`. A `catalog:` value would ship as-is and make the package uninstallable. `npm pack` copies
+  `devDependencies` into the tarball as written, so the rule covers them too. This lasts while publishing uses npm;
+  Changesets 3.x publishes through Yarn (#84).
+- **Keep `effect` in step:** the root `effect` range (in the catalog, needed as the peer of `@effect/vitest`) must
+  equal the `effect` range in `packages/platform-js/package.json` `dependencies`. Nothing checks this; bump both
+  together.
+
+To check a pack: run `yarn clean && yarn package` (the clean removes old tarballs), then
+`tar -xOf packages/platform-js/*.tgz package/package.json | grep catalog:` must print nothing.
+
+---
+
 ## Branching Strategy
 
 We use a simple, linear workflow. Branch names are not enforced, but the strongly recommended pattern is:
