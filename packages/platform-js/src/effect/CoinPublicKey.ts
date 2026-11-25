@@ -16,8 +16,8 @@
 import { Brand } from 'effect';
 import * as Either from 'effect/Either';
 
-import * as Hex_ from './Hex.js';
-import * as ParseError from './ParseError.js';
+import * as Hex_ from './Hex.ts';
+import * as ParseError from './ParseError.ts';
 
 /**
  * A user public key capable of receiving Zswap coins.

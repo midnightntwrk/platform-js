@@ -88,9 +88,14 @@ There is no `format` script yet. `-T` runs a tool installed at the workspace roo
 One package, `packages/platform-js/` (`@midnightntwrk/platform-js`, ESM). Modules live in `src/effect/`, one per
 domain type (`Hex`, `NetworkId`, `ContractAddress`, `CoinPublicKey`, `IntegerRange`, `Configuration`, ...), with
 private helpers in `src/effect/internal/`. Errors are `TypeId`-based (`src/effect/ParseError.ts`). `tsc` compiles
-`src/` straight to `dist/` (`tsconfig.build.json`; `tsconfig.publish.json` drops the maps for publishing). Public entry
-points are the `exports` in the package's `package.json`, which point at `dist/` (`types`, `import` and `default`
-conditions, ESM only); changing one is a public API change.
+`src/` straight to `dist/` (`tsconfig.build.json`; `tsconfig.publish.json` drops the maps for publishing). The package
+ships only `dist/` (`.js` and `.d.ts`).
+
+The `.ts` source is the source of truth: relative imports end in `.ts`, and `tsc` rewrites them to `.js`
+([ADR-0003](docs/decisions/0003-typescript-source-as-source-of-truth.md)). Public entry points are the `exports` in
+the package's `package.json`, which point at `dist/` (`types`, `import` and `default` conditions, ESM only); changing
+one is a public API change. `typesVersions` mirrors `effect` and `effect/*` for `node10` consumers, which ignore
+`exports` ([ADR-0004](docs/decisions/0004-keep-node10-subpath-types.md)).
 
 ## Testing
 
@@ -116,7 +121,7 @@ touched; full rationale and worked examples: `docs/CodingConventions.md`.
 
 ## Common Gotchas
 
-- **Tests import from `src/`** by relative path (`../../src/effect/Hex.js`), so they never need a build and never
+- **Tests import from `src/`** by relative path (`../../src/effect/Hex.ts`), so they never need a build and never
   test a stale `dist/`. Import public modules, not `src/effect/internal/`. A new `effect/` module is also re-exported
   from `src/effect/index.ts`.
 - **The type-check is clean**, and CI's `General Checks` job fails on any type error: every error `yarn typecheck`

@@ -11,6 +11,8 @@
     "noPropertyAccessFromIndexSignature": false,
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
+    "rewriteRelativeImportExtensions": true,
+    "erasableSyntaxOnly": true,
     "types": ["vitest/globals", "node"]
   },
 }

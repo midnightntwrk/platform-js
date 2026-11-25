@@ -11,7 +11,7 @@ paths:
 
 - Every test is a unit test: `*.test.ts` under `packages/platform-js/test/`. Pure: no network, no external services,
   no Docker. Must pass anywhere with zero setup. There is no integration tier; don't add one without an issue.
-- Tests import from `src/` by relative path (`../../src/effect/Hex.js`), never by package name, so a test never needs
+- Tests import from `src/` by relative path (`../../src/effect/Hex.ts`), never by package name, so a test never needs
   a build and never runs against a stale `dist/`. Import public modules, not `src/effect/internal/`: nothing enforces
   this, so check it in review.
 - Shared FastCheck arbitraries live in `test/effect/Arbitrary.ts`; add new ones there.

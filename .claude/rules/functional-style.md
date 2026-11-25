@@ -79,7 +79,10 @@ File paths below are relative to `packages/platform-js/src/`, except `test/…` 
 
 - The public API is what `packages/platform-js/package.json` `exports` exposes: `.`, `./effect`, `./effect/*`, each
   mapped to its compiled file in `dist/` (`types`, `import` and `default`). `./effect/internal/*` is blocked (`null`)
-  — internal code is free to change.
+  — internal code is free to change. `typesVersions` mirrors `effect` and `effect/*` for `node10` consumers and maps
+  `effect/internal/*` to nothing; keep it in step with `exports`.
+- Relative imports end in `.ts` (`import * as Hex from './Hex.ts'`); lint rejects `.js`. Source stays erasable
+  (`erasableSyntaxOnly`): no `enum`, no runtime `namespace`, no parameter properties, no `import =`/`export =`.
 - A new module under `effect/` must also be re-exported from `effect/index.ts`.
 - A removed or changed public signature is a major bump. Every PR that changes a package carries a changeset:
   `DEV_GUIDE.md` → Versioning & releases.

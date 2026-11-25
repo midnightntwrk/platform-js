@@ -476,7 +476,9 @@ jobs:
           done <<< "$DIRS"
 
       # Every public package went through the dry-run canary publish with a real snapshot version, is still absent from
-      # npm, and installs; the platform-js export map serves every public module and hides `effect/internal`.
+      # npm, and installs; the platform-js export map serves every public module and hides `effect/internal`; and the
+      # installed types check (`tsc --strict`, library checks on) for the root, `effect` and every `effect/*` module,
+      # with `effect/internal` unresolved, under node10 (through `typesVersions`), nodenext and bundler resolution.
       - name: Install the tarballs and check the entry points
         env:
           CONSUMER: ${{ runner.temp }}/consumer
@@ -529,6 +531,8 @@ jobs:
           if [ "${#TARBALLS[@]}" -ne "$COUNT" ]; then
             echo "::error::Expected ${COUNT} tarballs, found ${#TARBALLS[@]}"; exit 1
           fi
+          TS_VERSION=$(node -p 'require("./package.json").devDependencies.typescript')
+          TYPES_NODE_VERSION=$(node -p 'require("./package.json").devDependencies["@types/node"]')
           mkdir -p "$CONSUMER"
           cd "$CONSUMER"
           npm init -y > /dev/null
@@ -553,4 +557,38 @@ jobs:
             }
             console.log(`Not exported, as expected: ${hidden}`);
           '
+          # Type check as a consumer would, with the workspace TypeScript. `"type": "module"` makes the check file ESM
+          # under nodenext, so it resolves through the `import` condition as an ESM-only package's users do.
+          npm pkg set type=module
+          npm install --no-audit --no-fund "typescript@${TS_VERSION}" "@types/node@${TYPES_NODE_VERSION}"
+          # shellcheck disable=SC2016 # `${...}` inside the single-quoted script is a JavaScript template literal
+          node --input-type=module -e '
+            import { readdirSync, writeFileSync } from "node:fs";
+            const pkg = "@midnightntwrk/platform-js";
+            const dist = `node_modules/${pkg}/dist/effect`;
+            const dtsModules = (dir) =>
+              readdirSync(dir).filter((f) => f.endsWith(".d.ts")).map((f) => f.slice(0, -5));
+            const specifiers = [pkg, `${pkg}/effect`, ...dtsModules(dist).map((name) => `${pkg}/effect/${name}`)];
+            const internal = dtsModules(`${dist}/internal`);
+            if (internal.length === 0) throw new Error(`${dist}/internal has no declarations to check`);
+            const lines = [
+              ...specifiers.map((specifier, i) => `import * as m${i} from "${specifier}";`),
+              `export type Modules = [${specifiers.map((_, i) => `typeof m${i}`).join(", ")}];`,
+              "// @ts-expect-error effect/internal must not resolve",
+              `import * as hidden from "${pkg}/effect/internal/${internal[0]}";`,
+              "export type Hidden = typeof hidden;",
+            ];
+            writeFileSync("types-check.ts", `${lines.join("\n")}\n`);
+            console.log(lines.join("\n"));
+          '
+          for MODE in "commonjs node10" "nodenext nodenext" "esnext bundler"; do
+            read -r MODULE RESOLUTION <<< "$MODE"
+            EXTRA=()
+            if [ "$RESOLUTION" = node10 ]; then EXTRA=(--ignoreDeprecations 6.0); fi
+            if ! npx --no -- tsc --noEmit --strict --skipLibCheck false --types node \
+              --module "$MODULE" --moduleResolution "$RESOLUTION" "${EXTRA[@]}" types-check.ts; then
+              echo "::error::The installed types do not check under --moduleResolution ${RESOLUTION}"; exit 1
+            fi
+            echo "Types check under --module ${MODULE} --moduleResolution ${RESOLUTION}"
+          done
           echo "Installed and imported: $(basename -a "${TARBALLS[@]}" | tr '\n' ' ')"

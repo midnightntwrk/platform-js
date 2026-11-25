@@ -15,7 +15,7 @@
 
 import { Brand } from 'effect';
 
-import * as Hex from './Hex.js';
+import * as Hex from './Hex.ts';
 
 /**
  * The kind of signature scheme that a {@link SigningKey} is used with.

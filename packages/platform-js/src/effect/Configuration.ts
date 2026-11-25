@@ -23,10 +23,10 @@ import * as Layer from 'effect/Layer';
 import * as Option from 'effect/Option';
 import * as Schema from 'effect/Schema';
 
-import * as CoinPublicKey from './CoinPublicKey.js';
-import * as NetworkId from './NetworkId.js';
-import * as NetworkIdMoniker from './NetworkIdMoniker.js';
-import * as SigningKey from './SigningKey.js';
+import * as CoinPublicKey from './CoinPublicKey.ts';
+import * as NetworkId from './NetworkId.ts';
+import * as NetworkIdMoniker from './NetworkIdMoniker.ts';
+import * as SigningKey from './SigningKey.ts';
 
 /**
  * Provides accessors for retrieving configured keys.

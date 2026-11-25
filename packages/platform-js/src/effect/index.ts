@@ -13,13 +13,13 @@
  * limitations under the License.
  */
 
-export * as CoinPublicKey from './CoinPublicKey.js';
-export * as Configuration from './Configuration.js';
-export * as ContractAddress from './ContractAddress.js';
-export * as DomainSeparator from './DomainSeparator.js';
-export * as Hex from './Hex.js';
-export * as IntegerRange from './IntegerRange.js';
-export * as NetworkId from './NetworkId.js';
-export * as NetworkIdMoniker from './NetworkIdMoniker.js';
-export * as ParseError from './ParseError.js';
-export * as SigningKey from './SigningKey.js';
+export * as CoinPublicKey from './CoinPublicKey.ts';
+export * as Configuration from './Configuration.ts';
+export * as ContractAddress from './ContractAddress.ts';
+export * as DomainSeparator from './DomainSeparator.ts';
+export * as Hex from './Hex.ts';
+export * as IntegerRange from './IntegerRange.ts';
+export * as NetworkId from './NetworkId.ts';
+export * as NetworkIdMoniker from './NetworkIdMoniker.ts';
+export * as ParseError from './ParseError.ts';
+export * as SigningKey from './SigningKey.ts';

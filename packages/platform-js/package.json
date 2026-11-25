@@ -6,6 +6,13 @@
   "main": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "typesVersions": {
+    "*": {
+      "effect": ["./dist/effect/index.d.ts"],
+      "effect/internal/*": [],
+      "effect/*": ["./dist/effect/*.d.ts"]
+    }
+  },
   "exports": {
     "./package.json": "./package.json",
     ".": {

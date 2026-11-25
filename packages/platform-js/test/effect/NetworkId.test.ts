@@ -16,9 +16,9 @@
 import { describe, expect,it } from '@effect/vitest';
 import * as fc from 'effect/FastCheck';
 
-import * as NetworkId from '../../src/effect/NetworkId.js';
-import * as NetworkIdMoniker from '../../src/effect/NetworkIdMoniker.js';
-import * as Arbitrary from './Arbitrary.js';
+import * as NetworkId from '../../src/effect/NetworkId.ts';
+import * as NetworkIdMoniker from '../../src/effect/NetworkIdMoniker.ts';
+import * as Arbitrary from './Arbitrary.ts';
 
 describe('NetworkId', () => {
   describe('isMainNet', () => {

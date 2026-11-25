@@ -112,6 +112,12 @@ jobs:
         if: ${{ !cancelled() }}
         run: yarn lint
 
+      # Lint and the type-check pass even with a guard switched off, since no source file trips one; this feeds each
+      # guard a probe that must. It runs whatever the steps above reported, so one run reports all three.
+      - name: Check the source guards
+        if: ${{ !cancelled() }}
+        run: bash scripts/check-source-guards.sh
+
   test-unit:
     name: Unit Tests
     runs-on: ubuntu-26.04
