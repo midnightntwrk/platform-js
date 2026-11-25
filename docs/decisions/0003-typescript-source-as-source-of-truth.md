@@ -38,7 +38,8 @@ while the published package stays the compiled `.js` and `.d.ts` consumers alrea
 - **`.d.ts` paths:** the emitted `.d.ts` files keep the `.ts` paths (`export * as Hex from './Hex.ts'`). TypeScript
   resolves such a path to the sibling `.d.ts` in `dist/`, never to `src/`. A consumer of a tarball holding only `.js`
   and `.d.ts` type-checks cleanly, with `skipLibCheck: false`, on TypeScript 5.9 and 6.0 under `node10`, `nodenext`
-  and `bundler`; TypeScript 4.9, 5.0 and 5.6 also read the `.d.ts` files without errors.
+  and `bundler`. TypeScript 5.0 is the oldest that reads `.ts` paths in `.d.ts` files. TypeScript 4.9 reports TS2691
+  (or types the module as `any` under `skipLibCheck`), and effect 3.x needs TypeScript 5 anyway.
 - **Package:** `exports` keeps `types`, `import` and `default`, all in `dist/`. `files` is
   `["dist/", "!dist/**/*.map"]`, and `tsconfig.publish.json` emits no source or declaration maps, so the tarball holds
   `.js`, `.d.ts`, `package.json`, `LICENSE` and `README.md`.
@@ -46,14 +47,16 @@ while the published package stays the compiled `.js` and `.d.ts` consumers alrea
 ### Positive Consequences
 
 - The source imports files that exist; no import names a build output.
-- Consumers see no change.
+- Consumers' imports and resolved types are unchanged; only the relative paths inside the shipped `.d.ts` files now
+  end in `.ts`.
 - Nothing extra to build, ship or keep in step.
 
 ### Negative Consequences
 
 - A tool that reads `.d.ts` files without TypeScript's resolution could trip on the `.ts` paths. None is known; if one
   turns up, a post-build rewrite of `dist/**/*.d.ts` fixes it without changing the package layout.
-- Source must stay erasable: no `enum`, no runtime `namespace`, no parameter properties.
+- Source must stay erasable: no `enum`, no runtime `namespace`, no parameter properties, no `import x = require()`
+  or `export =`.
 - The layout differs from midnight-wallet's.
 - A future workspace package that wants to consume platform-js without a build needs a source condition then; this
   decision doesn't provide one.
@@ -63,7 +66,8 @@ while the published package stays the compiled `.js` and `.d.ts` consumers alrea
 ### `.ts` imports, shipping only `dist/`
 
 - Good, because the `.ts` file is what is edited and imported.
-- Good, because the published package is unchanged.
+- Good, because consumers' imports and resolved types are unchanged; only the relative paths inside the shipped
+  `.d.ts` files now end in `.ts`.
 - Bad, because nothing outside the package can resolve its source without a build.
 
 ### `.ts` imports plus a source export condition, shipping `src/`
