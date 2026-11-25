@@ -741,6 +741,9 @@ export const make: (input: NetworkIdInput) => NetworkId = (input) =>
   Object.create(NetworkIdProto(isNetworkId(input) ? input[MonikerSymbol] : input));
 ```
 
+`yarn lint` checks the mechanical part of these rules with `eslint-plugin-jsdoc`. What it checks, and what is left to
+review, is in [ADR-0005](decisions/0005-lint-public-api-jsdoc.md).
+
 **Recommended for new public APIs:** an `@example` block with a working snippet. No file in `src/` has one yet, so this
 is a recommendation, not existing house style.
 

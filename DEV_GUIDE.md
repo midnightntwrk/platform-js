@@ -10,7 +10,8 @@ the commands you can run, and how tests are organised.
 
 ## Local setup
 
-You need Node 22 or later. The exact version is pinned in [`.nvmrc`](.nvmrc).
+You need Node 22.22.2 or later on 22, or 24.15.0 or later (`engines` in the root `package.json`). The exact version is
+pinned in [`.nvmrc`](.nvmrc).
 
 ```bash
 nvm use && corepack enable
@@ -216,10 +217,10 @@ yarn run -T vitest run test/effect/Hex.test.ts
 
 ### Repo tooling tests
 
-`test/tooling/` at the repo root tests the repo's own tooling, not the package: the root scripts, `turbo.json` and the
-Vitest configs. The tests run the scripts as child processes against temporary folders and temporary git repos. They
-have their own config, `vitest.tooling.config.ts`, and run only through `yarn test:tooling` (part of
-`yarn verify:test`). `yarn typecheck:root` type-checks them.
+`test/tooling/` at the repo root tests the repo's own tooling, not the package: the root scripts, `turbo.json`, the
+Vitest configs and the root ESLint config's JSDoc rules. The tests run the scripts as child processes against temporary
+folders and temporary git repos. They have their own config, `vitest.tooling.config.ts`, and run only through
+`yarn test:tooling` (part of `yarn verify:test`). `yarn typecheck:root` type-checks them.
 
 ---
 
