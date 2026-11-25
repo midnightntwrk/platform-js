@@ -57,8 +57,8 @@ export declare namespace Hex {
  * Creates a hex-encoded string, of some arbitrary byte length, that has a `'0x'` prefix.
  *
  * @remarks
- *   Called directly, the constructor throws on invalid input. `PrefixedHex.either` returns the errors in a `Left`
- *   instead, and `PrefixedHex.option` returns `None` when only absence matters.
+ *   Non-throwing forms: `Hex.PrefixedHex.either` returns the errors in a `Left`; `Hex.PrefixedHex.option` returns `None`,
+ *   dropping the reason.
  * @category constructors
  * @param source The string to brand.
  * @returns `source`, branded as a {@link Hex.PrefixedHex | PrefixedHex}.
@@ -72,12 +72,11 @@ export const PrefixedHex: Brand.Brand.Constructor<Hex.PrefixedHex> = internal.ma
  * Creates a hex-encoded string, from some given constraints, that has a `'0x'` prefix.
  *
  * @remarks
- *   The returned constructor, called directly, throws `Brand.BrandErrors` on a string that is not prefixed hex or falls
- *   outside `constraints`; its `.either` and `.option` are the non-throwing forms.
- *
- *   `constraints.byteLength` is read on each call of the returned constructor, after the hex and prefix checks, not here.
- *   If {@link IntegerRange.from} cannot read it, a string that passes those checks makes the constructor, and its
- *   `.either`, `.option` and `.is`, throw an `Error`.
+ *   The returned constructor throws `Brand.BrandErrors` on a string that is not prefixed hex or falls outside
+ *   `constraints`. Its `.either` and `.option` return the errors instead, with one exception: `constraints.byteLength`
+ *   is taken here but parsed on each call, after the hex and prefix checks. An empty value (`''`, `0`, `null`) is
+ *   ignored and no length is checked. Any other value {@link IntegerRange.from} cannot read makes the constructor, and
+ *   its `.either`, `.option` and `.is`, throw an `Error` on every string that passes the hex and prefix checks.
  * @category constructors
  * @param constraints The {@link HexConstraints} to apply when parsing a received hex-encoded string.
  * @returns A function that creates a {@link Hex.PrefixedHex | PrefixedHex} instance from a received string ensuring that
@@ -91,12 +90,12 @@ export const ConstrainedPrefixedHex: (constraints: HexConstraints) => Brand.Bran
  * Creates a plain hex-encoded string, of some arbitrary byte length.
  *
  * @remarks
- *   Called directly, the constructor throws on invalid input. `PlainHex.either` returns the errors in a `Left` instead,
- *   and `PlainHex.option` returns `None` when only absence matters.
+ *   Non-throwing forms: `Hex.PlainHex.either` returns the errors in a `Left`; `Hex.PlainHex.option` returns `None`,
+ *   dropping the reason.
  * @category constructors
  * @param source The string to brand.
  * @returns `source`, branded as a {@link Hex.PlainHex | PlainHex}.
- * @throws `Brand.BrandErrors` if `source` is not one or more whole bytes of hex digits with no `0x` prefix.
+ * @throws `Brand.BrandErrors` if `source` is not plain hex: one or more whole bytes of hex digits, with no `0x` prefix.
  */
 export const PlainHex: Brand.Brand.Constructor<Hex.PlainHex> = internal.make<Hex.PlainHex>({ requirePrefix: false });
 
@@ -104,12 +103,11 @@ export const PlainHex: Brand.Brand.Constructor<Hex.PlainHex> = internal.make<Hex
  * Creates a plain hex-encoded string, from some given constraints.
  *
  * @remarks
- *   The returned constructor, called directly, throws `Brand.BrandErrors` on a string that is not plain hex or falls
- *   outside `constraints`; its `.either` and `.option` are the non-throwing forms.
- *
- *   `constraints.byteLength` is read on each call of the returned constructor, after the hex and prefix checks, not here.
- *   If {@link IntegerRange.from} cannot read it, a string that passes those checks makes the constructor, and its
- *   `.either`, `.option` and `.is`, throw an `Error`.
+ *   The returned constructor throws `Brand.BrandErrors` on a string that is not plain hex or falls outside `constraints`.
+ *   Its `.either` and `.option` return the errors instead, with one exception: `constraints.byteLength` is taken here
+ *   but parsed on each call, after the hex and prefix checks. An empty value (`''`, `0`, `null`) is ignored and no
+ *   length is checked. Any other value {@link IntegerRange.from} cannot read makes the constructor, and its `.either`,
+ *   `.option` and `.is`, throw an `Error` on every string that passes the hex and prefix checks.
  * @category constructors
  * @param constraints The {@link HexConstraints} to apply when parsing a received hex-encoded string.
  * @returns A function that creates a {@link Hex.PlainHex | PlainHex} instance from a received string ensuring that it

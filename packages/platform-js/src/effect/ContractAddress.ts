@@ -28,15 +28,15 @@ export type ContractAddress = Brand.Branded<string, 'ContractAddress'>;
  * Creates a contract address from a plain hex-encoded string, 32 bytes in length.
  *
  * @remarks
- *   Called directly, the constructor throws on invalid input. `ContractAddress.either` returns the errors in a `Left`
- *   instead, and `ContractAddress.option` returns `None` when only absence matters.
+ *   Non-throwing forms: `ContractAddress.ContractAddress.either` returns the errors in a `Left`;
+ *   `ContractAddress.ContractAddress.option` returns `None`, dropping the reason.
  *
- *   Brands are erased at runtime, and {@link DomainSeparator} shares this refinement, so `ContractAddress.is` accepts a
- *   domain separator too. The two stay apart at compile time only.
+ *   Brands are erased at runtime, and `DomainSeparator` shares this refinement, so `ContractAddress.ContractAddress.is`
+ *   accepts a domain separator too. The two stay apart at compile time only.
  * @category constructors
  * @param source The string to brand.
  * @returns `source`, branded as a {@link ContractAddress}.
- * @throws `Brand.BrandErrors` if `source` is not plain hex (no `0x` prefix) exactly 32 bytes in length.
+ * @throws `Brand.BrandErrors` if `source` is not plain hex of exactly 32 bytes.
  */
 export const ContractAddress = Brand.all(
   Brand.nominal<ContractAddress>(),

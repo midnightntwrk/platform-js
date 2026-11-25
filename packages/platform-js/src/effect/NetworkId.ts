@@ -39,13 +39,15 @@ const MonikerSymbol: unique symbol = Symbol.for('platform-js/effect/NetworkId#Ne
  * @remarks
  *   A {@link NetworkId} can be constructed by calling {@link make} with a valid
  *   {@link NetworkIdMoniker.NetworkIdMoniker | NetworkIdMoniker} identifying the network. Alternatively, in order to use
- *   the Midnight MainNet, use the exported instance {@link MainNet}.
+ *   the Midnight MainNet, use the exported instance {@link MainNet}. {@link make} does not check the moniker again: check
+ *   untrusted strings with `NetworkIdMoniker.either` first.
  *
  *   {@link make} keeps the moniker it is given, so `make('main')` is not {@link MainNet}: it is not equal to it, and its
- *   `isMainNet()` is `false`.
+ *   `isMainNet()` is `false`. Both print as `main` (`toString`, and the `moniker` field of `toJSON`).
  *
- *   Compare network identifiers with {@link equals}. `Equal.equals` returns `false` for two separately made identifiers
- *   with the same moniker, because a `NetworkId` has no hash, and so it does not work as a `HashSet` or `HashMap` key.
+ *   Compare network identifiers with {@link equals}. The type declares a hash (through `Equal.Equal`), but a `NetworkId`
+ *   has none at runtime, so `Equal.equals` is `false` for two separately made identifiers with the same moniker, and a
+ *   `HashSet` or `HashMap` matches only the same instance.
  * @category models
  * @see {@link NetworkIdInput}
  * @see {@link make}
@@ -56,8 +58,7 @@ export interface NetworkId extends Equal.Equal, Inspectable {
   /**
    * Determines if the network identifier represents the Midnight MainNet.
    *
-   * @returns `true` for {@link MainNet} and network identifiers made from it; `false` otherwise, `make('main')`
-   *   included.
+   * @returns `true` only for {@link MainNet} and identifiers made from it (`make(MainNet)`).
    */
   readonly isMainNet: () => boolean;
 }
@@ -75,8 +76,11 @@ export type NetworkIdInput = NetworkIdMoniker.NetworkIdMoniker | NetworkId;
  *
  * @remarks
  *   For two {@link NetworkId} instances to be considered equal, their underlying monikers must be equal. {@link MainNet}
- *   holds an internal moniker of its own, not `'main'`, so it equals only itself and identifiers made from it.
+ *   equals only itself and identifiers made from it (`make(MainNet)`).
  * @category equivalence
+ * @param self The first {@link NetworkId}.
+ * @param that The {@link NetworkId} to compare with `self`.
+ * @returns `true` if `self` and `that` have the same moniker; `false` otherwise.
  */
 export const Equivalence: equivalence.Equivalence<NetworkId> = equivalence.mapInput(
   (a, b) => Equal.equals(a, b),
@@ -97,7 +101,7 @@ export const isNetworkId = (u: unknown): u is NetworkId => hasProperty(u, TypeId
  *
  * @remarks
  *   Call it data-first, `equals(self, that)`, or data-last, `equals(that)(self)`, for use in a `pipe`. Equality is that
- *   of {@link Equivalence}: the same moniker.
+ *   of {@link Equivalence}.
  * @category predicates
  * @param self The first {@link NetworkId}.
  * @param that The {@link NetworkId} to compare with `self`.

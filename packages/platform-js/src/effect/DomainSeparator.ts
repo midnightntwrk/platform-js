@@ -28,15 +28,15 @@ export type DomainSeparator = Brand.Branded<string, 'DomainSeparator'>;
  * Creates a token domain separator from a plain hex-encoded string, 32 bytes in length.
  *
  * @remarks
- *   Called directly, the constructor throws on invalid input. `DomainSeparator.either` returns the errors in a `Left`
- *   instead, and `DomainSeparator.option` returns `None` when only absence matters.
+ *   Non-throwing forms: `DomainSeparator.DomainSeparator.either` returns the errors in a `Left`;
+ *   `DomainSeparator.DomainSeparator.option` returns `None`, dropping the reason.
  *
- *   Brands are erased at runtime, and {@link ContractAddress} shares this refinement, so `DomainSeparator.is` accepts a
- *   contract address too. The two stay apart at compile time only.
+ *   Brands are erased at runtime, and `ContractAddress` shares this refinement, so `DomainSeparator.DomainSeparator.is`
+ *   accepts a contract address too. The two stay apart at compile time only.
  * @category constructors
  * @param source The string to brand.
  * @returns `source`, branded as a {@link DomainSeparator}.
- * @throws `Brand.BrandErrors` if `source` is not plain hex (no `0x` prefix) exactly 32 bytes in length.
+ * @throws `Brand.BrandErrors` if `source` is not plain hex of exactly 32 bytes.
  */
 export const DomainSeparator = Brand.all(
   Brand.nominal<DomainSeparator>(),

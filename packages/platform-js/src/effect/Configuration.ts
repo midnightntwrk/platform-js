@@ -41,6 +41,10 @@ export class Keys extends Context.Tag('@midnightntwrk/platform-js/Configuration#
 /**
  * Provides an accessor for retrieving the configured {@link NetworkId.NetworkId | NetworkId}.
  *
+ * @remarks
+ *   When `network` is not configured, the service is made from {@link NetworkId.MainNet}: it equals `MainNet`, and its
+ *   `isMainNet()` is `true`. A configured `'main'` is `NetworkId.make('main')`, whose `isMainNet()` is `false`: leave
+ *   `network` unset for MainNet. An invalid moniker fails the layer with a `ConfigError`.
  * @category services
  */
 // The tag key is a runtime identifier other code may depend on, so it keeps its published value rather than the
@@ -52,7 +56,7 @@ export class Network extends Context.Tag('@midnightntwrk/platform-js/Configurati
 >() {}
 
 /**
- * The shapes of the services this module provides.
+ * The shape of the {@link Keys} service.
  *
  * @category models
  */
@@ -66,6 +70,9 @@ export declare namespace Configuration {
     /**
      * Gets the current user's Zswap public key.
      *
+     * @remarks
+     *   `keys.coinPublic` is not checked as a key. Plain hex loads as a {@link CoinPublicKey.Hex}. Any other string,
+     *   including the empty string, loads as a {@link CoinPublicKey.Bech32m} unchecked.
      * @category keys
      */
     readonly coinPublicKey: CoinPublicKey.CoinPublicKey;
@@ -82,6 +89,7 @@ export declare namespace Configuration {
      *   `keys.signingKind` configuration value. When `signingKind` is not configured it defaults to
      *   {@link SigningKey.DefaultSignatureKind} (`'schnorr'`).
      * @category keys
+     * @returns `Some` signing key when `keys.signing` is configured; `None` otherwise.
      */
     getSigningKey(): Option.Option<SigningKey.SigningKey>;
   }
@@ -139,7 +147,8 @@ const makeNetwork: () => Layer.Layer<Network, ConfigError> = () =>
  *
  * @remarks
  *   An environment variable overrides the JSON value at the same path, named in constant case with `_` between path
- *   segments: `KEYS_COIN_PUBLIC` overrides `keys.coinPublic`.
+ *   segments: `KEYS_COIN_PUBLIC` overrides `keys.coinPublic`. A top-level key reads a bare name: `NETWORK` overrides
+ *   `network`.
  * @category constructors
  * @param json A JSON object from which configuration values can be read.
  * @returns A `ConfigProvider` that defaults to values present in `json`, but allows them to be overridden via
@@ -155,6 +164,9 @@ export const configProvider: (json: unknown) => ConfigProvider.ConfigProvider = 
  * A default layer that provides a collection of services that provide accessors, that in turn, access underlying
  * configured values.
  *
+ * @remarks
+ *   A missing `keys.coinPublic`, or an invalid `network`, `keys.signing` or `keys.signingKind`, fails the layer with a
+ *   `ConfigError`; `keys.coinPublic` and `network: 'main'` load as described on {@link Keys} and {@link Network}.
  * @category layers
  * @see {@link Keys}
  * @see {@link Network}

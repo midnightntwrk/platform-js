@@ -180,6 +180,9 @@ returns `Option.Option<SigningKey.SigningKey>` rather than `undefined` when no k
   throws: the same `.is` makes it return every input unchanged, hex included
 - `IntegerRange.from`, `IntegerRange.inclusive`, `IntegerRange.exclusive` (#25): throw through the private `make` on
   input it cannot read (`from` on a malformed range string)
+- The constructors returned by `Hex.ConstrainedPlainHex` and `Hex.ConstrainedPrefixedHex` (#25): throw an `Error` on a
+  `constraints.byteLength` that `IntegerRange.from` cannot read, even from `.either`, `.option` and `.is`, because the
+  constraint is parsed on each call, after the hex and prefix checks
 - `SigningKey.make` (#26): throws `BrandErrors` on an invalid key string, with no total alternative
 
 ### Immutability and Pure Functions (MANDATORY)
@@ -703,7 +706,8 @@ APIs:
   and `.option`
 - `@throws` on every export that can throw (a brand constructor called directly, and the known throwing exports under
   Total Functions), in plain text: what is thrown, in backticks, and what makes it throw, e.g.
-  ``@throws `Brand.BrandErrors` if `source` is not plain hex``. Read what is thrown from the code, not from a guess
+  ``@throws `Brand.BrandErrors` if `source` is not plain hex``. Read what is thrown from the code, not from a guess.
+  `Brand.BrandErrors` is an array of refinement errors, not an `Error`: `instanceof Error` is `false`
 - No JSDoc on a `declare namespace` merged with a documented type of the same name (`Hex`, `CoinPublicKey`,
   `SigningKey`): the type's JSDoc covers the merged name, and a second one shows twice on hover. Members inside the
   namespace keep their own

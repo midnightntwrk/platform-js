@@ -28,8 +28,8 @@ export type NetworkIdMoniker = Brand.Branded<string, 'NetworkIdMoniker'>;
  * Creates a network identifier moniker from a source string.
  *
  * @remarks
- *   Called directly, the constructor throws on invalid input. `NetworkIdMoniker.either` returns the errors in a `Left`
- *   instead, and `NetworkIdMoniker.option` returns `None` when only absence matters.
+ *   Non-throwing forms: `NetworkIdMoniker.NetworkIdMoniker.either` returns the errors in a `Left`;
+ *   `NetworkIdMoniker.NetworkIdMoniker.option` returns `None`, dropping the reason.
  * @category constructors
  * @param source The string to brand.
  * @returns `source`, branded as a {@link NetworkIdMoniker}.
