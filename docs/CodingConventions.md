@@ -305,7 +305,7 @@ Effect.gen(function* () {
 // src/effect/test/Hex.test.ts - pass an Either to an Effect combinator
 Effect.gen(function* () {
   const error = yield* Effect.flip(Hex.parseHex('HOSKYA'));
-  expect(ParseError.isParseError(error)).toBeTruthy();
+  expect(ParseError.isParseError(error)).toBe(true);
 });
 ```
 

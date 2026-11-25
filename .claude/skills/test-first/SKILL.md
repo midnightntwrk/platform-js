@@ -58,7 +58,7 @@ The minimum code that makes the test pass. Follow the repo's functional rules (`
 
 Re-run both commands from step 3. The test passes and `tsc` shows no errors.
 
-Check the test is unchanged since the gate: `git diff <commit> -- 'src/**/test/**'` is empty, or each `git hash-object`
+Check the test is unchanged since the gate: `git diff <commit> -- ':(top)packages/*/src/**/test/**'` is empty, or each `git hash-object`
 matches. If not, go back to step 4 and get approval again.
 
 No `yarn lint` or full `yarn test` per cycle.

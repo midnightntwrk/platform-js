@@ -7,8 +7,10 @@ paths:
 
 Mandatory for all library code. Rationale and worked examples: `docs/CodingConventions.md`.
 File paths below are relative to `packages/platform-js/src/`, except paths starting `packages/` (relative to the repo
-root). Tests in `src/**/test/` follow `.claude/rules/testing.md`; the JSDoc rules below do not apply to them. Quoted
-import specifiers (`'effect/Either'`) and Effect module names (`effect/Brand`, `effect/Array`) name Effect's own modules, not files.
+root). Tests in `src/**/test/` follow `.claude/rules/testing.md` and these rules too, with two exceptions: the JSDoc
+rules (Public API documentation) do not apply to them, and a `forEach` over assertions or an `it.each` table is not a
+loop to replace. Quoted import specifiers (`'effect/Either'`) and Effect module names (`effect/Brand`, `effect/Array`)
+name Effect's own modules, not files.
 
 ## Immutability
 

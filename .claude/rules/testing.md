@@ -17,14 +17,17 @@ paths:
 - Tooling tests are the one exception. Tests for the root scripts, `turbo.json`, the Vitest configs and the root ESLint
   config's JSDoc rules live in `test/tooling/` at the repo root and run with `yarn test:tooling` (root
   `vitest.tooling.config.ts`). They may use temp dirs and temp git repos, and run the scripts by path as child
-  processes. They are not package tests, so the `src/` import rules below do not apply to them.
+  processes. They are not package tests, so the relative-import rule below does not apply to them. The root ESLint
+  block for `**/test/**` does, since `test/tooling/` matches it: that includes the `internal/` ban.
 - Tests import the module under test by relative path (`../Hex.ts`), never by package name, so a test never needs a
-  build and never runs against a stale `dist/`. Import public modules, not `internal/`: ESLint's
-  `no-restricted-imports` rejects an `internal/` path in a `test/` folder. Internal helpers are covered through the
-  public modules that use them.
+  build and never runs against a stale `dist/`. Import public modules, not `internal/`. ESLint rejects an `internal/`
+  path in a `test/` folder in every form: a static `import` (`no-restricted-imports`), and `import()`, `vi.mock`,
+  `vi.doMock`, `vi.importActual` and `vi.importMock` (`no-restricted-syntax`). Internal helpers are covered through
+  the public modules that use them.
 - `test/` folders never reach `dist/` (`tsconfig.build.json` excludes them), are left out of coverage, and are skipped
   by `check-barrel-exports` and the JSDoc lint.
-- Shared FastCheck arbitraries live in `src/effect/test/Arbitrary.ts`; add new ones there.
+- Shared FastCheck arbitraries live in `src/effect/test/Arbitrary.ts`; add new ones there. The hex brands' error
+  messages live in `src/effect/test/Messages.ts`; assert those texts through it, not a local copy.
 - Commands (all tests, one file, type-check): `CLAUDE.md` → Build Commands.
 
 ## TDD contract (mandatory — full loop: the `test-first` skill)
@@ -73,3 +76,7 @@ paths:
   matches it. Assert the errors themselves: `expect(Brand.either(x)).toEqual(Either.left([{ message: '…' }]))`, or,
   to check the constructor throws, `expect(() => Brand(x)).toThrow(expect.arrayContaining([{ message: '…' }]))`.
   Never a bare `toThrow()` / `toThrowError()`, and never `expect(() => Effect.runSync(...)).toThrow()`.
+- A hex brand that rejects a string its hex pattern parsed (an incomplete last byte, a bad digit) adds the parsed
+  groups as `meta` (`'0x'` too), so `{ message }` alone does not equal it. Match `meta` with its groups,
+  `expect.objectContaining({ hasPrefix, byteChars, incompleteChars })`, or with `expect.anything()` when the groups are
+  not what the test is about. Prefix and byte-length rejections carry no `meta`.

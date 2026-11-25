@@ -15,8 +15,9 @@
 // @ts-check
 
 // Checks platform-js's barrel files against its sources. The package's `exports` map is wildcard-based
-// (`./effect/*`, with `./effect/internal/*` set to null), so a module is public as soon as it exists under
-// src/effect/, at any depth, and the barrels are what must keep up:
+// (`./effect/*`, with `./effect/internal/*` set to null), so a module under src/effect/, at any depth, is public once
+// it is built, and the barrels are what must keep up. test/ folders are never built (`tsconfig.build.json` excludes
+// `src/**/test/**`), so this check skips them, as it skips internal/:
 //   1. every module under src/effect/, at any depth, outside internal/ and test/ is re-exported from
 //      src/effect/index.ts by its relative path, since the `./effect/*` wildcard already makes each such module public;
 //   2. src/index.ts re-exports ./effect/index.ts;
