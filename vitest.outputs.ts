@@ -30,6 +30,9 @@ export const testLaneOf = (script: string | undefined): TestLane =>
  * names, so a shared path lets one lane delete or overwrite the other's output. Giving every lane, `all` included, its
  * own folder keeps any two runs apart. The `outputs` of the `test`, `test:unit` and `test:integration` tasks in
  * `turbo.json` name the same folders, so a cache hit restores only its own lane's files.
+ *
+ * The lane comes from the package script, not from `--project`: a run started without one (`yarn run -T vitest run
+ * --project unit`, an editor's test runner) is the `all` lane and writes under `coverage/all` and `reports/all`.
  */
 export const testOutputs = (lane: TestLane = testLaneOf(process.env.npm_lifecycle_event)) => ({
   coverageDirectory: `./coverage/${lane}`,

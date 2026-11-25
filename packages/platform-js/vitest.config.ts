@@ -19,11 +19,19 @@ import { testOutputs } from '../../vitest.outputs.ts';
 
 const outputs = testOutputs();
 
+const exclude = [...configDefaults.exclude, '**/dist/**'];
+
+// Settings every project shares. The projects do not use `extends: true`: Vitest concatenates inherited `include`
+// lists, so the top-level `include` below would leak unit tests into the integration project.
+const shared = { environment: 'node', globals: true } as const;
+
 export default defineConfig({
   test: {
-    environment: 'node',
-    globals: true,
-    exclude: [...configDefaults.exclude, '**/dist/**'],
+    ...shared,
+    // Runners that ignore `projects` (vitest started from the repo root, some editor integrations) use this top-level
+    // selection: the unit project's files, never integration tests or files under src/.
+    include: ['test/**/*.test.ts'],
+    exclude: [...exclude, '**/*.integration.test.ts'],
     coverage: {
       provider: 'v8',
       enabled: true,
@@ -34,18 +42,19 @@ export default defineConfig({
     },
     projects: [
       {
-        extends: true,
         test: {
+          ...shared,
           name: 'unit',
           include: ['test/**/*.test.ts'],
-          exclude: [...configDefaults.exclude, '**/dist/**', '**/*.integration.test.ts'],
+          exclude: [...exclude, '**/*.integration.test.ts'],
         },
       },
       {
-        extends: true,
         test: {
+          ...shared,
           name: 'integration',
           include: ['test/**/*.integration.test.ts'],
+          exclude,
         },
       },
     ],
