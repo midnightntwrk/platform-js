@@ -42,9 +42,13 @@ paths:
 ## House style (canonical file: `src/effect/test/Hex.test.ts`)
 
 - Import `describe`, `expect`, `it` from `@effect/vitest`. Use `it.effect(..., () => Effect.gen(...))` for Effect code.
-- Prefer property tests with `effect/FastCheck` (`fc.assert(fc.property(...))`) over hand-picked examples. For
-  Effect bodies use `it.prop` / `it.effect.prop`, or `fc.asyncProperty` with `Effect.runPromise`; then **return or
-  await** `fc.assert(...)`, or the test passes before the property runs.
+- Use a property test with `effect/FastCheck` (`fc.assert(fc.property(...))`, inside a plain `it`) for a rule that
+  holds over an input space: every byte length in a range, every valid moniker, every value either side of a bound.
+  Use an example for an exact error message or a named edge case (`''`, `'0x'`). Most modules need both. For Effect
+  bodies use `it.prop` / `it.effect.prop`, or `fc.asyncProperty` with `Effect.runPromise`; then **return or await**
+  `fc.assert(...)`, or the test passes before the property runs.
+- Make a generator reach the edges: random integers seldom land on a bound, so check the values either side of it
+  (`valuesAround` in `src/effect/test/IntegerRange.test.ts`) rather than trusting chance.
 - Test names describe behaviour. New files use the `should …` style; in an existing file, match its style. Group by
   `describe` per module and per function.
 
