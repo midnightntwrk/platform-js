@@ -15,7 +15,7 @@
 /// <reference types="vitest" />
 import { configDefaults, defineConfig } from 'vitest/config';
 
-import { testOutputs } from '../../vitest.outputs.ts';
+import { checksCoverageThresholds, testOutputs } from '../../vitest.outputs.ts';
 
 const outputs = testOutputs();
 
@@ -39,6 +39,11 @@ export default defineConfig({
       include: ['src/**/*.ts'],
       // Tests and their helpers sit beside the source (ADR-0006); coverage measures only the code they test.
       exclude: ['src/**/test/**'],
+      // A floor, not a target: the coverage the unit tests reach, rounded down to the nearest 5. Raise it as the
+      // known gaps close; never lower it to make a change pass. Checked only on a full unit run.
+      ...(checksCoverageThresholds(process.env.npm_lifecycle_event)
+        ? { thresholds: { statements: 90, branches: 80, functions: 90, lines: 90 } }
+        : {}),
       reporter: ['clover', 'json', 'json-summary', 'lcov', 'text'],
       reportsDirectory: outputs.coverageDirectory,
     },

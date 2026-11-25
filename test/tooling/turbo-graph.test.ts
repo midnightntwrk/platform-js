@@ -73,6 +73,23 @@ describe('platform-js vitest config', () => {
     expect(fromRoot).toEqual(unit);
   });
 
+  it('should not fail a single-file run on the coverage thresholds', () => {
+    const result = run('yarn', ['run', '-T', 'vitest', 'run', 'src/effect/test/Hex.test.ts'], {
+      cwd: path.join(repoRoot, 'packages/platform-js'),
+      env: { npm_lifecycle_event: '' },
+    });
+
+    expect(result.stdout + result.stderr).not.toContain('threshold');
+    expect(result.status).toBe(0);
+  });
+
+  it('should not fail the empty integration lane on the coverage thresholds', () => {
+    const result = run('yarn', ['test:integration'], { cwd: path.join(repoRoot, 'packages/platform-js') });
+
+    expect(result.stdout + result.stderr).not.toContain('threshold');
+    expect(result.status).toBe(0);
+  });
+
   it('should keep every unit test out of the integration project', () => {
     const packageDir = path.join(repoRoot, 'packages/platform-js');
     const unit = listedFiles(packageDir, ['--project', 'unit']);

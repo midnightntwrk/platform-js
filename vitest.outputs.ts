@@ -39,3 +39,12 @@ export const testOutputs = (lane: TestLane = testLaneOf(process.env.npm_lifecycl
   junitFile: `reports/${lane}/test-report.xml`,
   htmlFile: `reports/${lane}/test-report.html`,
 });
+
+/**
+ * Whether a run checks the coverage thresholds: only a full run of the unit tests, the package's `test` or `test:unit`
+ * script. Any other run measures less than the whole suite would, so a threshold would fail it for no fault: the empty
+ * integration lane covers nothing, and a single-file or editor run (`yarn run -T vitest run <file>`) covers one
+ * module.
+ */
+export const checksCoverageThresholds = (script: string | undefined): boolean =>
+  script === 'test' || script === 'test:unit';
