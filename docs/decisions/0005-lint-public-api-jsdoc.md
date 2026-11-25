@@ -31,38 +31,51 @@ exports with gaps. Should a lint rule enforce the rule, so new gaps fail `yarn l
 Chosen option: "Add a narrow `eslint-plugin-jsdoc` config", because it turns the mechanical part of the rule into a
 `yarn lint` failure for one dev dependency, and leaves the rest to review as before.
 
-The config is a block in the root `eslint.config.mjs`, for `packages/*/src/**/*.ts` minus `internal/` and `index.ts`:
+The config is a block in the root `eslint.config.mjs`, for `packages/*/src/**/*.{ts,mts,tsx}` minus `internal/` and the
+two barrels, `src/index.ts` and `src/effect/index.ts`. Any other `index.ts` is checked like any other file.
 
 - `jsdoc/require-jsdoc` and `jsdoc/require-description` on exported functions, constants, types, interfaces, enums and
-  classes. A `declare namespace` merged with a same-named type needs no JSDoc of its own (#88); its members do.
-- `jsdoc/require-param` and `jsdoc/require-returns` on exports written as a function: a function declaration, or a
-  constant set to an arrow function or a function expression.
-- `jsdoc/no-restricted-syntax` for a `@category` tag on every export's JSDoc block, namespace members included, the
+  classes. Functions include `export declare function` and overload signatures. A `declare namespace` needs no JSDoc of
+  its own, whether it merges with a same-named type or stands alone; its members do.
+- `jsdoc/require-param` and `jsdoc/require-returns` on exports written as a function: a function declaration, an
+  `export declare function` or overload signature, or a constant set to an arrow function or a function expression. Each
+  parameter needs one `@param`. A destructured parameter's fields need no `@param` of their own.
+- `jsdoc/no-restricted-syntax` for a `@category` tag on every export's JSDoc block, namespace members included, every
   namespace itself left out. `jsdoc/no-missing-syntax` can't do this: it passes a whole file on one match.
+- ESLint's own `no-restricted-syntax` bans a local export list (`export { x }` with no `from`) and `export default`.
+  Every export is declared in place, so the rules above can see its JSDoc. Re-exports (`export { x } from './X.ts'`,
+  `export * from`) stay allowed. `jsdoc/no-restricted-syntax` can't do this ban: it checks only nodes that already have
+  a JSDoc block.
 
 The plugin's version lives in the Yarn catalog (`.yarnrc.yml`).
 
 Not checked, so left to review:
 
-- `@param`/`@returns` on an export not written as a function: one built by a call (`dual(...)`, `Brand.refined`,
-  `internal.make(...)`) or assigned from another binding (`= internal.parseHex`).
+- `@param`/`@returns` on an export not written as a function: one built by a call or assigned from another binding
+  (`= internal.parseHex`). Calls include `dual(...)` and the brand constructors (`Brand.refined`, `internal.make(...)`).
+  The house rule wants `@param`/`@returns` on a brand constructor, but the lint can't see one.
+- A function export wrapped in `as` or `satisfies` (`export const f = ((a) => a) as F`): the lint doesn't see its
+  parameters.
+- `@returns` on a function that returns `void`: the plugin skips it, though the house rule has no exception.
+- Members of an exported class: its methods and properties.
+- JSDoc on a `declare namespace` with no same-named type: every namespace is exempt, so its doc is review's job.
 - `@throws`: a lint can't tell which exports throw.
 - The `@category` value: the check finds the tag, not whether its value is one of the set in use.
-- `/** @internal */` in `internal/`, and anything in `index.ts`: both are outside the config.
+- `/** @internal */` in `internal/`, and the two barrels `src/index.ts` and `src/effect/index.ts`: all are outside the
+  config.
 - Whether a doc is true.
 
 ### Positive Consequences
 
 - A new export with no JSDoc, no description, no `@category`, or a plain function with no `@param`/`@returns`, fails
   `yarn lint` and CI's General Checks.
-- #88's fixes can't quietly come undone.
+- `jsdoc/require-jsdoc`'s `--fix` inserts empty JSDoc blocks; they then fail `require-description`, so a stub can't slip
+  through.
 
 ### Negative Consequences
 
 - The rule could only start once #88 had filled the existing gaps, so it lands after #88.
-- The items under "Not checked" stay review-only, and a clean lint can read as a complete doc.
-- `jsdoc/require-jsdoc`'s `--fix` inserts empty JSDoc blocks; they then fail `require-description`, so a stub can't slip
-  through.
+- The items under "Not checked" stay review-only.
 
 ## Pros and Cons of the Options
 
