@@ -531,8 +531,10 @@ jobs:
           if [ "${#TARBALLS[@]}" -ne "$COUNT" ]; then
             echo "::error::Expected ${COUNT} tarballs, found ${#TARBALLS[@]}"; exit 1
           fi
-          TS_VERSION=$(node -p 'require("./package.json").devDependencies.typescript')
-          TYPES_NODE_VERSION=$(node -p 'require("./package.json").devDependencies["@types/node"]')
+          # The root `devDependencies` say `catalog:`; the version ranges live in the Yarn catalog.
+          CATALOG=$(yarn config get catalog --json)
+          TS_VERSION=$(node -p 'JSON.parse(process.argv[1]).typescript' "$CATALOG")
+          TYPES_NODE_VERSION=$(node -p 'JSON.parse(process.argv[1])["@types/node"]' "$CATALOG")
           mkdir -p "$CONSUMER"
           cd "$CONSUMER"
           npm init -y > /dev/null

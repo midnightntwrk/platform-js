@@ -39,6 +39,8 @@ reads the version from the catalog.
   with `npm publish`. A `catalog:` value would ship as-is and make the package uninstallable. `npm pack` copies
   `devDependencies` into the tarball as written, so the rule covers them too. This lasts while publishing uses npm;
   Changesets 3.x publishes through Yarn (#84).
+- **A script that needs a tool's version** reads it from the catalog, not from the root `package.json` (which says
+  `catalog:`): `yarn config get catalog --json` prints the whole catalog as JSON.
 - **Keep `effect` in step:** the root `effect` range (in the catalog, needed as the peer of `@effect/vitest`) must
   equal the `effect` range in `packages/platform-js/package.json` `dependencies`. Nothing checks this; bump both
   together.
