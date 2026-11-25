@@ -14,26 +14,59 @@
  */
 
 import { describe, expect, it } from '@effect/vitest';
+import * as Either from 'effect/Either';
+import * as fc from 'effect/FastCheck';
 
 import * as SigningKey from '../SigningKey.ts';
+import * as Arbitrary from './Arbitrary.ts';
 
 // A valid signing key value is plain hex, 32 to 35 bytes in length.
 const VALID_VALUE = 'a1'.repeat(32);
 
+const wrongByteLength = (source: string, byteLength: number) =>
+  `Source string '${source}' has a byte length of ${byteLength}, but expected 32..=35`;
+
 describe('SigningKey', () => {
   describe('Value', () => {
     it('accepts a valid plain hex value', () => {
-      expect(() => SigningKey.Value(VALID_VALUE)).not.toThrow();
+      expect(SigningKey.Value(VALID_VALUE)).toBe(VALID_VALUE);
     });
 
+    it('accepts plain hex of 32 to 35 bytes', () =>
+      fc.assert(
+        fc.property(Arbitrary.makePlainHexArbitrary('32..=35'), (hex) => {
+          expect(SigningKey.Value.either(hex)).toEqual(Either.right(hex));
+        }),
+      ));
+
+    it('rejects plain hex shorter than 32 or longer than 35 bytes', () =>
+      fc.assert(
+        fc.property(
+          fc.oneof(Arbitrary.makePlainHexArbitrary('1..=31'), Arbitrary.makePlainHexArbitrary('36..=50')),
+          (hex) => {
+            expect(SigningKey.Value.either(hex)).toEqual(
+              Either.left([{ message: wrongByteLength(hex, hex.length / 2) }]),
+            );
+          },
+        ),
+      ));
+
     it.each([
-      '',
-      'not-hex',
-      '0x' + VALID_VALUE, // prefixed hex is not a plain hex value
-      'a1'.repeat(10), // too short (10 bytes)
-      'a1'.repeat(40), // too long (40 bytes)
-    ])('rejects an invalid value (%s)', (value) => {
-      expect(() => SigningKey.Value(value)).toThrow();
+      ['an empty value', '', [{ message: 'Source string must have non-zero length' }]],
+      [
+        'a value that is not hex',
+        'not-hex',
+        [{ message: "Last byte of source string 'not-hex' is incomplete", meta: expect.anything() }],
+      ],
+      [
+        'a prefixed hex value',
+        '0x' + VALID_VALUE,
+        [{ message: `Source string '0x${VALID_VALUE}' has a '0x' prefix but prefixes are not allowed` }],
+      ],
+      ['a 10-byte value', 'a1'.repeat(10), [{ message: wrongByteLength('a1'.repeat(10), 10) }]],
+      ['a 40-byte value', 'a1'.repeat(40), [{ message: wrongByteLength('a1'.repeat(40), 40) }]],
+    ])('rejects %s', (_case, value, errors) => {
+      expect(SigningKey.Value.either(value)).toEqual(Either.left(errors));
     });
   });
 
@@ -46,8 +79,21 @@ describe('SigningKey', () => {
       expect(SigningKey.make(VALID_VALUE, 'ecdsa')).toEqual({ tag: 'ecdsa', value: VALID_VALUE });
     });
 
-    it('validates the value', () => {
-      expect(() => SigningKey.make('not-hex')).toThrow();
+    it('keeps any supported kind and any valid value', () =>
+      fc.assert(
+        fc.property(
+          Arbitrary.makePlainHexArbitrary('32..=35'),
+          fc.constantFrom(...SigningKey.SignatureKinds),
+          (value, tag) => {
+            expect(SigningKey.make(value, tag)).toEqual({ tag, value });
+          },
+        ),
+      ));
+
+    it('validates the value, throwing the brand errors', () => {
+      expect(() => SigningKey.make('a1'.repeat(10))).toThrow(
+        expect.arrayContaining([{ message: wrongByteLength('a1'.repeat(10), 10) }]),
+      );
     });
   });
 
