@@ -29,14 +29,16 @@ export default defineConfig({
   test: {
     ...shared,
     // Runners that ignore `projects` (vitest started from the repo root, some editor integrations) use this top-level
-    // selection: the unit project's files, never integration tests or files under src/.
-    include: ['test/**/*.test.ts'],
+    // selection: the unit project's files, never integration tests.
+    include: ['src/**/test/**/*.test.ts'],
     exclude: [...exclude, '**/*.integration.test.ts'],
     coverage: {
       provider: 'v8',
       enabled: true,
       clean: true,
       include: ['src/**/*.ts'],
+      // Tests and their helpers sit beside the source (ADR-0006); coverage measures only the code they test.
+      exclude: ['src/**/test/**'],
       reporter: ['clover', 'json', 'json-summary', 'lcov', 'text'],
       reportsDirectory: outputs.coverageDirectory,
     },
@@ -45,7 +47,7 @@ export default defineConfig({
         test: {
           ...shared,
           name: 'unit',
-          include: ['test/**/*.test.ts'],
+          include: ['src/**/test/**/*.test.ts'],
           exclude: [...exclude, '**/*.integration.test.ts'],
         },
       },
@@ -53,7 +55,7 @@ export default defineConfig({
         test: {
           ...shared,
           name: 'integration',
-          include: ['test/**/*.integration.test.ts'],
+          include: ['src/**/test/**/*.integration.test.ts'],
           exclude,
         },
       },

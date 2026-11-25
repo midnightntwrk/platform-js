@@ -75,8 +75,8 @@ IntegerRange.contains(byte, 256); // false
 
 ## Repository layout
 
-- [`packages/platform-js/`](packages/platform-js/): the package. Modules live in `src/effect/`, one per domain type, and
-  tests in `test/`.
+- [`packages/platform-js/`](packages/platform-js/): the package. Modules live in `src/effect/`, one per domain type,
+  with their tests in `src/effect/test/`.
 - [`docs/`](docs/): coding conventions, the agentic workflow and the Claude Code setup.
 - [`docs/decisions/`](docs/decisions/): architectural decision records (ADRs).
 

@@ -224,7 +224,8 @@ describe('eslint jsdoc rules', () => {
       'packages/platform-js/src/effect/internal/X.ts',
       'packages/platform-js/src/index.ts',
       'packages/platform-js/src/effect/index.ts',
-      'packages/platform-js/test/X.test.ts',
+      'packages/platform-js/src/effect/test/X.test.ts',
+      'packages/platform-js/src/effect/test/Arbitrary.ts',
     ])('should not check %s', async (filePath) => {
       expect(await jsdocProblems(undocumentedExports.constant, filePath)).toEqual([]);
     });

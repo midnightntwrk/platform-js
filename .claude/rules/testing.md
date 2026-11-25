@@ -1,6 +1,6 @@
 ---
 paths:
-  - 'packages/platform-js/test/**'
+  - 'packages/platform-js/src/**/test/**'
   - '**/*.test.ts'
   - '**/vitest.config.ts'
 ---
@@ -9,7 +9,8 @@ paths:
 
 ## One tier: unit
 
-- Every test is a unit test: `*.test.ts` under `packages/platform-js/test/`. Pure: no network, no external services,
+- Every test is a unit test: `*.test.ts` in a `test/` folder beside the source it covers,
+  `packages/platform-js/src/<folder>/test/<Module>.test.ts` (ADR-0006). Pure: no network, no external services,
   no Docker. Must pass anywhere with zero setup. An `integration` Vitest lane exists (`*.integration.test.ts`,
   `yarn test:integration`) but holds no tests; don't add an integration test without an issue. A file named
   `*.integration.test.ts` leaves the unit lane, so never use that suffix for a unit test.
@@ -17,10 +18,13 @@ paths:
   config's JSDoc rules live in `test/tooling/` at the repo root and run with `yarn test:tooling` (root
   `vitest.tooling.config.ts`). They may use temp dirs and temp git repos, and run the scripts by path as child
   processes. They are not package tests, so the `src/` import rules below do not apply to them.
-- Tests import from `src/` by relative path (`../../src/effect/Hex.ts`), never by package name, so a test never needs
-  a build and never runs against a stale `dist/`. Import public modules, not `src/effect/internal/`: nothing enforces
-  this, so check it in review.
-- Shared FastCheck arbitraries live in `test/effect/Arbitrary.ts`; add new ones there.
+- Tests import the module under test by relative path (`../Hex.ts`), never by package name, so a test never needs a
+  build and never runs against a stale `dist/`. Import public modules, not `internal/`: ESLint's
+  `no-restricted-imports` rejects an `internal/` path in a `test/` folder. Internal helpers are covered through the
+  public modules that use them.
+- `test/` folders never reach `dist/` (`tsconfig.build.json` excludes them), are left out of coverage, and are skipped
+  by `check-barrel-exports` and the JSDoc lint.
+- Shared FastCheck arbitraries live in `src/effect/test/Arbitrary.ts`; add new ones there.
 - Commands (all tests, one file, type-check): `CLAUDE.md` → Build Commands.
 
 ## TDD contract (mandatory — full loop: the `test-first` skill)
@@ -35,7 +39,7 @@ paths:
   present the gap to the user (what the test expects, what exists, why, proposed solutions). The test is the
   specification.
 
-## House style (canonical file: `test/effect/Hex.test.ts`)
+## House style (canonical file: `src/effect/test/Hex.test.ts`)
 
 - Import `describe`, `expect`, `it` from `@effect/vitest`. Use `it.effect(..., () => Effect.gen(...))` for Effect code.
 - Prefer property tests with `effect/FastCheck` (`fc.assert(fc.property(...))`) over hand-picked examples. For
@@ -51,7 +55,7 @@ paths:
   via `Effect.provide`.
 - Config fixtures: `ConfigProvider.fromJson(json)`, applied with `Effect.withConfigProvider`. Never
   `Configuration.configProvider(json)`: it reads real environment variables first, so a shell or CI variable changes
-  the result. `test/effect/Configuration.test.ts` still uses it (#29): don't copy that part.
+  the result. `src/effect/test/Configuration.test.ts` still uses it (#29): don't copy that part.
 
 ## Testing Effect code
 

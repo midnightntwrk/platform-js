@@ -17,8 +17,8 @@ import { describe, expect, it } from '@effect/vitest';
 import { Effect } from 'effect';
 import * as fc from 'effect/FastCheck';
 
-import * as Hex from '../../src/effect/Hex.ts';
-import * as ParseError from '../../src/effect/ParseError.ts';
+import * as Hex from '../Hex.ts';
+import * as ParseError from '../ParseError.ts';
 import * as Arbitrary from './Arbitrary.ts';
 
 describe('Hex', () => {

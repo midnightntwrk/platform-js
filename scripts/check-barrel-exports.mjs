@@ -17,10 +17,11 @@
 // Checks platform-js's barrel files against its sources. The package's `exports` map is wildcard-based
 // (`./effect/*`, with `./effect/internal/*` set to null), so a module is public as soon as it exists under
 // src/effect/, at any depth, and the barrels are what must keep up:
-//   1. every module under src/effect/, at any depth, outside internal/ is re-exported from src/effect/index.ts by its
-//      relative path, since the `./effect/*` wildcard already makes each such module public;
+//   1. every module under src/effect/, at any depth, outside internal/ and test/ is re-exported from
+//      src/effect/index.ts by its relative path, since the `./effect/*` wildcard already makes each such module public;
 //   2. src/index.ts re-exports ./effect/index.ts;
-//   3. no barrel re-exports anything from internal/, which is private.
+//   3. no barrel re-exports anything from internal/, which is private, or from test/, which holds the unit tests and
+//      their helpers and is never built (ADR-0006).
 // The barrels are parsed with the TypeScript compiler, so a re-export inside a comment or a string never counts.
 //
 // Usage: check-barrel-exports.mjs [--src <dir>]   (default: packages/platform-js/src)
@@ -114,12 +115,15 @@ const specifiersOf = (barrel) => {
   );
 };
 
+/** Folders whose modules are never public: `internal/` (private helpers) and `test/` (tests and their helpers). */
+const SKIPPED_FOLDERS = new Set(['internal', 'test']);
+
 /** @param {string} specifier */
-const isInternal = (specifier) => specifier.split('/').includes('internal');
+const isSkipped = (specifier) => specifier.split('/').some((segment) => SKIPPED_FOLDERS.has(segment));
 
 /**
  * The `.ts` modules (not `.d.ts`) under a directory, as `/`-separated paths relative to `effectDir`, skipping every
- * `internal/` folder at any depth.
+ * `internal/` and `test/` folder at any depth.
  *
  * @param {string} relDir `/`-separated path relative to `effectDir`, empty for `effectDir` itself
  * @returns {string[]}
@@ -127,7 +131,7 @@ const isInternal = (specifier) => specifier.split('/').includes('internal');
 const modulesUnder = (relDir) =>
   fs.readdirSync(path.join(effectDir, relDir), { withFileTypes: true }).flatMap((entry) => {
     const relPath = relDir === '' ? entry.name : `${relDir}/${entry.name}`;
-    if (entry.isDirectory()) return entry.name === 'internal' ? [] : modulesUnder(relPath);
+    if (entry.isDirectory()) return SKIPPED_FOLDERS.has(entry.name) ? [] : modulesUnder(relPath);
     return entry.isFile() && entry.name.endsWith('.ts') && !entry.name.endsWith('.d.ts') ? [relPath] : [];
   });
 
@@ -151,7 +155,9 @@ const problems = [
     .map((relPath) => `src/effect/${relPath} is not re-exported from src/effect/index.ts`),
   ...(rootSpecifiers.includes('./effect/index.ts') ? [] : ['src/index.ts does not re-export ./effect/index.ts']),
   ...barrels.flatMap(([barrel, specifiers]) =>
-    specifiers.filter(isInternal).map((specifier) => `src/${barrel} re-exports ${specifier}, which is internal`),
+    specifiers
+      .filter(isSkipped)
+      .map((specifier) => `src/${barrel} re-exports ${specifier}, which is internal or a test/ file`),
   ),
 ];
 
@@ -161,4 +167,4 @@ if (problems.length > 0) {
   process.exit(1);
 }
 
-console.log(`packages/platform-js: ${effectModules.length} effect modules re-exported, no internal re-exports`);
+console.log(`packages/platform-js: ${effectModules.length} effect modules re-exported, no internal or test/ re-exports`);

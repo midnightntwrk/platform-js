@@ -37,13 +37,13 @@ the source folder listing to modules only, and matches midnight-wallet's current
   arbitraries) sit in the same `test/` folder.
 - The file name sets the tier, not the folder: `*.test.ts` is unit, `*.integration.test.ts` is integration, and both
   live in the same `test/` folders.
-- No end-to-end tier for now: the package is a library with no running system to drive. If one is ever needed, it is
-  a separate private workspace package (as midnight-wallet's `packages/e2e-tests`), never a folder inside a published
+- No end-to-end tier for now: the package is a library with no running system to drive. If one is ever needed, it is a
+  separate private workspace package (as midnight-wallet's `packages/e2e-tests`), never a folder inside a published
   package.
 - `tsconfig.build.json` excludes `src/**/test/**`, so no test file is compiled into `dist/`, and `check-barrel-exports`
   skips `test/` folders, as it skips `internal/`.
-- Tests still import the module under test by relative `.ts` path (ADR-0003), now `../Hex.ts`, and import public
-  modules only, never `internal/`. Internal helpers are covered through the public modules that use them.
+- Tests still import the module under test by relative `.ts` path (ADR-0003), now `../Hex.ts`, and import public modules
+  only, never `internal/`. Internal helpers are covered through the public modules that use them.
 
 ### Positive Consequences
 

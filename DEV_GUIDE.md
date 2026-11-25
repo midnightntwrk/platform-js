@@ -192,10 +192,12 @@ changes the label. A new workflow pins the same label.
 
 Today the package has **unit tests only**. They are pure: no Docker, network or other outside services.
 
-- Files are named `*.test.ts` and live in `packages/platform-js/test/` (for example `test/effect/Hex.test.ts`).
+- Files are named `*.test.ts` and live in a `test/` folder beside the source they cover (for example
+  `src/effect/test/Hex.test.ts`, [ADR-0006](docs/decisions/0006-colocate-unit-tests-with-source.md)). The build,
+  coverage and the barrel check leave `test/` folders out.
 - They use [`@effect/vitest`](https://github.com/Effect-TS/effect/tree/main/packages/vitest) (`it.effect`) and property
   tests from `effect/FastCheck`.
-- Tests import from `src/` by relative path, for example `../../src/effect/Hex.ts`, so they need no build first.
+- Tests import the module under test by relative path, for example `../Hex.ts`, so they need no build first.
 
 Run every package test from the repo root:
 
@@ -212,7 +214,7 @@ when empty. Each lane writes coverage and reports to its own folder, `coverage/<
 Run one file from `packages/platform-js/`:
 
 ```bash
-yarn run -T vitest run test/effect/Hex.test.ts
+yarn run -T vitest run src/effect/test/Hex.test.ts
 ```
 
 ### Repo tooling tests

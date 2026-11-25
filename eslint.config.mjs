@@ -172,7 +172,8 @@ export default tseslint.config(
               message: 'Direct imports from dist folders are not allowed. Use source files instead.'
             },
             {
-              group: ['**/src/effect/internal/**'],
+              // Tests sit in src/<folder>/test/ (ADR-0006), so `../internal/x.ts` reaches a private helper too.
+              group: ['**/src/effect/internal/**', '**/internal/**'],
               message: 'Tests import public modules, not src/effect/internal/.'
             }
           ]
@@ -184,7 +185,12 @@ export default tseslint.config(
     // .claude/rules/functional-style.md → Public API documentation, as far as a lint can see it. ADR-0005 lists what
     // it can't see.
     files: ['packages/*/src/**/*.{ts,mts,tsx}'],
-    ignores: ['packages/*/src/**/internal/**', 'packages/*/src/index.ts', 'packages/*/src/effect/index.ts'],
+    ignores: [
+      'packages/*/src/**/internal/**',
+      'packages/*/src/**/test/**',
+      'packages/*/src/index.ts',
+      'packages/*/src/effect/index.ts'
+    ],
     plugins: { jsdoc },
     settings: { jsdoc: { mode: 'typescript' } },
     rules: {

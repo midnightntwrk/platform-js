@@ -16,7 +16,7 @@
 import { describe, expect, it } from '@effect/vitest';
 import * as fc from 'effect/FastCheck';
 
-import * as ContractAddress from '../../src/effect/ContractAddress.ts';
+import * as ContractAddress from '../ContractAddress.ts';
 import * as Arbitrary from './Arbitrary.ts';
 
 describe('ContractAddress', () => {

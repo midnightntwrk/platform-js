@@ -11,7 +11,7 @@ set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
 SRC_PROBE='packages/platform-js/src/effect/Probe.ts'
-TEST_PROBE='packages/platform-js/test/effect/Probe.test.ts'
+TEST_PROBE='packages/platform-js/src/effect/test/Probe.test.ts'
 failures=0
 
 report() {
@@ -78,9 +78,9 @@ bad_src_cases=(
   "declare module './Hex.js' {}"
 )
 bad_test_cases=(
-  "import '../../src/effect/Hex.js'"
-  "vi.mock('../../src/effect/Hex.js')"
-  "vi.importActual('../../src/effect/Hex.js')"
+  "import '../Hex.js'"
+  "vi.mock('../Hex.js')"
+  "vi.importActual('../Hex.js')"
 )
 
 for source in "${bad_src_cases[@]}"; do

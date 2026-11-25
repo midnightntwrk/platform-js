@@ -16,7 +16,7 @@
 import { describe, expect, it } from '@effect/vitest';
 import * as fc from 'effect/FastCheck';
 
-import * as NetworkIdMoniker from '../../src/effect/NetworkIdMoniker.ts';
+import * as NetworkIdMoniker from '../NetworkIdMoniker.ts';
 import * as Arbitrary from './Arbitrary.ts';
 
 describe('NetworkIdMoniker', () => {

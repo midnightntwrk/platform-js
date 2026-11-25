@@ -61,8 +61,8 @@ describe('turbo verify graph', () => {
 });
 
 describe('platform-js vitest config', () => {
-  it('should select only test/**/*.test.ts at the top level, for runners that ignore its projects', () => {
-    expect(packageConfig.test?.include).toEqual(['test/**/*.test.ts']);
+  it('should select only src/**/test/**/*.test.ts at the top level, for runners that ignore its projects', () => {
+    expect(packageConfig.test?.include).toEqual(['src/**/test/**/*.test.ts']);
   });
 
   it('should list from the repo root exactly the files of the unit project', () => {

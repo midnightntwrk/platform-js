@@ -6,9 +6,9 @@ paths:
 # Functional style — hard rules
 
 Mandatory for all library code. Rationale and worked examples: `docs/CodingConventions.md`.
-File paths below are relative to `packages/platform-js/src/`, except `test/…` (relative to
-`packages/platform-js/`) and paths starting `packages/` (relative to the repo root). Quoted import specifiers
-(`'effect/Either'`) and Effect module names (`effect/Brand`, `effect/Array`) name Effect's own modules, not files.
+File paths below are relative to `packages/platform-js/src/`, except paths starting `packages/` (relative to the repo
+root). Tests in `src/**/test/` follow `.claude/rules/testing.md`; the JSDoc rules below do not apply to them. Quoted
+import specifiers (`'effect/Either'`) and Effect module names (`effect/Brand`, `effect/Array`) name Effect's own modules, not files.
 
 ## Immutability
 
@@ -24,7 +24,7 @@ File paths below are relative to `packages/platform-js/src/`, except `test/…` 
 - `Effect` = side effects: I/O, async, configuration, resources, dependency injection.
 - Never wrap pure logic in Effect. Return `Either` from pure code (`effect/internal/hex.ts` `parseHex`).
 - Crossing from `Either` to `Effect` needs no helper: in Effect 3 an `Either` is an `Effect` subtype. `yield*` it inside
-  `Effect.gen`, or pass it where an `Effect` is expected (`Effect.flip(Hex.parseHex(...))`, `test/effect/Hex.test.ts`).
+  `Effect.gen`, or pass it where an `Effect` is expected (`Effect.flip(Hex.parseHex(...))`, `effect/test/Hex.test.ts`).
 - Brands cross into config and decoding through `Schema.fromBrand` (`effect/Configuration.ts`).
 
 ## Types
