@@ -531,10 +531,17 @@ jobs:
           if [ "${#TARBALLS[@]}" -ne "$COUNT" ]; then
             echo "::error::Expected ${COUNT} tarballs, found ${#TARBALLS[@]}"; exit 1
           fi
-          # The root `devDependencies` say `catalog:`; the version ranges live in the Yarn catalog.
-          CATALOG=$(yarn config get catalog --json)
-          TS_VERSION=$(node -p 'JSON.parse(process.argv[1]).typescript' "$CATALOG")
-          TYPES_NODE_VERSION=$(node -p 'JSON.parse(process.argv[1])["@types/node"]' "$CATALOG")
+          # The root `devDependencies` say `catalog:`; the version ranges live in the Yarn catalog. Read them here, at
+          # the repo root where `.yarnrc.yml` is, before the `cd` below. A missing key prints `undefined`, not an error.
+          TS_VERSION=$(yarn config get 'catalog["typescript"]')
+          if [ -z "$TS_VERSION" ] || [ "$TS_VERSION" = "undefined" ]; then
+            echo "::error::No \"typescript\" entry in the Yarn catalog (.yarnrc.yml)"; exit 1
+          fi
+          TYPES_NODE_VERSION=$(yarn config get 'catalog["@types/node"]')
+          if [ -z "$TYPES_NODE_VERSION" ] || [ "$TYPES_NODE_VERSION" = "undefined" ]; then
+            echo "::error::No \"@types/node\" entry in the Yarn catalog (.yarnrc.yml)"; exit 1
+          fi
+          echo "Consumer tools: typescript@${TS_VERSION} @types/node@${TYPES_NODE_VERSION}"
           mkdir -p "$CONSUMER"
           cd "$CONSUMER"
           npm init -y > /dev/null
