@@ -78,12 +78,12 @@ The `CI` workflow (`.github/workflows/ci.yml`) runs on every pull request, on ev
 on every push to `main`, and by hand (`workflow_dispatch`). Build, General Checks and Unit Tests run side by side, each
 after `yarn install --immutable`. Tests waits for all three and passes only when all three succeed:
 
-| Job            | Runs                                                         |
-| -------------- | ------------------------------------------------------------ |
-| Build          | `yarn dist`, then `yarn publint`                             |
-| General Checks | `yarn typecheck`, then `yarn lint`                           |
-| Unit Tests     | `yarn test`                                                  |
-| Tests          | waits for the three jobs above; passes only when all succeed |
+| Job            | Runs                                                                          |
+| -------------- | ----------------------------------------------------------------------------- |
+| Build          | `yarn dist`, then `yarn publint`                                              |
+| General Checks | `yarn typecheck`, `yarn lint`, then `bash scripts/check-source-guards.sh`     |
+| Unit Tests     | `yarn test`                                                                   |
+| Tests          | waits for the three jobs above; passes only when all succeed                  |
 
 **`Tests` is the status check for `main` to require** (a repo setting, made by a maintainer): a lint error, a type
 error, a failing test or a broken build fails it. Run the same commands locally before you push ([Commands](#commands)).
@@ -95,8 +95,8 @@ and Dependabot PRs (`renovate/*`, `dependabot/*`), which never carry changesets.
 
 A third, `Publish (dry run)` in the `CD` workflow (`.github/workflows/cd.yml`), runs on every pull request to `main`. It
 lints the workflows with actionlint, checks the publish-mode rule, rehearses a stable and a canary publish without
-uploading, and installs the packed snapshot into an empty project to import every entry point
-([Releasing](#releasing)).
+uploading, and installs the packed snapshot into an empty project to import every entry point and type-check it under
+`node10`, `nodenext` and `bundler` ([Releasing](#releasing)).
 
 Every job runs on `ubuntu-26.04`, a pinned GitHub-hosted image, never `ubuntu-latest`: the image changes only
 when a PR changes the label. A new workflow pins the same label.
@@ -225,7 +225,9 @@ auth. In order, it:
 - rehearses a canary: dry-runs `scripts/publish-canary.sh` with the same changeset, and checks that each version is a
   `-canary.` snapshot, published under the `canary` tag, and not on npm;
 - packs each package, installs the tarballs into an empty project, imports `.`, `./effect` and every
-  `./effect/<module>`, and checks that `./effect/internal/*` is not exported.
+  `./effect/<module>`, and checks that `./effect/internal/*` is not exported;
+- type-checks those imports against the installed `.d.ts` files (`--strict`, `skipLibCheck` off) under `node10`,
+  `nodenext` and `bundler`, and checks that `./effect/internal/*` does not resolve under any of them.
 
 The tarballs live only on the runner. Run the canary rehearsal locally in a throwaway clone, because the script
 rewrites versions and deletes changesets. The clone takes your committed `HEAD`, not uncommitted changes, and the
