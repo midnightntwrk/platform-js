@@ -16,5 +16,5 @@ Labels are IaC-managed and the org forbids bare labels outside a grandfathered s
 
 When a skill mentions a role, use the corresponding label string from this table.
 
-An issue holds one triage role at a time. When moving an issue to a new role, remove the previous role's label,
-whatever its prefix (`status:untriaged`, `question` or `wontfix`).
+An issue holds one triage role at a time. When moving an issue to a new role, remove the previous role's label, whatever
+its prefix (`status:untriaged`, `question` or `wontfix`).

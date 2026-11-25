@@ -36,19 +36,18 @@ reads the version from the catalog.
 - **A dev tool only one package uses** still goes in the root `devDependencies`, through the catalog. Package scripts
   call it directly when run from the root (turbo); to run it by hand from a package folder, use `yarn run -T <tool>`.
 - **No `catalog:` in a published package**, in any dependency field (`dependencies`, `peerDependencies`,
-  `devDependencies`): write inline ranges there. npm does not replace `catalog:` when it packs or publishes (Yarn
-  does), and this repo packs and publishes with npm. In `dependencies` or `peerDependencies`, a `catalog:` value makes
-  the package uninstallable: npm fails with `EUNSUPPORTEDPROTOCOL`. In `devDependencies`, `npm pack` ships it
-  unresolved in the published manifest. CI's `scripts/check-manifests.sh` enforces this rule. This lasts while packing
-  and publishing use npm (`npm pack` in `yarn package` and the CD dry run, `npm publish` in Changesets 2.x); #84 plans
-  to move publishing to Yarn with Changesets 3.x.
+  `devDependencies`): write inline ranges there. npm does not replace `catalog:` when it packs or publishes (Yarn does),
+  and this repo packs and publishes with npm. In `dependencies` or `peerDependencies`, a `catalog:` value makes the
+  package uninstallable: npm fails with `EUNSUPPORTEDPROTOCOL`. In `devDependencies`, `npm pack` ships it unresolved in
+  the published manifest. CI's `scripts/check-manifests.sh` enforces this rule. This lasts while packing and publishing
+  use npm (`npm pack` in `yarn package` and the CD dry run, `npm publish` in Changesets 2.x); #84 plans to move
+  publishing to Yarn with Changesets 3.x.
 - **A script that needs a tool's version** reads it from the catalog, not from the root `package.json` (which says
   `catalog:`). The CD dry run uses `yarn config get 'catalog["<name>"]'`, which prints one entry's range. Use the
   bracket form: the dot form (`catalog.<name>`) prints `undefined`. `yarn config get catalog --json` prints the whole
   catalog as JSON.
-- **Keep `effect` in step:** the root `effect` range (in the catalog, needed as the peer of `@effect/vitest`) must
-  equal the `effect` range in `packages/platform-js/package.json` `dependencies`. Nothing checks this; bump both
-  together.
+- **Keep `effect` in step:** the root `effect` range (in the catalog, needed as the peer of `@effect/vitest`) must equal
+  the `effect` range in `packages/platform-js/package.json` `dependencies`. Nothing checks this; bump both together.
 
 To check a pack, run this from the repo root. It must print `no catalog: values`. It fails with an error when the
 tarball is missing or its manifest holds a `catalog:` value. The clean removes old tarballs, so exactly one is read.
@@ -95,20 +94,61 @@ Examples: `feat/123-network-id-parsing`, `chore/19-agentic-workflow-setup`, `doc
 
 Run these from the repo root.
 
-| Command                | What it does                                          |
-| ---------------------- | ----------------------------------------------------- |
-| `yarn dist`            | Compiles each package's `src/` to `dist/` (Turbo).    |
-| `yarn dist:publish`    | Clean `dist/` build, no source or declaration maps.   |
-| `yarn typecheck`       | Type-checks `src/` and the tests.                     |
-| `yarn test`            | Runs all tests (Turbo) from `src/`; no build needed.  |
-| `yarn lint`            | Lints packages and root configs; warnings fail.       |
-| `yarn publint`         | Publish build, then `publint --strict`.               |
-| `yarn package`         | Publish build, then `npm pack` in each package.       |
-| `yarn clean`           | Removes `dist`, coverage, reports and build info.     |
-| `yarn changeset`       | Adds a changeset (asks which packages and bumps).     |
-| `yarn changeset:check` | Lists the pending changesets and the bumps they make. |
+| Command                     | What it does                                                                                                                                                                    |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `yarn dist`                 | Compiles each package's `src/` to `dist/` (Turbo).                                                                                                                              |
+| `yarn dist:publish`         | Clean `dist/` build, no source or declaration maps.                                                                                                                             |
+| `yarn watch`                | Rebuilds `dist/` on every change (`turbo watch dist`).                                                                                                                          |
+| `yarn typecheck`            | Type-checks each package's `src/` and tests.                                                                                                                                    |
+| `yarn typecheck:root`       | Type-checks the root and package Vitest configs, `vitest.outputs.ts` and `test/tooling/` (`tsconfig.tooling.json`).                                                             |
+| `yarn test`                 | Runs all package tests (Turbo) from `src/`; no build and no type-check first.                                                                                                   |
+| `yarn test:unit`            | Type-checks, then runs the unit lane: every test except `*.integration.test.ts`. Fails if it finds no tests.                                                                    |
+| `yarn test:integration`     | Type-checks, then runs the integration lane: `*.integration.test.ts` (none yet, so it passes).                                                                                  |
+| `yarn test:tooling`         | Runs the repo tooling tests in `test/tooling/` (`vitest.tooling.config.ts`).                                                                                                    |
+| `yarn lint`                 | Lints packages and root files; warnings fail.                                                                                                                                   |
+| `yarn lint:root`            | Lints the root files alone: `eslint.config.mjs`, the root Vitest configs, `vitest.outputs.ts` and `test/tooling/`.                                                              |
+| `yarn format`               | Formats the root files, then each package, with Prettier.                                                                                                                       |
+| `yarn format:check`         | Checks the root files, then each package, are formatted; changes nothing.                                                                                                       |
+| `yarn format:root`          | Formats the root files only (`packages/` aside).                                                                                                                                |
+| `yarn format:check:root`    | Checks the root files only.                                                                                                                                                     |
+| `yarn format:file <f>`      | Formats the files you name.                                                                                                                                                     |
+| `yarn check-barrel-exports` | Checks the barrels: every `src/effect/` module outside `internal/` (any depth) is in `src/effect/index.ts`, `src/index.ts` re-exports it, and no barrel re-exports `internal/`. |
+| `yarn verify:check`         | `typecheck`, `typecheck:root`, `format:check`, `lint`, `lint:root` and `check-barrel-exports`.                                                                                  |
+| `yarn verify:test`          | The unit lane, plus `test:tooling`.                                                                                                                                             |
+| `yarn verify:integration`   | The integration lane.                                                                                                                                                           |
+| `yarn verify`               | All three `verify:*` steps above.                                                                                                                                               |
+| `yarn changed-files`        | Lists files changed since `HEAD`, untracked ones included, NUL-separated.                                                                                                       |
+| `yarn format:changed`       | Formats only those files.                                                                                                                                                       |
+| `yarn lint:changed`         | Lints the packages Turbo sees as affected since `main`, plus the root files when they changed.                                                                                  |
+| `yarn els:changed`          | Runs the Effect language service diagnostics on changed `packages/**/*.ts` files; warnings fail.                                                                                |
+| `yarn verify:changed`       | `format:changed`, `lint:changed`, then `els:changed`.                                                                                                                           |
+| `yarn publint`              | Publish build, then `publint --strict`.                                                                                                                                         |
+| `yarn package`              | Publish build, then `npm pack` in each package.                                                                                                                                 |
+| `yarn clean`                | Removes `dist`, coverage, reports and build info.                                                                                                                               |
+| `yarn changeset`            | Adds a changeset (asks which packages and bumps).                                                                                                                               |
+| `yarn changeset:check`      | Lists the pending changesets and the bumps they make.                                                                                                                           |
 
-There is no `format` script yet.
+Prettier's settings are in `.prettierrc.json`: midnight-wallet's, plus `jsdocCapitalizeDescription: false`, which keeps
+`@category` tags lowercase (`.claude/rules/functional-style.md`). It formats `ts`, `js`, `json`, `yaml`, `yml` and `md`
+files. Each script reads its own ignore files:
+
+- `format:root` and `format:check:root` run at the root and pass
+  `--ignore-path .gitignore --ignore-path .prettierignore.root`. `.prettierignore.root` also leaves out `packages/`.
+- A package's `format` and `format:check` run in the package folder and read that folder's `.prettierignore`, plus
+  `.gitignore` (Prettier's default).
+- `format:file`, and so `format:changed`, runs at the root and reads the root `.gitignore` and `.prettierignore`.
+
+All of them ignore `*.mjs` files (`scripts/` and `eslint.config.mjs`), which stay hand-formatted, and all of `.claude/`.
+
+`format:changed` and `els:changed` check uncommitted and untracked work against `HEAD`. `lint:changed` uses Turbo's
+`--affected`, so it checks the whole branch against `main`. Once you commit, the first two print "nothing to format" or
+"nothing to check" and pass. A change to `eslint.config.mjs` or `tsconfig.base.json` marks every package as affected
+(Turbo `globalDependencies`).
+
+`els:changed` runs the language service with `--strict`, so warnings fail as well as errors. It uses the shared plugin
+config from `tsconfig.base.json` unchanged. `deterministicKeys` is an error everywhere. The two `Context.Tag` keys in
+`Configuration.ts` turn it off with `@effect-diagnostics-next-line deterministicKeys:off`, because the keys are runtime
+identifiers other code may depend on. Renaming them is tracked in #87.
 
 ### Known failures today
 
@@ -131,34 +171,42 @@ after `yarn install --immutable`. Tests waits for all three and passes only when
 error, a failing test or a broken build fails it. Run the same commands locally before you push ([Commands](#commands)).
 
 A second workflow, `Check for Changeset` (`.github/workflows/check-changeset.yml`), runs on every pull request to
-`main`. It fails when the PR changes a package but adds no changeset
-([Versioning & releases](#versioning--releases)). It skips release PRs (`changeset-release/*` branches) and Renovate
-and Dependabot PRs (`renovate/*`, `dependabot/*`), which never carry changesets.
+`main`. It fails when the PR changes a package but adds no changeset ([Versioning & releases](#versioning--releases)).
+It skips release PRs (`changeset-release/*` branches) and Renovate and Dependabot PRs (`renovate/*`, `dependabot/*`),
+which never carry changesets.
 
 A third, `Publish (dry run)` in the `CD` workflow (`.github/workflows/cd.yml`), runs on every pull request to `main`. It
 lints the workflows with actionlint, checks the publish-mode rule, rehearses a stable and a canary publish without
 uploading, and installs the packed snapshot into an empty project to import every entry point and type-check it under
 `node10`, `nodenext` and `bundler` ([Releasing](#releasing)).
 
-Every job runs on `ubuntu-26.04`, a pinned GitHub-hosted image, never `ubuntu-latest`: the image changes only
-when a PR changes the label. A new workflow pins the same label.
+Every job runs on `ubuntu-26.04`, a pinned GitHub-hosted image, never `ubuntu-latest`: the image changes only when a PR
+changes the label. A new workflow pins the same label.
 
 ---
 
 ## Testing Tiers
 
-Today there are **unit tests only**. They are pure: no Docker, network or other outside services.
+### Package tests
+
+Today the package has **unit tests only**. They are pure: no Docker, network or other outside services.
 
 - Files are named `*.test.ts` and live in `packages/platform-js/test/` (for example `test/effect/Hex.test.ts`).
 - They use [`@effect/vitest`](https://github.com/Effect-TS/effect/tree/main/packages/vitest) (`it.effect`) and property
   tests from `effect/FastCheck`.
 - Tests import from `src/` by relative path, for example `../../src/effect/Hex.ts`, so they need no build first.
 
-Run every test from the repo root:
+Run every package test from the repo root:
 
 ```bash
 yarn test
 ```
+
+Tests run in two Vitest projects, called lanes: `unit` (every `*.test.ts` except `*.integration.test.ts`) and
+`integration` (`*.integration.test.ts`, none yet). Run one lane with `yarn test:unit` or `yarn test:integration`. Both
+lane scripts type-check first; `yarn test` does not. `test:unit` fails when it finds no tests; `test:integration` passes
+when empty. Each lane writes coverage and reports to its own folder, `coverage/<lane>` and `reports/<lane>` (`all` for
+`yarn test`), so `yarn verify`, which runs both lanes side by side, keeps both.
 
 Run one file from `packages/platform-js/`:
 
@@ -166,14 +214,21 @@ Run one file from `packages/platform-js/`:
 yarn run -T vitest run test/effect/Hex.test.ts
 ```
 
+### Repo tooling tests
+
+`test/tooling/` at the repo root tests the repo's own tooling, not the package: the root scripts, `turbo.json` and the
+Vitest configs. The tests run the scripts as child processes against temporary folders and temporary git repos. They
+have their own config, `vitest.tooling.config.ts`, and run only through `yarn test:tooling` (part of
+`yarn verify:test`). `yarn typecheck:root` type-checks them.
+
 ---
 
 ## Versioning & releases
 
 Versions and changelogs use [Changesets](https://github.com/changesets/changesets) (CLI `2.31.1`, pinned exactly). A
 changeset is a small Markdown file in `.changeset/` that names the packages a change releases, the
-[semver](https://semver.org/) bump for each, and the line it adds to the changelog. Each package's changelog is its
-own `CHANGELOG.md` (`packages/platform-js/CHANGELOG.md`).
+[semver](https://semver.org/) bump for each, and the line it adds to the changelog. Each package's changelog is its own
+`CHANGELOG.md` (`packages/platform-js/CHANGELOG.md`).
 
 ### Adding a changeset
 
@@ -204,15 +259,15 @@ Pick the bump:
 
 For a breaking change, start the summary with `**BREAKING CHANGE:**` and say how to migrate.
 
-A change that releases nothing (docs, tests, CI, tooling) but touches a package folder still needs a changeset: add
-an empty one with `yarn changeset add --empty`. A PR that touches no package needs none.
+A change that releases nothing (docs, tests, CI, tooling) but touches a package folder still needs a changeset: add an
+empty one with `yarn changeset add --empty`. A PR that touches no package needs none.
 
 ### Releasing
 
 The `CD` workflow (`.github/workflows/cd.yml`) releases `@midnightntwrk/platform-js` to npm from `main`, modelled on
-midnight-wallet's. It publishes to the `@midnightntwrk` scope only, with no alias scope. Never run `yarn changeset
-version` or `yarn changeset publish` by hand: the workflow does both. The one exception is the first canary in the
-one-time setup below.
+midnight-wallet's. It publishes to the `@midnightntwrk` scope only, with no alias scope. Never run
+`yarn changeset version` or `yarn changeset publish` by hand: the workflow does both. The one exception is the first
+canary in the one-time setup below.
 
 A version counts as released when its git tag, `@midnightntwrk/platform-js@<version>`, is on GitHub. On every push to
 `main`, the `version` job checks that tag and the pending changesets, and picks one mode:
@@ -225,8 +280,8 @@ A version counts as released when its git tag, `@midnightntwrk/platform-js@<vers
 
 `stable` starts with the push that merges the release PR, and holds until the tag is pushed. A push that lands while
 that run waits for approval resolves `stable` again and asks again; approve the newest one. Whichever run is approved,
-it publishes from the commit that set the version, not from the later push. `canary` holds on every push while a
-bumping changeset is pending, docs-only merges included, so each of them publishes a fresh canary.
+it publishes from the commit that set the version, not from the later push. `canary` holds on every push while a bumping
+changeset is pending, docs-only merges included, so each of them publishes a fresh canary.
 
 The workflow does not wait for `CI` on the same push. Each PR passed the required `Tests` check on its own, but two PRs
 that passed alone can still break together, and a canary from that combination publishes with no reviewer.
@@ -242,8 +297,8 @@ commit that set the version, pushes the `@midnightntwrk/platform-js@<version>` g
 from the changelog. Each step is skipped when already done, so if a run fails partway (published but not tagged, or
 tagged but no Release), re-run the failed `publish-stable` job and it finishes the release.
 
-**Canary build.** Every push to `main` in `canary` mode publishes a canary at once, with no approval. Its
-version is the next release plus a snapshot suffix: `<next version>-canary.<UTC timestamp>-<short sha>`, for example
+**Canary build.** Every push to `main` in `canary` mode publishes a canary at once, with no approval. Its version is the
+next release plus a snapshot suffix: `<next version>-canary.<UTC timestamp>-<short sha>`, for example
 `4.0.0-canary.20261118164023-12fd0e2`. A canary is a real test of the release path (build, pack, publish, install)
 before a stable release, and lets other repos try a change early. Install the newest one with:
 
@@ -271,9 +326,9 @@ auth. In order, it:
 - type-checks those imports against the installed `.d.ts` files (`--strict`, `skipLibCheck` off) under `node10`,
   `nodenext` and `bundler`, and checks that `./effect/internal/*` does not resolve under any of them.
 
-The tarballs live only on the runner. Run the canary rehearsal locally in a throwaway clone, because the script
-rewrites versions and deletes changesets. The clone takes your committed `HEAD`, not uncommitted changes, and the
-script refuses to run without a pending changeset that bumps a package, so add one:
+The tarballs live only on the runner. Run the canary rehearsal locally in a throwaway clone, because the script rewrites
+versions and deletes changesets. The clone takes your committed `HEAD`, not uncommitted changes, and the script refuses
+to run without a pending changeset that bumps a package, so add one:
 
 ```bash
 git clone . /tmp/platform-js-dry-run && cd /tmp/platform-js-dry-run
@@ -284,19 +339,19 @@ npm_config_dry_run=true scripts/publish-canary.sh
 (cd packages/platform-js && npm pack)   # the .tgz lands in packages/platform-js/
 ```
 
-Both publish jobs use npm Trusted Publishing (OIDC: GitHub proves the job's identity to npm, so no npm token is
-stored) and publish with provenance. The dry run cannot test that login or the upload; the first canary from `main`
-is what proves them, before any stable release.
+Both publish jobs use npm Trusted Publishing (OIDC: GitHub proves the job's identity to npm, so no npm token is stored)
+and publish with provenance. The dry run cannot test that login or the upload; the first canary from `main` is what
+proves them, before any stable release.
 
-A maintainer sets up, once, in this order, and finishes every step before the CD workflow merges. Its merge is itself
-a push to `main`: it publishes a canary at once if a bumping changeset is pending, and GitHub creates any missing
+A maintainer sets up, once, in this order, and finishes every step before the CD workflow merges. Its merge is itself a
+push to `main`: it publishes a canary at once if a bumping changeset is pending, and GitHub creates any missing
 environment unprotected.
 
-1. The GitHub environments: `npm-publish-stable` with required reviewers, `npm-publish-canary` with none. On both,
-   limit deployment branches to `main`: npm's Trusted Publisher does not check the branch, so without that rule a job
-   on any branch could use `npm-publish-canary` to publish.
-2. The baseline tag. Version 3.0.0 was released under the old `@midnight-ntwrk` scope; tag it as released under the
-   new name, so the workflow never publishes the scope-rename code as 3.0.0:
+1. The GitHub environments: `npm-publish-stable` with required reviewers, `npm-publish-canary` with none. On both, limit
+   deployment branches to `main`: npm's Trusted Publisher does not check the branch, so without that rule a job on any
+   branch could use `npm-publish-canary` to publish.
+2. The baseline tag. Version 3.0.0 was released under the old `@midnight-ntwrk` scope; tag it as released under the new
+   name, so the workflow never publishes the scope-rename code as 3.0.0:
 
    ```bash
    SHA=$(git log -1 --format=%H --grep='rename the package scope' origin/main)
@@ -306,13 +361,12 @@ environment unprotected.
 
 3. The package on npmjs. npm only lets you add a Trusted Publisher to a package that already exists, so the first
    version is published by hand, the one time `changeset publish` runs outside the workflow. Log in first with
-   `npm login` (a maintainer's account with publish rights on `@midnightntwrk`). Then run the local rehearsal above,
-   in a clone of the branch that adds the CD workflow (its scripts are not on `main` yet), without
+   `npm login` (a maintainer's account with publish rights on `@midnightntwrk`). Then run the local rehearsal above, in
+   a clone of the branch that adds the CD workflow (its scripts are not on `main` yet), without
    `npm_config_dry_run=true`: it publishes a canary under `canary`. npm points `latest` at a package's first version
    whatever the tag, so `latest` shows this canary until the first stable release moves it. The first version of
    `@midnightntwrk/platform-js` went out another way: the canary job published it once with a temporary org npm token
    (#75), removed again once the Trusted Publishers were set up (#76).
 4. Two Trusted Publishers on the package, one per environment: repository `midnightntwrk/platform-js`, workflow
-   `cd.yml`, environment `npm-publish-stable` or `npm-publish-canary`. npm expires a new Trusted Publisher that has
-   not published within 2 days, so merge the CD workflow soon after, and check that the canary from its merge
-   publishes.
+   `cd.yml`, environment `npm-publish-stable` or `npm-publish-canary`. npm expires a new Trusted Publisher that has not
+   published within 2 days, so merge the CD workflow soon after, and check that the canary from its merge publishes.

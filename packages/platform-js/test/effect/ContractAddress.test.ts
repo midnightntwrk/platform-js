@@ -13,38 +13,42 @@
  * limitations under the License.
  */
 
-import { describe, expect,it } from '@effect/vitest';
+import { describe, expect, it } from '@effect/vitest';
 import * as fc from 'effect/FastCheck';
 
 import * as ContractAddress from '../../src/effect/ContractAddress.ts';
 import * as Arbitrary from './Arbitrary.ts';
 
 describe('ContractAddress', () => {
-    it('should parse plain addresses', () => fc.assert(
+  it('should parse plain addresses', () =>
+    fc.assert(
       fc.property(Arbitrary.makePlainHexArbitrary('32..=32'), (hex) => {
         expect(() => ContractAddress.ContractAddress(hex)).not.toThrowError();
-      })
+      }),
     ));
 
-    it('should throw with short length plain addresses', () => fc.assert(
+  it('should throw with short length plain addresses', () =>
+    fc.assert(
       fc.property(Arbitrary.makePlainHexArbitrary('2..32'), (hex) => {
         expect(() => ContractAddress.ContractAddress(hex)).toThrowError();
-      })
+      }),
     ));
 
-    it('should throw with long length plain addresses', () => fc.assert(
+  it('should throw with long length plain addresses', () =>
+    fc.assert(
       fc.property(Arbitrary.makePlainHexArbitrary('33..=50'), (hex) => {
         expect(() => ContractAddress.ContractAddress(hex)).toThrowError();
-      })
+      }),
     ));
 
-    it('should throw with prefixed addresses', () => fc.assert(
+  it('should throw with prefixed addresses', () =>
+    fc.assert(
       fc.property(Arbitrary.makePrefixedHexArbitrary('32..=32'), (hex) => {
         expect(() => ContractAddress.ContractAddress(hex)).toThrowError();
-      })
+      }),
     ));
 
-    it('should throw with an invalid address', () => {
-      expect(() => ContractAddress.ContractAddress('HOSKYA')).toThrowError();
-    });
+  it('should throw with an invalid address', () => {
+    expect(() => ContractAddress.ContractAddress('HOSKYA')).toThrowError();
+  });
 });

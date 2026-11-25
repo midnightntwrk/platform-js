@@ -61,6 +61,6 @@ later, which `typescript-eslint` does not support.
 
 - Good, because it is the newest TypeScript, and Effect 3 itself runs on it.
 - Bad, because `typescript-eslint` does not support it, so `yarn lint` cannot run.
-- Bad, because it loads no compiler plugins, so `@effect/language-service` cannot run, and `@effect/tsgo` targets
-  Effect 4 and runs only part of its checks on Effect 3.
+- Bad, because it loads no compiler plugins, so `@effect/language-service` cannot run, and `@effect/tsgo` targets Effect
+  4 and runs only part of its checks on Effect 3.
 - Bad, because it moves further from midnight-wallet's TypeScript 5.9.3.

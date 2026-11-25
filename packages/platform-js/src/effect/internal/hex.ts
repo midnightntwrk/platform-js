@@ -16,7 +16,7 @@
 import * as Brand from 'effect/Brand';
 import * as Either from 'effect/Either';
 import { NodeInspectSymbol } from 'effect/Inspectable';
-import * as Option from 'effect/Option'
+import * as Option from 'effect/Option';
 
 import type * as Hex from '../Hex.ts';
 import * as IntegerRange from '../IntegerRange.ts';
@@ -25,76 +25,80 @@ import * as ParseError from '../ParseError.ts';
 const HEX_STRING_REGEXP = /^(?<prefix>(0x)?)(?<byteChars>([0-9A-Fa-f]{2})*)(?<incompleteChars>.*)$/;
 
 /** @internal */
-export const parseHex: (source: string) => Either.Either<Hex.ParsedHexString, ParseError.ParseError> =
-  (source) => {
-    if (!source) {
-      return Either.left(ParseError.make('Source string must have non-zero length', source));
-    }
-    const match = source.match(HEX_STRING_REGEXP);
-    if (!match || !match.groups) {
-      return Either.left(ParseError.make(`Source string '${source}' is not a valid hex-string`, source));
-    }
-    const { prefix, byteChars, incompleteChars } = match.groups;
-    const parsedHex: Hex.ParsedHexString = {
-      hasPrefix: Boolean(prefix),
-      byteChars: byteChars || '',
-      incompleteChars: incompleteChars || '',
-      toString: () => `${prefix}${byteChars}..[${incompleteChars ?? '<none>'}]`,
-      toJSON: () => match.groups,
-      [NodeInspectSymbol]: () => match.groups
-    };
-    if (parsedHex.incompleteChars) {
-      if (parsedHex.incompleteChars.length % 2 > 0) {
-        return Either.left(ParseError.make(`Last byte of source string '${source}' is incomplete`, source, parsedHex));
-      }
-      const invalidCharPos = parsedHex.byteChars.length + (parsedHex.hasPrefix ? 2 : 0);
-      return Either.left(
-        ParseError.make(
-          `Invalid hex-digit '${source[invalidCharPos]}' found in source string at index ${invalidCharPos}`,
-          source,
-          parsedHex
-        )
-      );
-    }
-    if (!parsedHex.byteChars) {
-      return Either.left(ParseError.make(`Source string '${source}' is not a valid hex-string`, source, parsedHex));
-    }
-    return Either.right(parsedHex);
+export const parseHex: (source: string) => Either.Either<Hex.ParsedHexString, ParseError.ParseError> = (source) => {
+  if (!source) {
+    return Either.left(ParseError.make('Source string must have non-zero length', source));
+  }
+  const match = source.match(HEX_STRING_REGEXP);
+  if (!match || !match.groups) {
+    return Either.left(ParseError.make(`Source string '${source}' is not a valid hex-string`, source));
+  }
+  const { prefix, byteChars, incompleteChars } = match.groups;
+  const parsedHex: Hex.ParsedHexString = {
+    hasPrefix: Boolean(prefix),
+    byteChars: byteChars || '',
+    incompleteChars: incompleteChars || '',
+    toString: () => `${prefix}${byteChars}..[${incompleteChars ?? '<none>'}]`,
+    toJSON: () => match.groups,
+    [NodeInspectSymbol]: () => match.groups,
   };
+  if (parsedHex.incompleteChars) {
+    if (parsedHex.incompleteChars.length % 2 > 0) {
+      return Either.left(ParseError.make(`Last byte of source string '${source}' is incomplete`, source, parsedHex));
+    }
+    const invalidCharPos = parsedHex.byteChars.length + (parsedHex.hasPrefix ? 2 : 0);
+    return Either.left(
+      ParseError.make(
+        `Invalid hex-digit '${source[invalidCharPos]}' found in source string at index ${invalidCharPos}`,
+        source,
+        parsedHex,
+      ),
+    );
+  }
+  if (!parsedHex.byteChars) {
+    return Either.left(ParseError.make(`Source string '${source}' is not a valid hex-string`, source, parsedHex));
+  }
+  return Either.right(parsedHex);
+};
 
 type HexConstraints = Hex.HexConstraints & {
-  readonly requirePrefix? : boolean;
-}
+  readonly requirePrefix?: boolean;
+};
 
 const defaultHexConstructionConstraints: HexConstraints = {
-  requirePrefix: false
+  requirePrefix: false,
 };
 
 /** @internal */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const make: <T extends Brand.Branded<string, any>>(constraints?: HexConstraints) => Brand.Brand.Constructor<T> =
-  <T extends Brand.Branded<string, any>>(options?: Hex.HexConstraints) => { // eslint-disable-line @typescript-eslint/no-explicit-any
-    const mergedOptions = { ...defaultHexConstructionConstraints, ...options };
-    return Brand.refined<T>(
-      (source: string) => Either.match(parseHex(source), {
-        onLeft: (error) => Option.some(Brand.error(error.message, error.meta)),
-        onRight: (parsedHex) => {
-          if (mergedOptions.requirePrefix && !parsedHex.hasPrefix) {
-            return Option.some(Brand.error(`Source string '${source}' requires a '0x' prefix`));
-          }
-          if (!mergedOptions.requirePrefix && parsedHex.hasPrefix) {
-            return Option.some(Brand.error(`Source string '${source}' has a '0x' prefix but prefixes are not allowed`));
-          }
-          if (mergedOptions.byteLength) {
-            const byteLength = IntegerRange.isIntegerRange(mergedOptions.byteLength)
-              ? mergedOptions.byteLength
-              : IntegerRange.from(mergedOptions.byteLength);
-            const actualByteLen = parsedHex.byteChars.length / 2;
-            if (!IntegerRange.contains(byteLength, actualByteLen)) {
-              return Option.some(Brand.error(`Source string '${source}' has a byte length of ${actualByteLen}, but expected ${byteLength.toString()}`));
-            }
-          }
-          return Option.none();
+export const make: <T extends Brand.Branded<string, string | symbol>>(
+  constraints?: HexConstraints,
+) => Brand.Brand.Constructor<T> = <T extends Brand.Branded<string, string | symbol>>(options?: Hex.HexConstraints) => {
+  const mergedOptions = { ...defaultHexConstructionConstraints, ...options };
+  return Brand.refined<T>((source: string) =>
+    Either.match(parseHex(source), {
+      onLeft: (error) => Option.some(Brand.error(error.message, error.meta)),
+      onRight: (parsedHex) => {
+        if (mergedOptions.requirePrefix && !parsedHex.hasPrefix) {
+          return Option.some(Brand.error(`Source string '${source}' requires a '0x' prefix`));
         }
-      }));
-  };
+        if (!mergedOptions.requirePrefix && parsedHex.hasPrefix) {
+          return Option.some(Brand.error(`Source string '${source}' has a '0x' prefix but prefixes are not allowed`));
+        }
+        if (mergedOptions.byteLength) {
+          const byteLength = IntegerRange.isIntegerRange(mergedOptions.byteLength)
+            ? mergedOptions.byteLength
+            : IntegerRange.from(mergedOptions.byteLength);
+          const actualByteLen = parsedHex.byteChars.length / 2;
+          if (!IntegerRange.contains(byteLength, actualByteLen)) {
+            return Option.some(
+              Brand.error(
+                `Source string '${source}' has a byte length of ${actualByteLen}, but expected ${byteLength.toString()}`,
+              ),
+            );
+          }
+        }
+        return Option.none();
+      },
+    }),
+  );
+};

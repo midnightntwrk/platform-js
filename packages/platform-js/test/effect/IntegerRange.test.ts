@@ -13,33 +13,31 @@
  * limitations under the License.
  */
 
-import { describe, expect,it } from '@effect/vitest';
+import { describe, expect, it } from '@effect/vitest';
 
 import * as IntegerRange from '../../src/effect/IntegerRange.ts';
 
 describe('IntegerRange', () => {
   describe('from', () => {
-    it.each<IntegerRange.IntegerRangeInput>([
-      [0, 10] as const,
-      [10, 100] as const,
-      '0..10',
-      '10..100'
-    ])('should create an exclusive range with exclusive input %o', (input: IntegerRange.IntegerRangeInput) => {
-      const range = IntegerRange.from(input);
+    it.each<IntegerRange.IntegerRangeInput>([[0, 10] as const, [10, 100] as const, '0..10', '10..100'])(
+      'should create an exclusive range with exclusive input %o',
+      (input: IntegerRange.IntegerRangeInput) => {
+        const range = IntegerRange.from(input);
 
-      expect(IntegerRange.isExclusive(range)).toBe(true);
-      expect(IntegerRange.isInclusive(range)).toBe(false);
-    });
+        expect(IntegerRange.isExclusive(range)).toBe(true);
+        expect(IntegerRange.isInclusive(range)).toBe(false);
+      },
+    );
 
-    it.each<IntegerRange.IntegerRangeInput>([
-      '0..=10',
-      '10..=100'
-    ])('should create an inclusive range with inclusive input %o', (input: IntegerRange.IntegerRangeInput) => {
-      const range = IntegerRange.from(input);
+    it.each<IntegerRange.IntegerRangeInput>(['0..=10', '10..=100'])(
+      'should create an inclusive range with inclusive input %o',
+      (input: IntegerRange.IntegerRangeInput) => {
+        const range = IntegerRange.from(input);
 
-      expect(IntegerRange.isExclusive(range)).toBe(false);
-      expect(IntegerRange.isInclusive(range)).toBe(true);
-    });
+        expect(IntegerRange.isExclusive(range)).toBe(false);
+        expect(IntegerRange.isInclusive(range)).toBe(true);
+      },
+    );
   });
 
   describe('equals', () => {
@@ -47,7 +45,7 @@ describe('IntegerRange', () => {
       const a = IntegerRange.from([0, 10]);
       const b = IntegerRange.exclusive([0, 10]);
       const c = IntegerRange.from('0..10');
-      
+
       expect(IntegerRange.equals(a, b)).toBe(true);
       expect(IntegerRange.equals(a, c)).toBe(true);
     });
@@ -56,7 +54,7 @@ describe('IntegerRange', () => {
       const a = IntegerRange.from([0, 10]);
       const b = IntegerRange.inclusive([0, 10]);
       const c = IntegerRange.from([0, 11]);
-      
+
       expect(IntegerRange.equals(a, b)).toBe(false);
       expect(IntegerRange.equals(a, c)).toBe(false);
     });
@@ -128,7 +126,7 @@ describe('IntegerRange', () => {
       const a = IntegerRange.from([0, 10]);
       const b = IntegerRange.exclusive([0, 10]);
       const c = IntegerRange.inclusive([0, 9]);
-      
+
       expect(IntegerRange.contains(a, effectiveMax)).toBe(true);
       expect(IntegerRange.contains(b, effectiveMax)).toBe(true);
       expect(IntegerRange.contains(c, effectiveMax)).toBe(true);

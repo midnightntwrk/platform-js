@@ -1,0 +1,14 @@
+dist/
+coverage/
+reports/
+.yarnrc.yml
+.changeset/
+.turbo/
+.yarn/
+
+# Node scripts and the ESLint config stay hand-formatted
+*.mjs
+# All of .claude/: vendored third-party skills, and repo-owned rules and settings that keep their hand wrapping
+.claude/
+# Rewritten by the skills CLI on every install or update
+skills-lock.json

@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { describe, expect,it } from '@effect/vitest';
+import { describe, expect, it } from '@effect/vitest';
 import * as fc from 'effect/FastCheck';
 
 import * as NetworkId from '../../src/effect/NetworkId.ts';
@@ -25,12 +25,13 @@ describe('NetworkId', () => {
     it('should return true for MainNet', () => {
       expect(NetworkId.MainNet.isMainNet()).toBe(true);
     });
-    
-    it('should return false for any named network identifier', () => fc.assert(
-      fc.property(Arbitrary.makeNetworkIdArbitrary(), (networkId) => {
-        expect(NetworkId.make(NetworkIdMoniker.NetworkIdMoniker(networkId)).isMainNet()).toBe(false);
-      })
-    ));
+
+    it('should return false for any named network identifier', () =>
+      fc.assert(
+        fc.property(Arbitrary.makeNetworkIdArbitrary(), (networkId) => {
+          expect(NetworkId.make(NetworkIdMoniker.NetworkIdMoniker(networkId)).isMainNet()).toBe(false);
+        }),
+      ));
   });
 
   describe('equals', () => {

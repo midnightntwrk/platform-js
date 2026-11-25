@@ -48,5 +48,5 @@ use (reconsider) or there's a real gap (note it for `/domain-modeling`).
 
 ## Flag ADR conflicts
 
-If your output contradicts an existing ADR, surface it explicitly rather than silently overriding: name the ADR and
-say why it is worth reopening.
+If your output contradicts an existing ADR, surface it explicitly rather than silently overriding: name the ADR and say
+why it is worth reopening.

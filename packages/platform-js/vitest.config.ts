@@ -15,24 +15,49 @@
 /// <reference types="vitest" />
 import { configDefaults, defineConfig } from 'vitest/config';
 
+import { testOutputs } from '../../vitest.outputs.ts';
+
+const outputs = testOutputs();
+
+const exclude = [...configDefaults.exclude, '**/dist/**'];
+
+// Settings every project shares. The projects do not use `extends: true`: Vitest concatenates inherited `include`
+// lists, so the top-level `include` below would leak unit tests into the integration project.
+const shared = { environment: 'node', globals: true } as const;
+
 export default defineConfig({
   test: {
-    environment: 'node',
-    globals: true,
+    ...shared,
+    // Runners that ignore `projects` (vitest started from the repo root, some editor integrations) use this top-level
+    // selection: the unit project's files, never integration tests or files under src/.
     include: ['test/**/*.test.ts'],
-    exclude: [...configDefaults.exclude, '**/dist/**'],
+    exclude: [...exclude, '**/*.integration.test.ts'],
     coverage: {
       provider: 'v8',
       enabled: true,
       clean: true,
       include: ['src/**/*.ts'],
       reporter: ['clover', 'json', 'json-summary', 'lcov', 'text'],
-      reportsDirectory: './coverage'
+      reportsDirectory: outputs.coverageDirectory,
     },
-    reporters: [
-      'default',
-      ['junit', { outputFile: `reports/report/test-report.xml` }],
-      ['html', { outputFile: `reports/report/test-report.html` }]
-    ]
-  }
+    projects: [
+      {
+        test: {
+          ...shared,
+          name: 'unit',
+          include: ['test/**/*.test.ts'],
+          exclude: [...exclude, '**/*.integration.test.ts'],
+        },
+      },
+      {
+        test: {
+          ...shared,
+          name: 'integration',
+          include: ['test/**/*.integration.test.ts'],
+          exclude,
+        },
+      },
+    ],
+    reporters: ['default', ['junit', { outputFile: outputs.junitFile }], ['html', { outputFile: outputs.htmlFile }]],
+  },
 });

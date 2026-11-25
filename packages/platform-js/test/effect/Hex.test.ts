@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { describe, expect,it } from '@effect/vitest';
+import { describe, expect, it } from '@effect/vitest';
 import { Effect } from 'effect';
 import * as fc from 'effect/FastCheck';
 
@@ -23,58 +23,70 @@ import * as Arbitrary from './Arbitrary.ts';
 
 describe('Hex', () => {
   describe('parseHex', () => {
-    it('should parse plain hex-encodings', () => fc.assert(
-      fc.asyncProperty(Arbitrary.makePlainHexArbitrary('2..=10'), (hex) => Effect.gen(function* () {
-        const result = yield* Hex.parseHex(hex);
-        expect(result.hasPrefix).toBe(false);
-        expect(result.byteChars).toEqual(hex);
-        expect(result.incompleteChars.length).toBe(0);
-      }).pipe(Effect.runPromise))
-    ));
+    it('should parse plain hex-encodings', () =>
+      fc.assert(
+        fc.asyncProperty(Arbitrary.makePlainHexArbitrary('2..=10'), (hex) =>
+          Effect.gen(function* () {
+            const result = yield* Hex.parseHex(hex);
+            expect(result.hasPrefix).toBe(false);
+            expect(result.byteChars).toEqual(hex);
+            expect(result.incompleteChars.length).toBe(0);
+          }).pipe(Effect.runPromise),
+        ),
+      ));
 
-    it('should parse prefixed hex-encodings', () => fc.assert(
-      fc.asyncProperty(Arbitrary.makePrefixedHexArbitrary('2..=10'), (hex) => Effect.gen(function* () {
-        const result = yield* Hex.parseHex(hex);
-        expect(result.hasPrefix).toBe(true);
-        expect(result.byteChars).toEqual(hex.substring(2));
-        expect(result.incompleteChars.length).toBe(0);
-      }).pipe(Effect.runPromise))
-    ));
+    it('should parse prefixed hex-encodings', () =>
+      fc.assert(
+        fc.asyncProperty(Arbitrary.makePrefixedHexArbitrary('2..=10'), (hex) =>
+          Effect.gen(function* () {
+            const result = yield* Hex.parseHex(hex);
+            expect(result.hasPrefix).toBe(true);
+            expect(result.byteChars).toEqual(hex.substring(2));
+            expect(result.incompleteChars.length).toBe(0);
+          }).pipe(Effect.runPromise),
+        ),
+      ));
 
-    it.effect('should throw with an invalid hex-encoding', () => Effect.gen(function* () {
-      const error = yield* Effect.flip(Hex.parseHex('HOSKYA'));
-      expect(ParseError.isParseError(error)).toBeTruthy();
-      expect(error).toMatchObject({
-        message: 'Invalid hex-digit \'H\' found in source string at index 0'
-      });
-    }));
+    it.effect('should throw with an invalid hex-encoding', () =>
+      Effect.gen(function* () {
+        const error = yield* Effect.flip(Hex.parseHex('HOSKYA'));
+        expect(ParseError.isParseError(error)).toBeTruthy();
+        expect(error).toMatchObject({
+          message: "Invalid hex-digit 'H' found in source string at index 0",
+        });
+      }),
+    );
   });
 
   describe('PlainHex', () => {
-    it('should parse plain hex-encodings', () => fc.assert(
-      fc.property(Arbitrary.makePlainHexArbitrary('2..=10'), (hex) => {
-        expect(() => Hex.PlainHex(hex)).not.toThrowError();
-      })
-    ));
+    it('should parse plain hex-encodings', () =>
+      fc.assert(
+        fc.property(Arbitrary.makePlainHexArbitrary('2..=10'), (hex) => {
+          expect(() => Hex.PlainHex(hex)).not.toThrowError();
+        }),
+      ));
 
-    it('should throw with prefixed hex-encodings', () => fc.assert(
-      fc.property(Arbitrary.makePrefixedHexArbitrary('2..=10'), (hex) => {
-        expect(() => Hex.PlainHex(hex)).toThrowError();
-      })
-    ));
+    it('should throw with prefixed hex-encodings', () =>
+      fc.assert(
+        fc.property(Arbitrary.makePrefixedHexArbitrary('2..=10'), (hex) => {
+          expect(() => Hex.PlainHex(hex)).toThrowError();
+        }),
+      ));
   });
 
   describe('PrefixedHex', () => {
-    it('should parse prefixed hex-encodings', () => fc.assert(
-      fc.property(Arbitrary.makePrefixedHexArbitrary('2..=10'), (hex) => {
-        expect(() => Hex.PrefixedHex(hex)).not.toThrowError();
-      })
-    ));
+    it('should parse prefixed hex-encodings', () =>
+      fc.assert(
+        fc.property(Arbitrary.makePrefixedHexArbitrary('2..=10'), (hex) => {
+          expect(() => Hex.PrefixedHex(hex)).not.toThrowError();
+        }),
+      ));
 
-    it('should throw with plain hex-encodings', () => fc.assert(
-      fc.property(Arbitrary.makePlainHexArbitrary('2..=10'), (hex) => {
-        expect(() => Hex.PrefixedHex(hex)).toThrowError();
-      })
-    ));
+    it('should throw with plain hex-encodings', () =>
+      fc.assert(
+        fc.property(Arbitrary.makePlainHexArbitrary('2..=10'), (hex) => {
+          expect(() => Hex.PrefixedHex(hex)).toThrowError();
+        }),
+      ));
   });
 });

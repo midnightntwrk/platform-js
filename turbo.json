@@ -1,6 +1,7 @@
 {
   "$schema": "https://turbo.build/schema.v2.json",
   "envMode": "loose",
+  "globalDependencies": ["eslint.config.mjs", "tsconfig.base.json"],
   "tasks": {
     "dist": {
       "inputs": ["src/**/*.ts", "package.json", "tsconfig*.json", "$TURBO_ROOT$/tsconfig.base.json"],
@@ -23,11 +24,30 @@
         "test/**/*.ts",
         "tsconfig*.json",
         "$TURBO_ROOT$/tsconfig.base.json",
-        "vitest.config.ts"
+        "vitest.config.ts",
+        "$TURBO_ROOT$/vitest.outputs.ts"
       ],
-      "outputs": ["coverage/**", "reports/**"],
+      "outputs": ["coverage/all/**", "reports/all/**"],
       "outputLogs": "new-only",
       "dependsOn": ["^dist"]
+    },
+    "test:unit": {
+      "inputs": [
+        "src/**/*.ts",
+        "test/**/*.ts",
+        "tsconfig*.json",
+        "$TURBO_ROOT$/tsconfig.base.json",
+        "vitest.config.ts",
+        "$TURBO_ROOT$/vitest.outputs.ts"
+      ],
+      "outputs": ["coverage/unit/**", "reports/unit/**"],
+      "outputLogs": "new-only",
+      "dependsOn": ["^dist", "typecheck"]
+    },
+    "test:integration": {
+      "cache": false,
+      "outputLogs": "new-only",
+      "dependsOn": ["^dist", "typecheck"]
     },
     "lint": {
       "inputs": [
@@ -36,13 +56,20 @@
         "tsconfig*.json",
         "vitest.config.ts",
         "$TURBO_ROOT$/tsconfig.base.json",
-        "$TURBO_ROOT$/eslint.config.mjs"
+        "$TURBO_ROOT$/eslint.config.mjs",
+        "$TURBO_ROOT$/vitest.outputs.ts"
       ],
       "outputLogs": "new-only",
       "dependsOn": ["^dist"]
     },
     "//#lint:root": {
-      "inputs": ["eslint.config.mjs", "vitest.config.ts"],
+      "inputs": [
+        "eslint.config.mjs",
+        "vitest.config.ts",
+        "vitest.outputs.ts",
+        "vitest.tooling.config.ts",
+        "test/tooling/**/*.ts"
+      ],
       "outputLogs": "new-only"
     },
     "clean": {
@@ -56,6 +83,66 @@
     "package": {
       "cache": false,
       "dependsOn": ["dist:publish"]
+    },
+    "format": {
+      "cache": false,
+      "outputLogs": "new-only",
+      "dependsOn": ["//#format:root"]
+    },
+    "format:check": {
+      "inputs": ["**/*.{ts,js,json,yaml,yml,md}", "$TURBO_ROOT$/.prettierrc.json", ".prettierignore"],
+      "outputs": [],
+      "outputLogs": "new-only",
+      "dependsOn": ["//#format:check:root"]
+    },
+    "//#format:root": {
+      "cache": false,
+      "outputLogs": "new-only"
+    },
+    "//#format:check:root": {
+      "cache": false,
+      "outputLogs": "new-only"
+    },
+    "//#check-barrel-exports": {
+      "inputs": ["scripts/check-barrel-exports.mjs", "packages/platform-js/src/**/*.ts"],
+      "outputs": [],
+      "outputLogs": "new-only"
+    },
+    "//#typecheck:root": {
+      "inputs": [
+        "tsconfig.base.json",
+        "tsconfig.tooling.json",
+        "vitest*.ts",
+        "packages/*/vitest.config.ts",
+        "test/tooling/**/*.ts"
+      ],
+      "outputLogs": "new-only"
+    },
+    "//#test:tooling": {
+      "inputs": [
+        "scripts/**",
+        "test/tooling/**",
+        "vitest*.ts",
+        "turbo.json",
+        "package.json",
+        "tsconfig*.json",
+        "packages/*/vitest.config.ts",
+        "packages/*/package.json",
+        "packages/platform-js/src/**"
+      ],
+      "outputLogs": "new-only"
+    },
+    "verify:check": {
+      "dependsOn": ["typecheck", "//#typecheck:root", "format:check", "lint", "//#lint:root", "//#check-barrel-exports"]
+    },
+    "verify:test": {
+      "dependsOn": ["test:unit", "//#test:tooling"]
+    },
+    "verify:integration": {
+      "dependsOn": ["test:integration"]
+    },
+    "verify": {
+      "dependsOn": ["verify:check", "verify:test", "verify:integration"]
     }
   }
 }

@@ -6,11 +6,11 @@ Recommended Claude Code configuration for developers working on this repository.
 
 Claude Code merges settings from several files. Know which one you're editing:
 
-| File                          | Scope               | Tracked by git  | What goes here                                                                |
-| ----------------------------- | ------------------- | --------------- | ----------------------------------------------------------------------------- |
-| `.claude/settings.json`       | This repo, everyone | **Yes**         | Shared team config (plugins, attribution). **No `permissions` or `hooks`.** |
-| `.claude/settings.local.json` | This repo, just you | No (ignored)    | Your personal repo-scoped permissions                                         |
-| `~/.claude/settings.json`     | All repos, just you | No              | Your personal global permissions (see below)                                  |
+| File                          | Scope               | Tracked by git | What goes here                                                              |
+| ----------------------------- | ------------------- | -------------- | --------------------------------------------------------------------------- |
+| `.claude/settings.json`       | This repo, everyone | **Yes**        | Shared team config (plugins, attribution). **No `permissions` or `hooks`.** |
+| `.claude/settings.local.json` | This repo, just you | No (ignored)   | Your personal repo-scoped permissions                                       |
+| `~/.claude/settings.json`     | All repos, just you | No             | Your personal global permissions (see below)                                |
 
 The tracked `.claude/settings.json` must never contain a `permissions` or `hooks` block. Permissions are personal and
 belong in one of the other two files. Hooks wait for their follow-up issue (see [Hooks](#hooks)). The repo's own
@@ -75,10 +75,10 @@ in `.claude/settings.local.json` for this repo only.
 }
 ```
 
-With these in place, the common ways to commit, push, merge, review, or create, edit, comment on or close PRs and
-issues stop for your approval, whatever any CLAUDE.md says. They are a safety net, not a guarantee. A rule matches the
-start of a command, so a command written another way can slip past it. The Bash denies cover only the common ways to
-print a secret. `git -C` and `gh api` also catch read-only calls, so expect some extra prompts.
+With these in place, the common ways to commit, push, merge, review, or create, edit, comment on or close PRs and issues
+stop for your approval, whatever any CLAUDE.md says. They are a safety net, not a guarantee. A rule matches the start of
+a command, so a command written another way can slip past it. The Bash denies cover only the common ways to print a
+secret. `git -C` and `gh api` also catch read-only calls, so expect some extra prompts.
 
 ## Plugins (tracked, apply to everyone)
 
@@ -88,10 +88,10 @@ blanks `attribution`, per the org rule on AI-assistance disclosure. Read the fil
 
 Pinning: a marketplace's `ref` in the settings takes only a branch or a tag, not a commit.
 
-- The `mattpocock` marketplace (GitHub `mattpocock/skills`) is pinned to the tag `v1.3.2`. To bump it, change `ref`
-  to a newer tag of `mattpocock/skills`, then update the plugin.
-- The `shieldedtech` marketplace is not pinned. `shieldedtech/agent-rules` has no tags yet, so it follows `main`. Pin
-  it once it publishes tags.
+- The `mattpocock` marketplace (GitHub `mattpocock/skills`) is pinned to the tag `v1.3.2`. To bump it, change `ref` to a
+  newer tag of `mattpocock/skills`, then update the plugin.
+- The `shieldedtech` marketplace is not pinned. `shieldedtech/agent-rules` has no tags yet, so it follows `main`. Pin it
+  once it publishes tags.
 
 To update a plugin, use `/plugin` inside Claude Code, or `claude plugin update <plugin>` from a shell.
 
@@ -110,15 +110,15 @@ every later session.
 >   `hasTrustDialogAccepted` for the project in `~/.claude.json` (or `$CLAUDE_CONFIG_DIR/.claude.json` if you set that
 >   variable). For **git worktrees** the flag is read from the **main checkout's** entry. Known bugs can leave it
 >   `false` even though sessions start without a trust prompt (anthropics/claude-code#36403,
->   anthropics/claude-code#9113). Fix: set it to `true` for the main checkout's path, then start a fresh session. Trust is only read at startup; `/reload-plugins`
->   won't pick it up.
+>   anthropics/claude-code#9113). Fix: set it to `true` for the main checkout's path, then start a fresh session. Trust
+>   is only read at startup; `/reload-plugins` won't pick it up.
 
 ## Skills
 
 ### Repo skill: `test-first`
 
-`.claude/skills/test-first/SKILL.md` is the mandatory test-first loop for code under `packages/platform-js/src`:
-design the test → write it → observe **red** for the right reason → **user gate** (you review the test before any
+`.claude/skills/test-first/SKILL.md` is the mandatory test-first loop for code under `packages/platform-js/src`: design
+the test → write it → observe **red** for the right reason → **user gate** (you review the test before any
 implementation) → implement → observe **green** → review → refactor. A test that fails for the right reason is never
 weakened to fit the implementation.
 
@@ -131,8 +131,8 @@ Two Effect skills live in `.claude/skills/`, and both are committed, so a fresh 
 
 **`effect-ts`** is vendored: a copy of the `effect-ts` skill from the
 [Claude-Matrix](https://github.com/ojowwalker77/Claude-Matrix) project (MIT). It covers Effect 3, which this repo uses.
-`.claude/skills/effect-ts/ATTRIBUTION.md` records the source commit, the local changes and the license. The `skills`
-CLI does not manage it, and it is not in `skills-lock.json`. Edit it by hand, and note any change in `ATTRIBUTION.md`.
+`.claude/skills/effect-ts/ATTRIBUTION.md` records the source commit, the local changes and the license. The `skills` CLI
+does not manage it, and it is not in `skills-lock.json`. Edit it by hand, and note any change in `ATTRIBUTION.md`.
 
 We don't use the `effect-ts` skill from `Effect-TS/skills`. It targets Effect 4: it is a setup recipe that runs
 `pnpm add effect@latest` and points to `node_modules/effect/AGENTS.md`, a file Effect 3 doesn't have. It would install
@@ -159,8 +159,8 @@ Never hand-edit `effect-v3-to-v4`: the next update overwrites it, and the conten
 ### Matt Pocock's skills
 
 Enabled by the `mattpocock-skills@mattpocock` plugin above. This repo uses only some of them, in its own order (for
-example, never `/to-spec` or `/implement-spec`). See [AgenticWorkflow.md](AgenticWorkflow.md) for which skills to use and
-when.
+example, never `/to-spec` or `/implement-spec`). See [AgenticWorkflow.md](AgenticWorkflow.md) for which skills to use
+and when.
 
 ## Name collisions
 
@@ -173,8 +173,8 @@ Two skill names mean something specific in this repo:
 
 ## Hooks
 
-The repo has no hooks of its own yet. Format-on-edit and verify-on-stop hooks are a follow-up: the workspace has no
-`format` script today, and the Effect language service is not set up.
+The repo has no hooks of its own yet. Format-on-edit and verify-on-stop hooks are a follow-up. The scripts they would
+call exist: `format`, `verify` and their `:changed` variants (`DEV_GUIDE.md` → Commands).
 
 The `shielded-core-rules` plugin does add hooks. At session start, one tells Claude to load the Shielded rules. Before
 each Bash call, two others block `gh pr create` or `gh issue create` without the `bot:ai-assisted` label, and block

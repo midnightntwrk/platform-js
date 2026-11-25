@@ -1,10 +1,12 @@
 # Contributing
 
-We welcome your contributions to the Midnight network! By contributing, you'll play a vital role in shaping the future of a blockchain focused on data privacy.
+We welcome your contributions to the Midnight network! By contributing, you'll play a vital role in shaping the future
+of a blockchain focused on data privacy.
 
 ## Developer Certificate of Origin (DCO)
 
-All contributions must include a sign-off in every commit message, certifying that you have the right to submit the code under the project license. This is done by adding a `Signed-off-by` trailer using `git commit -s`:
+All contributions must include a sign-off in every commit message, certifying that you have the right to submit the code
+under the project license. This is done by adding a `Signed-off-by` trailer using `git commit -s`:
 
 ```
 git commit -s -m "feat: your commit message"
@@ -34,7 +36,8 @@ A DCO GitHub App runs on every pull request and will block merges until all comm
 
 ### Automating sign-off
 
-To avoid having to remember `-s` on every commit, install a `prepare-commit-msg` hook in your clone of this repo that appends the sign-off automatically:
+To avoid having to remember `-s` on every commit, install a `prepare-commit-msg` hook in your clone of this repo that
+appends the sign-off automatically:
 
 ```bash
 cat > .git/hooks/prepare-commit-msg <<'EOF'
@@ -46,58 +49,68 @@ EOF
 chmod +x .git/hooks/prepare-commit-msg
 ```
 
-After installing the hook, every `git commit` in this repo will include a `Signed-off-by` trailer automatically. Make sure your `user.name` and `user.email` are set correctly, since the hook certifies the DCO on your behalf for every commit.
+After installing the hook, every `git commit` in this repo will include a `Signed-off-by` trailer automatically. Make
+sure your `user.name` and `user.email` are set correctly, since the hook certifies the DCO on your behalf for every
+commit.
 
 ## Getting Started
 
-* **Review Existing Contributions and Issues:** Before submitting, please check if a similar issue or feature request already exists by searching our issue tracker.
-* **Understand the Project:** Familiarize yourself with Midnight's architecture, technology, and coding standards. You can find relevant information in our litepaper.
-* **Set up Your Development Environment:** Ensure you have the necessary tools and dependencies installed. See our developer [documentation](https://docs.midnight.network/) for detailed instructions.
-* **Read the Repository Guides:**
-  * [`DEV_GUIDE.md`](DEV_GUIDE.md): local setup, branch names, commands and tests.
-  * [`docs/CodingConventions.md`](docs/CodingConventions.md): how we write code here.
-  * [`docs/ClaudeCode.md`](docs/ClaudeCode.md): recommended settings if you use Claude Code.
-  * [`docs/AgenticWorkflow.md`](docs/AgenticWorkflow.md): the issue-to-PR flow for agents.
+- **Review Existing Contributions and Issues:** Before submitting, please check if a similar issue or feature request
+  already exists by searching our issue tracker.
+- **Understand the Project:** Familiarize yourself with Midnight's architecture, technology, and coding standards. You
+  can find relevant information in our litepaper.
+- **Set up Your Development Environment:** Ensure you have the necessary tools and dependencies installed. See our
+  developer [documentation](https://docs.midnight.network/) for detailed instructions.
+- **Read the Repository Guides:**
+  - [`DEV_GUIDE.md`](DEV_GUIDE.md): local setup, branch names, commands and tests.
+  - [`docs/CodingConventions.md`](docs/CodingConventions.md): how we write code here.
+  - [`docs/ClaudeCode.md`](docs/ClaudeCode.md): recommended settings if you use Claude Code.
+  - [`docs/AgenticWorkflow.md`](docs/AgenticWorkflow.md): the issue-to-PR flow for agents.
 
 ## Submitting Issues
 
-Use one of the [templates] to submit an issue to the Project Board. The Midnight team or a community member will address it if it's relevant.
-Ensure the title is a clear summary of the requirement and provides enough context.
+Use one of the [templates] to submit an issue to the Project Board. The Midnight team or a community member will address
+it if it's relevant. Ensure the title is a clear summary of the requirement and provides enough context.
 
 **Issue Types:**
 
-* **Bug Report:** Provide detailed information about the issue, including steps to reproduce it, expected behavior, and actual behavior, screenshots, or any other relevant information.
-* **Feature Request:** Clearly describe your feature, its benefits, and most importantly, the expected outcome. This helps us analyze the proposed solution and develop alternatives.
-* **Task:** Describe a unit of work that isn't a bug or a new feature. Summarise what needs to be done and list concrete, verifiable acceptance criteria.
-* **Documentation Improvement:** Clearly describe the improvement requested for existing content and/or raise missing areas of documentation and provide details for what should be included.
+- **Bug Report:** Provide detailed information about the issue, including steps to reproduce it, expected behavior, and
+  actual behavior, screenshots, or any other relevant information.
+- **Feature Request:** Clearly describe your feature, its benefits, and most importantly, the expected outcome. This
+  helps us analyze the proposed solution and develop alternatives.
+- **Task:** Describe a unit of work that isn't a bug or a new feature. Summarise what needs to be done and list
+  concrete, verifiable acceptance criteria.
+- **Documentation Improvement:** Clearly describe the improvement requested for existing content and/or raise missing
+  areas of documentation and provide details for what should be included.
 
 ## Code Contribution Process
 
-* **Pull Requests:** Code contributions are submitted via Pull Requests.
-* **Fork the Repository:** Create your own fork of the Midnight repository.
-* **Create a Branch:** Make your changes in a separate branch,
-  named `<type>/<ticket>-<short-description>` (e.g. `feat/123-network-id-parsing`).
-  See [Branching Strategy](DEV_GUIDE.md#branching-strategy) in `DEV_GUIDE.md`.
-* **Follow Coding Standards:** Adhere to the conventions in [`docs/CodingConventions.md`](docs/CodingConventions.md).
-* **Write Tests:** Include unit tests to cover your changes. See [Testing Tiers](DEV_GUIDE.md#testing-tiers) in `DEV_GUIDE.md`.
-* **Commit Messages:** Write clear and concise commit messages.
-* **Add a Changeset:** If your change touches a package, run `yarn changeset` at the repo root and commit the file it
-  writes to `.changeset/`. It records the version bump and the changelog line; the `Check for Changeset` CI job fails
-  a PR that changes a package without one. Don't bump versions or edit `CHANGELOG.md` by hand. See
+- **Pull Requests:** Code contributions are submitted via Pull Requests.
+- **Fork the Repository:** Create your own fork of the Midnight repository.
+- **Create a Branch:** Make your changes in a separate branch, named `<type>/<ticket>-<short-description>` (e.g.
+  `feat/123-network-id-parsing`). See [Branching Strategy](DEV_GUIDE.md#branching-strategy) in `DEV_GUIDE.md`.
+- **Follow Coding Standards:** Adhere to the conventions in [`docs/CodingConventions.md`](docs/CodingConventions.md).
+- **Write Tests:** Include unit tests to cover your changes. See [Testing Tiers](DEV_GUIDE.md#testing-tiers) in
+  `DEV_GUIDE.md`.
+- **Commit Messages:** Write clear and concise commit messages.
+- **Add a Changeset:** If your change touches a package, run `yarn changeset` at the repo root and commit the file it
+  writes to `.changeset/`. It records the version bump and the changelog line; the `Check for Changeset` CI job fails a
+  PR that changes a package without one. Don't bump versions or edit `CHANGELOG.md` by hand. See
   [Versioning & releases](DEV_GUIDE.md#versioning--releases) in `DEV_GUIDE.md`.
-* **Submit Pull Request:** Submit your pull request to the appropriate branch in the main repository.
-* **Please do not `--force` pushes** - doing so means that reviewers will have to re-review all
-  commits in the PR rather than commits since last review.
-* **Code Review:** All pull requests undergo code review by project maintainers.
-  Be prepared to address feedback from reviewers.
+- **Submit Pull Request:** Submit your pull request to the appropriate branch in the main repository.
+- **Please do not `--force` pushes** - doing so means that reviewers will have to re-review all commits in the PR rather
+  than commits since last review.
+- **Code Review:** All pull requests undergo code review by project maintainers. Be prepared to address feedback from
+  reviewers.
 
 ## Requirements for Acceptable Contributions:
 
-* **Coding Standards:** Code must adhere to the conventions in [`docs/CodingConventions.md`](docs/CodingConventions.md).
-* **Testing:** New functionality must include corresponding unit tests (see [Testing Tiers](DEV_GUIDE.md#testing-tiers)).
-* **Documentation:** Code changes should be accompanied by proposed relevant documentation updates.
-* **License:** All contributions must be compatible with the project's license.
-  Where possible all files should have this license header:
+- **Coding Standards:** Code must adhere to the conventions in [`docs/CodingConventions.md`](docs/CodingConventions.md).
+- **Testing:** New functionality must include corresponding unit tests (see
+  [Testing Tiers](DEV_GUIDE.md#testing-tiers)).
+- **Documentation:** Code changes should be accompanied by proposed relevant documentation updates.
+- **License:** All contributions must be compatible with the project's license. Where possible all files should have
+  this license header:
 
 ```ts
 // This file is part of <REPLACE WITH REPOSITORY NAME>.
@@ -116,10 +129,13 @@ Ensure the title is a clear summary of the requirement and provides enough conte
 // limitations under the License.
 ```
 
-Where this is not possible, a copy of the Apache 2.0 or the repository's top-level LICENSE file in the same directory is required
+Where this is not possible, a copy of the Apache 2.0 or the repository's top-level LICENSE file in the same directory is
+required
 
 ## Support and Communication:
 
-Ask anything about Midnight! We're here to help. Connect with us on [Discord](https://discord.com/invite/midnightnetwork), [Telegram](https://t.me/Midnight_Network_Official), and [X](https://x.com/MidnightNtwrk) and Join the Community to stay updated and engage with other Midnight enthusiasts.
+Ask anything about Midnight! We're here to help. Connect with us on
+[Discord](https://discord.com/invite/midnightnetwork), [Telegram](https://t.me/Midnight_Network_Official), and
+[X](https://x.com/MidnightNtwrk) and Join the Community to stay updated and engage with other Midnight enthusiasts.
 
 We appreciate your contributions!

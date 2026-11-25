@@ -10,7 +10,13 @@ paths:
 ## One tier: unit
 
 - Every test is a unit test: `*.test.ts` under `packages/platform-js/test/`. Pure: no network, no external services,
-  no Docker. Must pass anywhere with zero setup. There is no integration tier; don't add one without an issue.
+  no Docker. Must pass anywhere with zero setup. An `integration` Vitest lane exists (`*.integration.test.ts`,
+  `yarn test:integration`) but holds no tests; don't add an integration test without an issue. A file named
+  `*.integration.test.ts` leaves the unit lane, so never use that suffix for a unit test.
+- Tooling tests are the one exception. Tests for the root scripts, `turbo.json` and the Vitest configs live in
+  `test/tooling/` at the repo root and run with `yarn test:tooling` (root `vitest.tooling.config.ts`). They may use
+  temp dirs and temp git repos, and run the scripts by path as child processes. They are not package tests, so the
+  `src/` import rules below do not apply to them.
 - Tests import from `src/` by relative path (`../../src/effect/Hex.ts`), never by package name, so a test never needs
   a build and never runs against a stale `dist/`. Import public modules, not `src/effect/internal/`: nothing enforces
   this, so check it in review.

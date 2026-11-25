@@ -32,20 +32,19 @@ export class ParseError extends Error.TypeIdError(TypeId, 'ParseError')<{
   /** The source string that failed to parse. */
   readonly source: string;
 
-  /** Inspectable data about the parse operation.  */
+  /** Inspectable data about the parse operation. */
   readonly meta?: Inspectable;
 
-  /** The underlying cause of the failed parse operation.  */
+  /** The underlying cause of the failed parse operation. */
   readonly cause?: unknown;
-}> { }
+}> {}
 
 /**
  * Determines if a value is a parse error.
  *
+ * @category guards
  * @param u The value to check.
  * @returns `true` if `u` is a {@link ParseError}; `false` otherwise.
- *
- * @category guards
  */
 export const isParseError = (u: unknown): u is ParseError => hasProperty(u, TypeId);
 
@@ -63,5 +62,5 @@ export const make: {
     message,
     source,
     meta,
-    cause
+    cause,
   });

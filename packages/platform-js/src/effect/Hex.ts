@@ -23,32 +23,31 @@ import type * as ParseError from './ParseError.ts';
 
 /**
  * A hex-encoded string, of some arbitrary byte length, that may or may not have a `'0x'` prefix.
- * 
+ *
  * @remarks
- * `Hex` is a 'branded' string type defining a sequence of hexadecimal characters, and represented either as a
- * {@link Hex.PrefixedHex | PrefixedHex} or {@link Hex.PlainHex | PlainHex} instance.
- * 
- * It is possible to create custom `Hex` constructors that represent hex-encoded strings with specific constraints
- * (such as byte lengths), by invoking {@link ConstrainedPrefixedHex} or
- * {@link ConstrainedPlainHex} with options described by {@link HexConstraints}.
- * 
+ *   `Hex` is a 'branded' string type defining a sequence of hexadecimal characters, and represented either as a
+ *   {@link Hex.PrefixedHex | PrefixedHex} or {@link Hex.PlainHex | PlainHex} instance.
+ *
+ *   It is possible to create custom `Hex` constructors that represent hex-encoded strings with specific constraints (such
+ *   as byte lengths), by invoking {@link ConstrainedPrefixedHex} or {@link ConstrainedPlainHex} with options described by
+ *   {@link HexConstraints}.
+ * @category models
  * @see {@link ConstrainedPrefixedHex}
  * @see {@link ConstrainedPlainHex}
- * @category models
  */
 export type Hex = Hex.PlainHex | Hex.PrefixedHex;
 
 export declare namespace Hex {
   /**
    * A hex-encoded string, of some arbitrary byte length, that has a `'0x'` prefix.
-   * 
+   *
    * @category models
    */
   export type PrefixedHex = Brand.Branded<string, 'PrefixedHex'>;
 
   /**
    * A plain hex-encoded string, of some arbitrary byte length.
-   * 
+   *
    * @category models
    */
   export type PlainHex = Brand.Branded<string, 'PlainHex'>;
@@ -56,54 +55,54 @@ export declare namespace Hex {
 
 /**
  * Creates a hex-encoded string, of some arbitrary byte length, that has a `'0x'` prefix.
- * 
+ *
  * @category constructors
  */
-export const PrefixedHex: Brand.Brand.Constructor<Hex.PrefixedHex> =
-  internal.make<Hex.PrefixedHex>({ requirePrefix: true });
+export const PrefixedHex: Brand.Brand.Constructor<Hex.PrefixedHex> = internal.make<Hex.PrefixedHex>({
+  requirePrefix: true,
+});
 
 /**
  * Creates a hex-encoded string, from some given constraints, that has a `'0x'` prefix.
  *
- * @param constraints The {@link HexConstraints} to apply when parsing a received hex-encoded string.
- * @returns A function that creates a {@link Hex.PrefixedHex | PrefixedHex} instance from a received string
- * ensuring that it meets `constraints`.
- * 
  * @category constructors
+ * @param constraints The {@link HexConstraints} to apply when parsing a received hex-encoded string.
+ * @returns A function that creates a {@link Hex.PrefixedHex | PrefixedHex} instance from a received string ensuring that
+ *   it meets `constraints`.
  */
-export const ConstrainedPrefixedHex: (constraints: HexConstraints) => Brand.Brand.Constructor<Hex.PrefixedHex> =
-  (constraints) => internal.make<Hex.PrefixedHex>({ requirePrefix: true, ...constraints });
+export const ConstrainedPrefixedHex: (constraints: HexConstraints) => Brand.Brand.Constructor<Hex.PrefixedHex> = (
+  constraints,
+) => internal.make<Hex.PrefixedHex>({ requirePrefix: true, ...constraints });
 
 /**
  * Creates a plain hex-encoded string, of some arbitrary byte length.
- * 
+ *
  * @category constructors
  */
-export const PlainHex: Brand.Brand.Constructor<Hex.PlainHex> =
-  internal.make<Hex.PlainHex>({ requirePrefix: false });
+export const PlainHex: Brand.Brand.Constructor<Hex.PlainHex> = internal.make<Hex.PlainHex>({ requirePrefix: false });
 
 /**
  * Creates a plain hex-encoded string, from some given constraints.
  *
- * @param constraints The {@link HexConstraints} to apply when parsing a received hex-encoded string.
- * @returns A function that creates a {@link Hex.PlainHex | PlainHex} instance from a received string
- * ensuring that it meets `constraints`.
- * 
  * @category constructors
+ * @param constraints The {@link HexConstraints} to apply when parsing a received hex-encoded string.
+ * @returns A function that creates a {@link Hex.PlainHex | PlainHex} instance from a received string ensuring that it
+ *   meets `constraints`.
  */
-export const ConstrainedPlainHex: (constraints: HexConstraints) => Brand.Brand.Constructor<Hex.PlainHex> =
-  (constraints) => internal.make<Hex.PlainHex>({ requirePrefix: false, ...constraints });
-  
+export const ConstrainedPlainHex: (constraints: HexConstraints) => Brand.Brand.Constructor<Hex.PlainHex> = (
+  constraints,
+) => internal.make<Hex.PlainHex>({ requirePrefix: false, ...constraints });
+
 /**
  * Describes constraints for creating {@link Hex} constructors that parse hex-encoded strings.
  *
- * @see {@link Hex}
  * @category models
+ * @see {@link Hex}
  */
 export interface HexConstraints {
   /**
-   * An {@link IntegerRange.IntegerRangeInput | IntegerRangeInput} describing the minimum and maximum number
-   * of bytes a hex-encoded string should represent.
+   * An {@link IntegerRange.IntegerRangeInput | IntegerRangeInput} describing the minimum and maximum number of bytes a
+   * hex-encoded string should represent.
    */
   readonly byteLength?: IntegerRange.IntegerRangeInput;
 }
@@ -111,34 +110,26 @@ export interface HexConstraints {
 /**
  * The result of parsing a hex-encoded string.
  *
- * @see {@link parseHex}
  * @category models
+ * @see {@link parseHex}
  */
 export interface ParsedHexString extends Inspectable {
-  /**
-   * A flag indicating if the hex-string has a `'0x'` prefix.
-   */
+  /** A flag indicating if the hex-string has a `'0x'` prefix. */
   readonly hasPrefix: boolean;
 
-  /**
-   * The captured sequence of _whole_ bytes found in the source string.
-   */
+  /** The captured sequence of _whole_ bytes found in the source string. */
   readonly byteChars: string;
 
-  /**
-   * The remaining characters of incomplete bytes and/or the non hexadecimal characters found in the
-   * source string.
-   */
+  /** The remaining characters of incomplete bytes and/or the non hexadecimal characters found in the source string. */
   readonly incompleteChars: string;
-};
+}
 
 /**
  * Parses a hex-encoded string.
  *
- * @param source The source string to parse.
- * @returns An `Either` with a `Right` value of {@link ParsedHexString} describing the parsed elements of `source`,
- * or a `Left` value of {@link ParseError.ParseError | ParseError} if parsing fails.
- *
  * @category utilities
+ * @param source The source string to parse.
+ * @returns An `Either` with a `Right` value of {@link ParsedHexString} describing the parsed elements of `source`, or a
+ *   `Left` value of {@link ParseError.ParseError | ParseError} if parsing fails.
  */
 export const parseHex: (source: string) => Either.Either<ParsedHexString, ParseError.ParseError> = internal.parseHex;
