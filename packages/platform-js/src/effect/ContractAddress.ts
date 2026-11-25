@@ -23,6 +23,21 @@ import * as Hex from './Hex.ts';
  * @category models
  */
 export type ContractAddress = Brand.Branded<string, 'ContractAddress'>;
+
+/**
+ * Creates a contract address from a plain hex-encoded string, 32 bytes in length.
+ *
+ * @remarks
+ *   Non-throwing forms: `ContractAddress.ContractAddress.either` returns the errors in a `Left`;
+ *   `ContractAddress.ContractAddress.option` returns `None`, dropping the reason.
+ *
+ *   Brands are erased at runtime, and `DomainSeparator` shares this refinement, so `ContractAddress.ContractAddress.is`
+ *   accepts a domain separator too. The two stay apart at compile time only.
+ * @category constructors
+ * @param source The string to brand.
+ * @returns `source`, branded as a {@link ContractAddress}.
+ * @throws `Brand.BrandErrors` if `source` is not plain hex of exactly 32 bytes.
+ */
 export const ContractAddress = Brand.all(
   Brand.nominal<ContractAddress>(),
   Hex.ConstrainedPlainHex({ byteLength: '32..=32' }),

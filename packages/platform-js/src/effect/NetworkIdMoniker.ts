@@ -24,7 +24,17 @@ const NETWORK_ID_REGEXP = /^[a-zA-Z0-9-]+$/;
  */
 export type NetworkIdMoniker = Brand.Branded<string, 'NetworkIdMoniker'>;
 
-/** @category constructors */
+/**
+ * Creates a network identifier moniker from a source string.
+ *
+ * @remarks
+ *   Non-throwing forms: `NetworkIdMoniker.NetworkIdMoniker.either` returns the errors in a `Left`;
+ *   `NetworkIdMoniker.NetworkIdMoniker.option` returns `None`, dropping the reason.
+ * @category constructors
+ * @param source The string to brand.
+ * @returns `source`, branded as a {@link NetworkIdMoniker}.
+ * @throws `Brand.BrandErrors` if `source` is empty or holds a character other than an ASCII letter, a digit or `-`.
+ */
 export const NetworkIdMoniker = Brand.refined<NetworkIdMoniker>((source: string) => {
   return source.match(NETWORK_ID_REGEXP)
     ? Option.none()

@@ -24,18 +24,35 @@ import { type Pipeable, pipeArguments } from 'effect/Pipeable';
 import { hasProperty, isNumber, isString } from 'effect/Predicate';
 
 const TypeId: unique symbol = Symbol.for('platform-js/effect/IntegerRange');
+/**
+ * The type of the unique symbol that marks a value as an {@link IntegerRange}.
+ *
+ * @category symbols
+ */
 export type TypeId = typeof TypeId;
 
 /**
  * An integer range, bounded inclusively of its minimum value, and either inclusively or exclusively of its maximum
  * value.
+ *
+ * @remarks
+ *   Construction checks neither that the bounds are integers nor that `min <= max`: `[5, 1]`, `[1.5, 3]` and `[NaN, 3]`
+ *   all build a range.
+ *
+ *   A `NaN` bound equals nothing, so a range with one equals no range built apart from it. It still equals itself, and
+ *   the copy {@link from} makes of it, because equality first checks for the same object.
+ * @category models
  */
 export interface IntegerRange extends Equal.Equal, Pipeable, Inspectable {
   readonly [TypeId]: TypeId;
   readonly value: IntegerRangeValue;
 }
 
-/** Describes the internal structure of an {@link IntegerRange}. */
+/**
+ * Describes the internal structure of an {@link IntegerRange}.
+ *
+ * @category models
+ */
 export type IntegerRangeValue =
   | { readonly _tag: 'Inclusive'; readonly min: number; readonly max: number }
   | { readonly _tag: 'Exclusive'; readonly min: number; readonly max: number };
@@ -52,6 +69,11 @@ export type IntegerRangeValue =
  *
  *   - `'n..m'` will create a _exclusive_ range that contains all values `x` where `n <= x < m`, and
  *   - `'n..=m'` will create an _inclusive_ range that contains all values `x` where `n <= x <= m`.
+ *
+ *   The string forms are read by an unanchored pattern: the first `..` (or `..=`) is used, with the unsigned digits right
+ *   before and after it, and anything else is dropped: `'-1..5'` reads as `1..5`, `'1.5..3'` as `5..3`. An empty bound
+ *   reads as `0`: `'..5'` is `0..5`.
+ * @category models
  */
 export type IntegerRangeInput =
   | IntegerRange
@@ -67,6 +89,9 @@ export type IntegerRangeInput =
  *   and they should both have the same type of inclusion (i.e., inclusive or exclusive). This is not _range
  *   equivalence_ which determines if two {@link IntegerRange} instances represent the same sequence of values.
  * @category equivalence
+ * @param self The first {@link IntegerRange}.
+ * @param that The {@link IntegerRange} to compare with `self`.
+ * @returns `true` if `self` and `that` have the same bounds and the same inclusion; `false` otherwise.
  */
 export const Equivalence: equivalence.Equivalence<IntegerRange> = equivalence.struct({
   value: equivalence.struct({
@@ -106,7 +131,13 @@ export const isExclusive = (self: IntegerRange): boolean => self.value._tag === 
 /**
  * Determines if two integer ranges are equal.
  *
+ * @remarks
+ *   Call it data-first, `equals(self, that)`, or data-last, `equals(that)(self)`, for use in a `pipe`. Equality is that
+ *   of {@link Equivalence}.
  * @category predicates
+ * @param self The first {@link IntegerRange}.
+ * @param that The {@link IntegerRange} to compare with `self`.
+ * @returns `true` if `self` and `that` have the same bounds and the same inclusion; `false` otherwise.
  */
 export const equals: {
   (that: IntegerRange): (self: IntegerRange) => boolean;
@@ -116,7 +147,15 @@ export const equals: {
 /**
  * Determines if an integer range is inclusive of a value.
  *
+ * @remarks
+ *   Call it data-first, `contains(self, value)`, or data-last, `contains(value)(self)`, for use in a `pipe`.
+ *
+ *   An exclusive range contains `value` when `min <= value < max`. An inclusive range is checked as the exclusive range
+ *   `min..(max + 1)`, so any `value` below `max + 1` counts as contained: `3.99` is in `1..=3`.
  * @category predicates
+ * @param self The {@link IntegerRange} to check.
+ * @param value The value to look for.
+ * @returns `true` if `self` contains `value`; `false` otherwise.
  */
 export const contains: {
   (value: number): (self: IntegerRange) => boolean;
@@ -132,7 +171,15 @@ export const contains: {
 /**
  * Creates _inclusive_ integer ranges.
  *
+ * @remarks
+ *   A string cast past the parameter type is read as in {@link from}: its own `..` or `..=` decides the inclusion, so the
+ *   result need not be _inclusive_.
  * @category constructors
+ * @param range A tuple of the minimum and maximum values, or an {@link IntegerRange} to convert.
+ * @returns An {@link IntegerRange} that is _inclusive_ of its maximum value for a tuple or an {@link IntegerRange}:
+ *   `range` itself if it already is one.
+ * @throws `Error` if `range` is not an {@link IntegerRange}, a tuple of two numbers, or a string containing `..`.
+ *   Reachable only through a cast.
  */
 export const inclusive: {
   /**
@@ -161,7 +208,15 @@ export const inclusive: {
 /**
  * Creates _exclusive_ integer ranges.
  *
+ * @remarks
+ *   A string cast past the parameter type is read as in {@link from}: its own `..` or `..=` decides the inclusion, so the
+ *   result need not be _exclusive_.
  * @category constructors
+ * @param range A tuple of the minimum and maximum values, or an {@link IntegerRange} to convert.
+ * @returns An {@link IntegerRange} that is _exclusive_ of its maximum value for a tuple or an {@link IntegerRange}:
+ *   `range` itself if it already is one.
+ * @throws `Error` if `range` is not an {@link IntegerRange}, a tuple of two numbers, or a string containing `..`.
+ *   Reachable only through a cast.
  */
 export const exclusive: {
   /**
@@ -196,6 +251,8 @@ export const exclusive: {
  * @category constructors
  * @param input The input to use when constructing the integer range.
  * @returns An {@link IntegerRange} derived from `input`.
+ * @throws `Error` if `input` is a string with no `..` in it, or is neither an {@link IntegerRange}, a tuple of two
+ *   numbers, nor a string. Only a value cast past the parameter type, or one from untyped JavaScript, reaches this.
  */
 export const from: (input: IntegerRangeInput) => IntegerRange = (input) => make(input);
 

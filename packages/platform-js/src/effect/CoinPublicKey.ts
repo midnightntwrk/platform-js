@@ -24,7 +24,8 @@ import * as ParseError from './ParseError.ts';
  *
  * @remarks
  *   `CoinPublicKey` is a 'branded' string type that represents a public key encoded either as a sequence of hexadecimal
- *   characters, or as a string formatted according to the Bech32m encoding scheme.
+ *   characters, or as a string formatted according to the Bech32m encoding scheme. Unchecked: any string can carry the
+ *   `Bech32m` brand.
  * @category keys
  * @see {@link CoinPublicKey.Hex}
  * @see {@link CoinPublicKey.Bech32m}
@@ -33,7 +34,7 @@ export type CoinPublicKey = CoinPublicKey.Bech32m | CoinPublicKey.Hex;
 
 export declare namespace CoinPublicKey {
   /**
-   * A user public key capable of receiving Zswap coins, formatted as a hex-encoded string.
+   * A user public key capable of receiving Zswap coins, formatted as plain hex (no `0x` prefix).
    *
    * @category keys
    */
@@ -42,6 +43,8 @@ export declare namespace CoinPublicKey {
   /**
    * A user public key capable of receiving Zswap coins, formatted as a string according to the Bech32m encoding scheme.
    *
+   * @remarks
+   *   Unchecked: any string can carry the `Bech32m` brand.
    * @category keys
    */
   export type Bech32m = Brand.Branded<string, 'CoinPublicKeyBech32m'>;
@@ -50,14 +53,25 @@ export declare namespace CoinPublicKey {
 /**
  * Creates a coin public key from a plain hex-encoded source string ({@link Hex_.PlainHex | PlainHex}).
  *
+ * @remarks
+ *   Non-throwing forms: `CoinPublicKey.Hex.either` returns the errors in a `Left`; `CoinPublicKey.Hex.option` returns
+ *   `None`, dropping the reason.
  * @category constructors
+ * @param source The string to brand.
+ * @returns `source`, branded as a {@link CoinPublicKey.Hex}.
+ * @throws `Brand.BrandErrors` if `source` is not plain hex.
  */
 export const Hex = Brand.all(Brand.nominal<CoinPublicKey.Hex>(), Hex_.PlainHex);
 
 /**
- * Create a coin public key from a source string formatted according to the Bech32m encoding scheme.
+ * Creates a coin public key from a source string formatted according to the Bech32m encoding scheme.
  *
+ * @remarks
+ *   A nominal brand: it accepts any string, hex and the empty string included, and never throws. Its `.either` and
+ *   `.option` always succeed, and `.is` is always `true`.
  * @category constructors
+ * @param source The string to brand.
+ * @returns `source`, branded as a {@link CoinPublicKey.Bech32m}.
  */
 export const Bech32m = Brand.nominal<CoinPublicKey.Bech32m>();
 
@@ -67,7 +81,9 @@ export const Bech32m = Brand.nominal<CoinPublicKey.Bech32m>();
  * @category constructors
  * @param self A source string that should become a {@link CoinPublicKey.Hex}, or a {@link CoinPublicKey} that should
  *   become a {@link CoinPublicKey.Hex}.
- * @returns A {@link CoinPublicKey.Hex}.
+ * @returns `self`, unchanged, when it is plain hex.
+ * @throws `ParseError` if `self` is not plain hex: any other string is taken for Bech32m, and Bech32m-to-hex conversion
+ *   is not yet supported.
  */
 export const asHex: (self: CoinPublicKey | string) => CoinPublicKey.Hex = (self) => {
   if (Hex.is(self)) return self;
@@ -80,10 +96,12 @@ export const asHex: (self: CoinPublicKey | string) => CoinPublicKey.Hex = (self)
 /**
  * Creates a Bech32m formatted coin public key from a given source.
  *
+ * @remarks
+ *   `Bech32m.is` is always `true`, so no input is converted or rejected.
  * @category constructors
  * @param self A source string that should become a {@link CoinPublicKey.Bech32m}, or a {@link CoinPublicKey} that should
  *   become a {@link CoinPublicKey.Bech32m}.
- * @returns A {@link CoinPublicKey.Bech32m}.
+ * @returns `self`, unchanged and unchecked, typed as a {@link CoinPublicKey.Bech32m}, hex included.
  */
 export const asBech32m: (self: CoinPublicKey | string) => CoinPublicKey.Bech32m = (self) => {
   if (Bech32m.is(self)) return self;
@@ -99,16 +117,22 @@ export const asBech32m: (self: CoinPublicKey | string) => CoinPublicKey.Bech32m 
  * @category constructors
  * @param self The {@link CoinPublicKey} for which raw bytes are required.
  * @returns A `Uint8Array` representing the raw bytes of `self`.
+ * @throws `ParseError` if `self` is not plain hex, as for {@link asHex}: Bech32m keys are not yet supported.
  */
 export const asBytes: (self: CoinPublicKey) => Uint8Array = (self) => Buffer.from(asHex(self), 'hex');
 
 /**
- * Create a coin public key from a source string.
+ * Creates a coin public key from a source string.
  *
+ * @remarks
+ *   A `value` that does not parse as hex, the empty string included, becomes a {@link CoinPublicKey.Bech32m} without any
+ *   check.
  * @category constructors
- * @param value The string value that is become a {@link CoinPublicKey}.
+ * @param value The string value that is to become a {@link CoinPublicKey}.
  * @returns A {@link CoinPublicKey} that is an instance of {@link CoinPublicKey.Hex} if `value` could be parsed as a
  *   hex-encoded string; otherwise as an instance of {@link CoinPublicKey.Bech32m}.
+ * @throws `Brand.BrandErrors` if `value` is `0x` followed by one or more whole bytes of hex digits: it parses as hex,
+ *   but {@link Hex} accepts only plain hex. Other `0x` strings (`'0x'`, `'0xabc'`) become Bech32m.
  */
 export const make: (value: string) => CoinPublicKey = (value) => {
   return Either.match(Hex_.parseHex(value), {
