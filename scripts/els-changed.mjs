@@ -12,19 +12,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-// Run @effect/language-service diagnostics on changed packages/**/*.ts(x) files.
-// Uses the plugin config from tsconfig.base.json, with `deterministicKeys` downgraded
-// to "off": the Context.Tag keys in src/effect/Configuration.ts don't match the deterministic
-// pattern, and fixing them renames runtime tag keys (a breaking API change) — cleanup tracked
-// in issue #87. Remove the override once it lands.
+// Run the Effect language service on the changed packages/**/*.ts(x) files, with the shared
+// @effect/language-service plugin config from tsconfig.base.json. Any diagnostic fails the run,
+// warnings as well as errors (`--strict`). "Changed" is measured against HEAD, so uncommitted
+// and untracked work is checked.
 import { execFileSync, spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
 
-const changed = execFileSync('node', ['scripts/changed-files.mjs'], { encoding: 'utf8' })
-  .split('\n')
+const PLUGIN_NAME = '@effect/language-service';
+
+// changed-files.mjs sits next to this script and prints each path NUL-terminated, so any file
+// name (spaces, newlines, non-ASCII) arrives intact. It is resolved from this file, not the cwd.
+const changedFilesScript = fileURLToPath(new URL('./changed-files.mjs', import.meta.url));
+
+const changed = execFileSync(process.execPath, [changedFilesScript], { encoding: 'utf8' })
+  .split('\0')
+  .filter((file) => file !== '')
   .filter((file) => /^packages\/.*\.tsx?$/.test(file));
 
-if (changed.length === 0) process.exit(0);
+if (changed.length === 0) {
+  console.log('els:changed: no changed packages/**/*.ts files since HEAD; nothing to check');
+  process.exit(0);
+}
 
 // Parse with TypeScript's own tsconfig reader (JSONC-aware: comments, trailing commas) —
 // the same parser tsc uses, so it can never disagree with how the config is interpreted.
@@ -33,11 +43,13 @@ if (error) {
   console.error(ts.flattenDiagnosticMessageText(error.messageText, '\n'));
   process.exit(1);
 }
-const plugin = baseConfig.compilerOptions.plugins.find((p) => p.name === '@effect/language-service');
-const lspConfig = {
-  ...plugin,
-  diagnosticSeverity: { ...plugin.diagnosticSeverity, deterministicKeys: 'off' },
-};
+
+const plugins = baseConfig?.compilerOptions?.plugins;
+const plugin = Array.isArray(plugins) ? plugins.find((p) => p?.name === PLUGIN_NAME) : undefined;
+if (plugin === undefined) {
+  console.error(`tsconfig.base.json has no ${PLUGIN_NAME} plugin entry`);
+  process.exit(1);
+}
 
 const failures = changed.filter((file) => {
   const result = spawnSync(
@@ -49,11 +61,16 @@ const failures = changed.filter((file) => {
       `${process.cwd()}/${file}`,
       '--format',
       'pretty',
+      '--strict',
       '--lspconfig',
-      JSON.stringify(lspConfig),
+      JSON.stringify(plugin),
     ],
     { stdio: 'inherit' },
   );
+  if (result.error) {
+    console.error(`could not run effect-language-service for ${file}: ${result.error.message}`);
+    return true;
+  }
   return result.status !== 0;
 });
 

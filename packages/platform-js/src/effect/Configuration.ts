@@ -33,6 +33,9 @@ import * as SigningKey from './SigningKey.ts';
  *
  * @category services
  */
+// The tag key is a runtime identifier other code may depend on, so it keeps its published value rather than the
+// deterministic key pattern.
+// @effect-diagnostics-next-line deterministicKeys:off
 export class Keys extends Context.Tag('@midnightntwrk/platform-js/Configuration#Keys')<Keys, Configuration.Keys>() {}
 
 /**
@@ -40,6 +43,9 @@ export class Keys extends Context.Tag('@midnightntwrk/platform-js/Configuration#
  *
  * @category services
  */
+// The tag key is a runtime identifier other code may depend on, so it keeps its published value rather than the
+// deterministic key pattern.
+// @effect-diagnostics-next-line deterministicKeys:off
 export class Network extends Context.Tag('@midnightntwrk/platform-js/Configuration#Network')<
   Network,
   NetworkId.NetworkId
