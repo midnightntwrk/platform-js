@@ -216,10 +216,10 @@ yarn run -T vitest run test/effect/Hex.test.ts
 
 ### Repo tooling tests
 
-`test/tooling/` at the repo root tests the repo's own tooling, not the package: the root scripts, `turbo.json` and the
-Vitest configs. The tests run the scripts as child processes against temporary folders and temporary git repos. They
-have their own config, `vitest.tooling.config.ts`, and run only through `yarn test:tooling` (part of
-`yarn verify:test`). `yarn typecheck:root` type-checks them.
+`test/tooling/` at the repo root tests the repo's own tooling, not the package: the root scripts, `turbo.json`, the
+Vitest configs and the root ESLint config's JSDoc rules. The tests run the scripts as child processes against temporary
+folders and temporary git repos. They have their own config, `vitest.tooling.config.ts`, and run only through
+`yarn test:tooling` (part of `yarn verify:test`). `yarn typecheck:root` type-checks them.
 
 ---
 

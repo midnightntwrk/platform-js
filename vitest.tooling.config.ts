@@ -16,9 +16,9 @@
 import { defineConfig } from 'vitest/config';
 
 /**
- * Tests for the repo's own tooling: the root scripts, `turbo.json` and the Vitest configs. They run root scripts as
- * child processes against temporary directories and git repos, so they live outside the package projects and run
- * through `yarn test:tooling` only.
+ * Tests for the repo's own tooling: the root scripts, `turbo.json`, the Vitest configs and the root ESLint config's
+ * JSDoc rules. They run root scripts as child processes against temporary directories and git repos, so they live
+ * outside the package projects and run through `yarn test:tooling` only.
  */
 export default defineConfig({
   test: {
