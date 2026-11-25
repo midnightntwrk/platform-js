@@ -51,8 +51,17 @@ export class Network extends Context.Tag('@midnightntwrk/platform-js/Configurati
   NetworkId.NetworkId
 >() {}
 
+/**
+ * The shapes of the services this module provides.
+ *
+ * @category models
+ */
 export declare namespace Configuration {
-  /** Accessors for retrieving keys. */
+  /**
+   * Accessors for retrieving keys: the shape of the {@link Keys} service.
+   *
+   * @category models
+   */
   export interface Keys {
     /**
      * Gets the current user's Zswap public key.
@@ -66,7 +75,7 @@ export declare namespace Configuration {
      *
      * @remarks
      *   A signing key is required when creating Contract Maintenance Authority (CMA) instances when initializing new
-     *   contracts. If `Option.None` is returned, then a new singing key is sampled and used for the CMA instead.
+     *   contracts. If `Option.None` is returned, then a new signing key is sampled and used for the CMA instead.
      *   Returning the same signing key is useful when that key is to be used to maintain multiple contracts.
      *
      *   The returned key carries its {@link SigningKey.SignatureKind | kind} (the `tag`), taken from the
@@ -126,8 +135,11 @@ const makeNetwork: () => Layer.Layer<Network, ConfigError> = () =>
   );
 
 /**
- * Creates a platform independent configuration provider,
+ * Creates a platform independent configuration provider.
  *
+ * @remarks
+ *   An environment variable overrides the JSON value at the same path, named in constant case with `_` between path
+ *   segments: `KEYS_COIN_PUBLIC` overrides `keys.coinPublic`.
  * @category constructors
  * @param json A JSON object from which configuration values can be read.
  * @returns A `ConfigProvider` that defaults to values present in `json`, but allows them to be overridden via

@@ -174,9 +174,10 @@ returns `Option.Option<SigningKey.SigningKey>` rather than `undefined` when no k
 
 **Known throwing exports, do not copy.** New code returns `Either` or fails an `Effect` instead.
 
-- `CoinPublicKey.make`, `CoinPublicKey.asHex`, `CoinPublicKey.asBech32m`, `CoinPublicKey.asBytes` (#23): `make` throws
-  on prefixed hex and labels any non-hex string Bech32m; the `as…` conversions throw a `ParseError` for conversions not
-  yet supported, and rely on a nominal `.is` that is always `true`
+- `CoinPublicKey.make`, `CoinPublicKey.asHex`, `CoinPublicKey.asBytes` (#23): `make` throws on prefixed hex and labels
+  any non-hex string Bech32m; `asHex` and `asBytes` throw a `ParseError` on any string that is not plain hex, because
+  the nominal `Bech32m.is` is always `true` and Bech32m-to-hex conversion is not yet supported. `asBech32m` never
+  throws: the same `.is` makes it return every input unchanged, hex included
 - `IntegerRange.from`, `IntegerRange.inclusive`, `IntegerRange.exclusive` (#25): throw through the private `make` on
   input it cannot read (`from` on a malformed range string)
 - `SigningKey.make` (#26): throws `BrandErrors` on an invalid key string, with no total alternative
@@ -697,9 +698,15 @@ APIs:
 - A one-line summary of purpose, then `@remarks` for detail that does not fit in one line
 - `@param` for each parameter and `@returns` for the result, naming `Right`/`Left` cases for an `Either`
 - `@category` on every export, from the set in use: `models`, `constructors`, `guards`, `predicates`, `equivalence`,
-  `utilities`, `errors`, `services`, `layers`, `keys`
-- In new code, `@throws` on the rare export that can throw (a brand constructor called directly). No file in `src/` uses
-  it yet, so existing exports, the known throwing exports under Total Functions included, lack it
+  `utilities`, `errors`, `services`, `layers`, `keys`, `symbols` (Effect's category for a `TypeId` type)
+- A brand constructor is a function too: `@param` and `@returns`, and `@remarks` pointing to its non-throwing `.either`
+  and `.option`
+- `@throws` on every export that can throw (a brand constructor called directly, and the known throwing exports under
+  Total Functions), in plain text: what is thrown, in backticks, and what makes it throw, e.g.
+  ``@throws `Brand.BrandErrors` if `source` is not plain hex``. Read what is thrown from the code, not from a guess
+- No JSDoc on a `declare namespace` merged with a documented type of the same name (`Hex`, `CoinPublicKey`,
+  `SigningKey`): the type's JSDoc covers the merged name, and a second one shows twice on hover. Members inside the
+  namespace keep their own
 - `/** @internal */` on anything in `src/effect/internal/`
 
 Use `{@link ...}` to cross-reference other symbols, and `@see` for related ones.

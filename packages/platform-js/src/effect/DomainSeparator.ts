@@ -23,6 +23,21 @@ import * as Hex from './Hex.ts';
  * @category models
  */
 export type DomainSeparator = Brand.Branded<string, 'DomainSeparator'>;
+
+/**
+ * Creates a token domain separator from a plain hex-encoded string, 32 bytes in length.
+ *
+ * @remarks
+ *   Called directly, the constructor throws on invalid input. `DomainSeparator.either` returns the errors in a `Left`
+ *   instead, and `DomainSeparator.option` returns `None` when only absence matters.
+ *
+ *   Brands are erased at runtime, and {@link ContractAddress} shares this refinement, so `DomainSeparator.is` accepts a
+ *   contract address too. The two stay apart at compile time only.
+ * @category constructors
+ * @param source The string to brand.
+ * @returns `source`, branded as a {@link DomainSeparator}.
+ * @throws `Brand.BrandErrors` if `source` is not plain hex (no `0x` prefix) exactly 32 bytes in length.
+ */
 export const DomainSeparator = Brand.all(
   Brand.nominal<DomainSeparator>(),
   Hex.ConstrainedPlainHex({ byteLength: '32..=32' }),

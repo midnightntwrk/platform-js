@@ -59,14 +59,14 @@ export interface SigningKey {
   /** The kind of signature scheme this key is used with. */
   readonly tag: SignatureKind;
 
-  /** The raw key value, a public BIP-340 signing key, 32 bytes in length, with an optional 3-byte version prefix. */
+  /** The raw key value, a public BIP-340 signing key: plain hex, 32 to 35 bytes in length (see {@link SigningKey.Value}). */
   readonly value: SigningKey.Value;
 }
 
 export declare namespace SigningKey {
   /**
-   * The raw value of a {@link SigningKey}; a hex-encoded string 32 bytes in length, with an optional 3-byte version
-   * prefix.
+   * The raw value of a {@link SigningKey}; a plain hex-encoded string 32 to 35 bytes in length: a 32-byte key, with room
+   * for a version prefix of up to 3 bytes.
    *
    * @category keys
    */
@@ -76,17 +76,27 @@ export declare namespace SigningKey {
 /**
  * Creates a {@link SigningKey.Value} from a hex-encoded source string.
  *
+ * @remarks
+ *   Called directly, the constructor throws on invalid input. `SigningKey.Value.either` returns the errors in a `Left`
+ *   instead, and `SigningKey.Value.option` returns `None` when only absence matters.
  * @category constructors
+ * @param source The string to brand.
+ * @returns `source`, branded as a {@link SigningKey.Value}.
+ * @throws `Brand.BrandErrors` if `source` is not plain hex (no `0x` prefix) 32 to 35 bytes in length.
  */
 export const Value = Brand.all(Brand.nominal<SigningKey.Value>(), Hex.ConstrainedPlainHex({ byteLength: '32..=35' }));
 
 /**
  * Creates a {@link SigningKey} from a raw key value and an optional {@link SignatureKind}.
  *
+ * @remarks
+ *   `value` goes through the {@link Value} constructor, which throws on an invalid string. To build a key from untrusted
+ *   input without a throw, check it with `SigningKey.Value.either` first.
  * @category constructors
  * @param value The raw key value. A string source is validated and branded as a {@link SigningKey.Value}.
  * @param tag The {@link SignatureKind} the key is used with. Defaults to {@link DefaultSignatureKind} (`'schnorr'`).
  * @returns A {@link SigningKey}.
+ * @throws `Brand.BrandErrors` if `value` is not plain hex (no `0x` prefix) 32 to 35 bytes in length.
  */
 export const make: (value: SigningKey.Value | string, tag?: SignatureKind) => SigningKey = (
   value,

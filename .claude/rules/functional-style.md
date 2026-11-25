@@ -42,8 +42,8 @@ File paths below are relative to `packages/platform-js/src/`, except `test/…` 
   A brand constructor called directly (`Hex.PlainHex(s)`) throws by Effect's design; callers that can fail use its
   `.either`. Use `.option` only when absence is all the caller needs: it drops the reason.
 - Known throwing exports, not a pattern to copy: `CoinPublicKey.make`, `CoinPublicKey.asHex`,
-  `CoinPublicKey.asBech32m`, `CoinPublicKey.asBytes` (#23); `IntegerRange.from`, `IntegerRange.inclusive`,
-  `IntegerRange.exclusive` (#25); `SigningKey.make` (#26).
+  `CoinPublicKey.asBytes` (#23; `CoinPublicKey.asBech32m` never throws, but labels any string Bech32m);
+  `IntegerRange.from`, `IntegerRange.inclusive`, `IntegerRange.exclusive` (#25); `SigningKey.make` (#26).
 - No `as` casts without exhausting alternatives first; a necessary cast requires a
   `// Type cast required because: <reason>` comment.
 
@@ -71,8 +71,13 @@ File paths below are relative to `packages/platform-js/src/`, except `test/…` 
 ## Public API documentation
 
 - Every export requires JSDoc: description, `@param` for each parameter, `@returns`, and a `@category` tag
-  (`models`, `constructors`, `guards`, `errors`, `layers`, …) matching the existing modules.
-- In new code, add `@throws` to the rare export that can throw (a brand constructor called directly).
+  (`models`, `constructors`, `guards`, `errors`, `layers`, `symbols`, …) matching the existing modules. A brand
+  constructor counts as a function: `@param` and `@returns` too.
+- Every export that can throw gets `@throws`, in plain text, naming what is thrown (in backticks) and what makes it
+  throw: ``@throws `Brand.BrandErrors` if `source` is not plain hex``. Read what is thrown from the code. A brand
+  constructor's `@remarks` points to its non-throwing `.either` and `.option`.
+- A `declare namespace` merged with a documented type of the same name gets no JSDoc of its own (hover would show it
+  twice); its members keep theirs.
 - Mark everything in `effect/internal/` with `/** @internal */`.
 
 ## Public API and changesets

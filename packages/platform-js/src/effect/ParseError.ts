@@ -52,6 +52,11 @@ export const isParseError = (u: unknown): u is ParseError => hasProperty(u, Type
  * Creates a new `ParseError`.
  *
  * @category constructors
+ * @param message A displayable message.
+ * @param source The source string that failed to parse.
+ * @param meta Optional inspectable data about the parse operation.
+ * @param cause Optional underlying cause of the failed parse operation.
+ * @returns A {@link ParseError} holding the given values.
  */
 export const make: {
   (message: string, source: string): ParseError;
