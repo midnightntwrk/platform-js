@@ -9,6 +9,7 @@
   "typesVersions": {
     "*": {
       "effect": ["./dist/effect/index.d.ts"],
+      "effect/internal/*": [],
       "effect/*": ["./dist/effect/*.d.ts"]
     }
   },
