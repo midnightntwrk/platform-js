@@ -296,16 +296,16 @@ Error Modeling), so callers can `Effect.catchTag` it. The single-argument form `
 fails. So there is no conversion helper; yield or pass the `Either` directly where an `Effect` is expected:
 
 ```typescript
-// test/effect/Hex.test.ts - yield an Either inside Effect.gen; a Left fails the effect
+// src/effect/test/Hex.test.ts - yield an Either inside Effect.gen; a Left fails the effect
 Effect.gen(function* () {
   const result = yield* Hex.parseHex(hex);
   expect(result.hasPrefix).toBe(false);
 });
 
-// test/effect/Hex.test.ts - pass an Either to an Effect combinator
+// src/effect/test/Hex.test.ts - pass an Either to an Effect combinator
 Effect.gen(function* () {
   const error = yield* Effect.flip(Hex.parseHex('HOSKYA'));
-  expect(ParseError.isParseError(error)).toBeTruthy();
+  expect(ParseError.isParseError(error)).toBe(true);
 });
 ```
 
@@ -602,18 +602,18 @@ Effect.all({ a: fetchA(), b: fetchB() }, { concurrency: 'unbounded' }); // → {
 
 ### Scala/F# Idiom Translation
 
-| Scala/F# Idiom      | TypeScript Equivalent                               | Example Location                                            |
-| ------------------- | --------------------------------------------------- | ----------------------------------------------------------- |
-| for-comprehension   | `Effect.gen(function* () { ... })`                  | `src/effect/Configuration.ts`                               |
-| case class          | Proto-object with `Equal`/`Hash`, `TypeId`          | `src/effect/IntegerRange.ts`                                |
-| sealed trait / DU   | `_tag` union type                                   | `IntegerRangeValue` in `src/effect/IntegerRange.ts`         |
-| exception type      | `TypeIdError` class + guard + `make`                | `src/effect/ParseError.ts`                                  |
-| opaque / newtype    | `Brand.nominal`, `Brand.refined`, `Brand.all`       | `src/effect/ContractAddress.ts`                             |
-| implicit / given    | `Context.Tag` + `Layer`                             | `src/effect/Configuration.ts`                               |
-| `\|>` pipe          | `pipe()` / `.pipe()` from effect                    | Throughout                                                  |
-| Railway-oriented    | `Either.map`, `Either.flatMap` chains               | Not used in `src/` yet                                      |
-| Pattern matching    | `Either.match({ onLeft, onRight })`, `Option.match` | `src/effect/internal/hex.ts`, `src/effect/Configuration.ts` |
-| Property-based test | `effect/FastCheck` arbitraries                      | `test/effect/Arbitrary.ts`, `test/effect/Hex.test.ts`       |
+| Scala/F# Idiom      | TypeScript Equivalent                               | Example Location                                              |
+| ------------------- | --------------------------------------------------- | ------------------------------------------------------------- |
+| for-comprehension   | `Effect.gen(function* () { ... })`                  | `src/effect/Configuration.ts`                                 |
+| case class          | Proto-object with `Equal`/`Hash`, `TypeId`          | `src/effect/IntegerRange.ts`                                  |
+| sealed trait / DU   | `_tag` union type                                   | `IntegerRangeValue` in `src/effect/IntegerRange.ts`           |
+| exception type      | `TypeIdError` class + guard + `make`                | `src/effect/ParseError.ts`                                    |
+| opaque / newtype    | `Brand.nominal`, `Brand.refined`, `Brand.all`       | `src/effect/ContractAddress.ts`                               |
+| implicit / given    | `Context.Tag` + `Layer`                             | `src/effect/Configuration.ts`                                 |
+| `\|>` pipe          | `pipe()` / `.pipe()` from effect                    | Throughout                                                    |
+| Railway-oriented    | `Either.map`, `Either.flatMap` chains               | Not used in `src/` yet                                        |
+| Pattern matching    | `Either.match({ onLeft, onRight })`, `Option.match` | `src/effect/internal/hex.ts`, `src/effect/Configuration.ts`   |
+| Property-based test | `effect/FastCheck` arbitraries                      | `src/effect/test/Arbitrary.ts`, `src/effect/test/Hex.test.ts` |
 
 ### Effect Usage
 
@@ -691,7 +691,7 @@ When implementing new features, refer to these exemplary files:
 | Proto-object data type, `_tag` union, dual | `src/effect/IntegerRange.ts`                                     |
 | Error type (`TypeIdError` + guard + make)  | `src/effect/ParseError.ts`                                       |
 | Services, `Context.Tag`, layers, config    | `src/effect/Configuration.ts`                                    |
-| Tests (`@effect/vitest`, FastCheck)        | `test/effect/Hex.test.ts`, `test/effect/Arbitrary.ts`            |
+| Tests (`@effect/vitest`, FastCheck)        | `src/effect/test/Hex.test.ts`, `src/effect/test/Arbitrary.ts`    |
 
 ## Documentation Standards
 

@@ -72,8 +72,8 @@ yarn watch                   # rebuild dist/ on every change (turbo watch dist)
 yarn typecheck               # type-check each package's src and tests
 yarn typecheck:root          # type-check the Vitest configs and test/tooling/
 yarn test                    # full test suite (turbo), straight from src/, no build or type-check
-yarn test:unit               # unit lane: test/**/*.test.ts, not *.integration.test.ts; type-checks first; fails if none
-yarn test:integration        # integration lane: test/**/*.integration.test.ts; type-checks first (none yet; passes)
+yarn test:unit               # unit lane: src/**/test/**/*.test.ts, not *.integration.test.ts; type-checks first; fails if none
+yarn test:integration        # integration lane: src/**/test/**/*.integration.test.ts; type-checks first (none yet; passes)
 yarn lint                    # eslint in each package, plus lint:root
 yarn lint:root               # eslint on the root eslint.config.mjs, vitest*.ts configs and test/tooling/
 yarn format                  # format:root first, then prettier --write in each package
@@ -98,7 +98,7 @@ yarn clean                   # remove dist, coverage, reports and tsconfig.*.tsb
 yarn changeset status --since=origin/main   # the CI changeset check: fails if a package changed without one
 
 cd packages/platform-js      # the package folder
-yarn run -T vitest run test/effect/Hex.test.ts   # one test file
+yarn run -T vitest run src/effect/test/Hex.test.ts   # one test file
 ```
 
 `-T` runs a tool installed at the workspace root. Each test lane writes to its own `coverage/<lane>` and
@@ -124,9 +124,9 @@ a public API change. `typesVersions` mirrors `effect` and `effect/*` for `node10
 user review it, then implement. **A confirmed-failing test must never be weakened to fit the implementation**: escalate
 to the user instead. Full loop: the `test-first` skill (Matt's `tdd`, which `/implement` calls, runs inside it).
 
-Unit tests only today (the `integration` lane is empty): `*.test.ts` in `packages/platform-js/test/`, using
-`@effect/vitest` and `effect/FastCheck` property tests. Hard rules load from `.claude/rules/testing.md`; tiers:
-`DEV_GUIDE.md` → Testing Tiers.
+Unit tests only today (the `integration` lane is empty): `*.test.ts` in a `test/` folder beside the source
+(`src/effect/test/`, ADR-0006), using `@effect/vitest` and `effect/FastCheck` property tests. Hard rules load from
+`.claude/rules/testing.md`; tiers: `DEV_GUIDE.md` → Testing Tiers.
 
 ## Versioning
 
@@ -143,9 +143,9 @@ touched; full rationale and worked examples: `docs/CodingConventions.md`.
 
 ## Common Gotchas
 
-- **Tests import from `src/`** by relative path (`../../src/effect/Hex.ts`), so they never need a build and never test a
-  stale `dist/`. Import public modules, not `src/effect/internal/`. A new `effect/` module is also re-exported from
-  `src/effect/index.ts`.
+- **Tests sit beside the source** in `src/<folder>/test/` and import it by relative path (`../Hex.ts`), so they never
+  need a build and never test a stale `dist/`. Import public modules, not `internal/`. A new `effect/` module is also
+  re-exported from `src/effect/index.ts`; `test/` folders are not.
 - **The type-check is clean**, and CI's `General Checks` job fails on any type error: every error `yarn typecheck`
   reports is yours to fix. CI jobs: `DEV_GUIDE.md` → Continuous integration.
 - **TypeScript stays on 6.0** (`~6.0.x`): typescript-eslint supports only `<6.1.0`; don't bump to 6.1+ or 7 without

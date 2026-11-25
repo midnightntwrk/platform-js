@@ -15,7 +15,7 @@
 /// <reference types="vitest" />
 import { configDefaults, defineConfig } from 'vitest/config';
 
-import { testOutputs } from '../../vitest.outputs.ts';
+import { checksCoverageThresholds, testOutputs } from '../../vitest.outputs.ts';
 
 const outputs = testOutputs();
 
@@ -29,14 +29,22 @@ export default defineConfig({
   test: {
     ...shared,
     // Runners that ignore `projects` (vitest started from the repo root, some editor integrations) use this top-level
-    // selection: the unit project's files, never integration tests or files under src/.
-    include: ['test/**/*.test.ts'],
+    // selection: the unit project's files, never integration tests.
+    include: ['src/**/test/**/*.test.ts'],
     exclude: [...exclude, '**/*.integration.test.ts'],
     coverage: {
       provider: 'v8',
       enabled: true,
       clean: true,
       include: ['src/**/*.ts'],
+      // Tests and their helpers sit beside the source (ADR-0006); coverage measures only the code they test.
+      exclude: ['src/**/test/**'],
+      // A floor, not a target: the coverage the unit tests reach, rounded down to the nearest 5. Raise it as the
+      // known gaps close; never lower it to make a change pass. Checked only by the package's `test` and `test:unit`
+      // scripts (`checksCoverageThresholds`); `yarn run -T vitest run <file>` skips it.
+      ...(checksCoverageThresholds(process.env.npm_lifecycle_event)
+        ? { thresholds: { statements: 90, branches: 80, functions: 90, lines: 90 } }
+        : {}),
       reporter: ['clover', 'json', 'json-summary', 'lcov', 'text'],
       reportsDirectory: outputs.coverageDirectory,
     },
@@ -45,7 +53,7 @@ export default defineConfig({
         test: {
           ...shared,
           name: 'unit',
-          include: ['test/**/*.test.ts'],
+          include: ['src/**/test/**/*.test.ts'],
           exclude: [...exclude, '**/*.integration.test.ts'],
         },
       },
@@ -53,7 +61,7 @@ export default defineConfig({
         test: {
           ...shared,
           name: 'integration',
-          include: ['test/**/*.integration.test.ts'],
+          include: ['src/**/test/**/*.integration.test.ts'],
           exclude,
         },
       },

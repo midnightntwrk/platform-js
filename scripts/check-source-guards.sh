@@ -11,8 +11,18 @@ set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
 SRC_PROBE='packages/platform-js/src/effect/Probe.ts'
-TEST_PROBE='packages/platform-js/test/effect/Probe.test.ts'
+TEST_PROBE='packages/platform-js/src/effect/test/Probe.test.ts'
 failures=0
+
+# The test cases prove the guard only if eslint lints the probe as a test file: one in a `test/` folder under a
+# package's `src/`. A probe anywhere else would pass or fail under the source rules instead.
+case "$TEST_PROBE" in
+  packages/*/src/*/test/*.test.ts) ;;
+  *)
+    echo "TEST_PROBE (${TEST_PROBE}) must be a *.test.ts file in a test/ folder under packages/*/src/" >&2
+    exit 1
+    ;;
+esac
 
 report() {
   local verdict="$1"
@@ -78,9 +88,9 @@ bad_src_cases=(
   "declare module './Hex.js' {}"
 )
 bad_test_cases=(
-  "import '../../src/effect/Hex.js'"
-  "vi.mock('../../src/effect/Hex.js')"
-  "vi.importActual('../../src/effect/Hex.js')"
+  "import '../Hex.js'"
+  "vi.mock('../Hex.js')"
+  "vi.importActual('../Hex.js')"
 )
 
 for source in "${bad_src_cases[@]}"; do

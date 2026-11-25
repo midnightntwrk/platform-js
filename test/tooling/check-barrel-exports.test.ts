@@ -77,6 +77,22 @@ describe('check-barrel-exports', () => {
     expect(check().status).toBe(0);
   });
 
+  it.each(['effect/test/Extra.test.ts', 'effect/test/Arbitrary.ts', 'effect/sub/test/Extra.test.ts'])(
+    'should not require test files such as %s to be re-exported',
+    (file) => {
+      write(file, 'export const extra = 1;\n');
+      expect(check().status).toBe(0);
+    },
+  );
+
+  it('should fail when effect/index.ts re-exports a test/ file', () => {
+    write('effect/test/Arbitrary.ts', 'export const extra = 1;\n');
+    append(effectIndex, "export * as Arbitrary from './test/Arbitrary.ts';");
+    const result = check();
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('test/');
+  });
+
   it.each([
     ['export *', "export * from './internal/hex.ts';"],
     ['export * as', "export * as H from './internal/hex.ts';"],

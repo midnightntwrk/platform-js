@@ -192,10 +192,12 @@ changes the label. A new workflow pins the same label.
 
 Today the package has **unit tests only**. They are pure: no Docker, network or other outside services.
 
-- Files are named `*.test.ts` and live in `packages/platform-js/test/` (for example `test/effect/Hex.test.ts`).
+- Files are named `*.test.ts` and live in a `test/` folder beside the source they cover (for example
+  `src/effect/test/Hex.test.ts`, [ADR-0006](docs/decisions/0006-colocate-unit-tests-with-source.md)). The build,
+  coverage and the barrel check leave `test/` folders out.
 - They use [`@effect/vitest`](https://github.com/Effect-TS/effect/tree/main/packages/vitest) (`it.effect`) and property
   tests from `effect/FastCheck`.
-- Tests import from `src/` by relative path, for example `../../src/effect/Hex.ts`, so they need no build first.
+- Tests import the module under test by relative path, for example `../Hex.ts`, so they need no build first.
 
 Run every package test from the repo root:
 
@@ -209,10 +211,16 @@ lane scripts type-check first; `yarn test` does not. `test:unit` fails when it f
 when empty. Each lane writes coverage and reports to its own folder, `coverage/<lane>` and `reports/<lane>` (`all` for
 `yarn test`), so `yarn verify`, which runs both lanes side by side, keeps both.
 
+`yarn test` and `yarn test:unit` also fail when coverage drops below the thresholds in
+`packages/platform-js/vitest.config.ts` (statements 90, branches 80, functions 90, lines 90). They check every run of
+the package's `test` and `test:unit` scripts, even one given a single file, which then fails.
+`yarn run -T vitest run <file>` and the integration lane skip them. The thresholds are a floor: raise them as coverage
+grows, never lower them to make a change pass.
+
 Run one file from `packages/platform-js/`:
 
 ```bash
-yarn run -T vitest run test/effect/Hex.test.ts
+yarn run -T vitest run src/effect/test/Hex.test.ts
 ```
 
 ### Repo tooling tests

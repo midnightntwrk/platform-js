@@ -14,7 +14,7 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { type TestLane, testLaneOf, testOutputs } from '../../vitest.outputs.ts';
+import { checksCoverageThresholds, type TestLane, testLaneOf, testOutputs } from '../../vitest.outputs.ts';
 
 describe('testLaneOf', () => {
   it.each<[string | undefined, TestLane]>([
@@ -36,4 +36,17 @@ describe('testOutputs', () => {
       htmlFile: `reports/${lane}/test-report.html`,
     });
   });
+});
+
+describe('checksCoverageThresholds', () => {
+  it.each(['test', 'test:unit'])('should check the thresholds on a full unit run, the %j script', (script) => {
+    expect(checksCoverageThresholds(script)).toBe(true);
+  });
+
+  it.each(['test:integration', 'verify', 'vitest', '', undefined])(
+    'should not check the thresholds for the %j script, which runs no unit tests or only some',
+    (script) => {
+      expect(checksCoverageThresholds(script)).toBe(false);
+    },
+  );
 });

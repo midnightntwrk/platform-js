@@ -4,7 +4,7 @@
   "globalDependencies": ["eslint.config.mjs", "tsconfig.base.json"],
   "tasks": {
     "dist": {
-      "inputs": ["src/**/*.ts", "package.json", "tsconfig*.json", "$TURBO_ROOT$/tsconfig.base.json"],
+      "inputs": ["src/**/*.ts", "!src/**/test/**", "package.json", "tsconfig*.json", "$TURBO_ROOT$/tsconfig.base.json"],
       "outputs": ["dist/**", "tsconfig.build.tsbuildinfo"],
       "outputLogs": "new-only",
       "dependsOn": ["^dist"]
@@ -14,14 +14,13 @@
       "dependsOn": ["^dist:publish"]
     },
     "typecheck": {
-      "inputs": ["src/**/*.ts", "test/**/*.ts", "package.json", "tsconfig*.json", "$TURBO_ROOT$/tsconfig.base.json"],
+      "inputs": ["src/**/*.ts", "package.json", "tsconfig*.json", "$TURBO_ROOT$/tsconfig.base.json"],
       "outputLogs": "new-only",
       "dependsOn": ["^dist"]
     },
     "test": {
       "inputs": [
         "src/**/*.ts",
-        "test/**/*.ts",
         "tsconfig*.json",
         "$TURBO_ROOT$/tsconfig.base.json",
         "vitest.config.ts",
@@ -34,7 +33,6 @@
     "test:unit": {
       "inputs": [
         "src/**/*.ts",
-        "test/**/*.ts",
         "tsconfig*.json",
         "$TURBO_ROOT$/tsconfig.base.json",
         "vitest.config.ts",
@@ -52,7 +50,6 @@
     "lint": {
       "inputs": [
         "src/**/*.ts",
-        "test/**/*.ts",
         "tsconfig*.json",
         "vitest.config.ts",
         "$TURBO_ROOT$/tsconfig.base.json",
@@ -76,7 +73,7 @@
       "cache": false
     },
     "publint": {
-      "inputs": ["src/**/*.ts", "package.json", "tsconfig*.json", "$TURBO_ROOT$/tsconfig.base.json"],
+      "inputs": ["src/**/*.ts", "!src/**/test/**", "package.json", "tsconfig*.json", "$TURBO_ROOT$/tsconfig.base.json"],
       "outputLogs": "new-only",
       "dependsOn": ["dist:publish"]
     },
