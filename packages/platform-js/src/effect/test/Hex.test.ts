@@ -14,7 +14,7 @@
  */
 
 import { describe, expect, it } from '@effect/vitest';
-import { Effect } from 'effect';
+import * as Effect from 'effect/Effect';
 import * as Either from 'effect/Either';
 import * as fc from 'effect/FastCheck';
 import { NodeInspectSymbol } from 'effect/Inspectable';
@@ -23,11 +23,14 @@ import * as Hex from '../Hex.ts';
 import * as IntegerRange from '../IntegerRange.ts';
 import * as ParseError from '../ParseError.ts';
 import * as Arbitrary from './Arbitrary.ts';
+import { byteLengthOutOfRange, prefixNotAllowed, prefixRequired } from './Messages.ts';
 
-const prefixNotAllowed = (source: string) => `Source string '${source}' has a '0x' prefix but prefixes are not allowed`;
-const prefixRequired = (source: string) => `Source string '${source}' requires a '0x' prefix`;
-const byteLengthOutOfRange = (source: string, byteLength: number, expected: string) =>
-  `Source string '${source}' has a byte length of ${byteLength}, but expected ${expected}`;
+/** The regex groups a parsed hex-string serialises to. */
+interface HexGroups {
+  readonly prefix: string;
+  readonly byteChars: string;
+  readonly incompleteChars: string;
+}
 
 describe('Hex', () => {
   describe('parseHex', () => {
@@ -65,28 +68,49 @@ describe('Hex', () => {
       }),
     );
 
-    it.effect('should fail with a ParseError for an invalid hex-encoding', () =>
-      Effect.gen(function* () {
-        const error = yield* Effect.flip(Hex.parseHex('HOSKYA'));
-        expect(ParseError.isParseError(error)).toBe(true);
-        expect(error).toMatchObject({
-          message: "Invalid hex-digit 'H' found in source string at index 0",
-        });
-      }),
-    );
-
-    it.effect.each([
+    // A source the hex pattern matches carries its parsed groups as `meta`; one it never matches carries none.
+    // The pattern's `.` stops at a line terminator, so a trailing one leaves the source unmatched.
+    it.effect.each<readonly [label: string, source: string, message: string, groups?: HexGroups]>([
       ['an empty string', '', 'Source string must have non-zero length'],
-      ['an incomplete last byte', 'abc', "Last byte of source string 'abc' is incomplete"],
-      ['an invalid digit after whole bytes', 'abzz', "Invalid hex-digit 'z' found in source string at index 2"],
-      ['an invalid digit after a prefix', '0xzz', "Invalid hex-digit 'z' found in source string at index 2"],
-      ['a prefix with no bytes', '0x', "Source string '0x' is not a valid hex-string"],
-    ])('should fail with a ParseError for %s', ([, source, message]) =>
+      ['a trailing line feed', 'ab\n', "Source string 'ab\n' is not a valid hex-string"],
+      ['a trailing carriage return', 'ab\r', "Source string 'ab\r' is not a valid hex-string"],
+      [
+        'an incomplete last byte',
+        'abc',
+        "Last byte of source string 'abc' is incomplete",
+        { prefix: '', byteChars: 'ab', incompleteChars: 'c' },
+      ],
+      [
+        'a non-hex first digit',
+        'HOSKYA',
+        "Invalid hex-digit 'H' found in source string at index 0",
+        { prefix: '', byteChars: '', incompleteChars: 'HOSKYA' },
+      ],
+      [
+        'an invalid digit after whole bytes',
+        'abzz',
+        "Invalid hex-digit 'z' found in source string at index 2",
+        { prefix: '', byteChars: 'ab', incompleteChars: 'zz' },
+      ],
+      [
+        'an invalid digit after a prefix',
+        '0xzz',
+        "Invalid hex-digit 'z' found in source string at index 2",
+        { prefix: '0x', byteChars: '', incompleteChars: 'zz' },
+      ],
+      [
+        'a prefix with no bytes',
+        '0x',
+        "Source string '0x' is not a valid hex-string",
+        { prefix: '0x', byteChars: '', incompleteChars: '' },
+      ],
+    ])('should fail with a ParseError for an invalid hex-encoding: %s', ([, source, message, groups]) =>
       Effect.gen(function* () {
         const error = yield* Effect.flip(Hex.parseHex(source));
         expect(ParseError.isParseError(error)).toBe(true);
         expect(error.message).toBe(message);
         expect(error.source).toBe(source);
+        expect(error.meta?.toJSON()).toEqual(groups);
       }),
     );
   });
@@ -106,9 +130,14 @@ describe('Hex', () => {
         }),
       ));
 
-    it('should reject a string that is not hex with the parse error message', () => {
+    it('should reject an incomplete last byte with the parse error message', () => {
       expect(Hex.PlainHex.either('abc')).toEqual(
-        Either.left([{ message: "Last byte of source string 'abc' is incomplete", meta: expect.anything() }]),
+        Either.left([
+          {
+            message: "Last byte of source string 'abc' is incomplete",
+            meta: expect.objectContaining({ hasPrefix: false, byteChars: 'ab', incompleteChars: 'c' }),
+          },
+        ]),
       );
     });
 
@@ -134,8 +163,17 @@ describe('Hex', () => {
 
     it('should reject a prefixed string that is not hex with the parse error message', () => {
       expect(Hex.PrefixedHex.either('0xzz')).toEqual(
-        Either.left([{ message: "Invalid hex-digit 'z' found in source string at index 2", meta: expect.anything() }]),
+        Either.left([
+          {
+            message: "Invalid hex-digit 'z' found in source string at index 2",
+            meta: expect.objectContaining({ hasPrefix: true, byteChars: '', incompleteChars: 'zz' }),
+          },
+        ]),
       );
+    });
+
+    it('should throw the brand errors from the constructor', () => {
+      expect(() => Hex.PrefixedHex('ab')).toThrow(expect.arrayContaining([{ message: prefixRequired('ab') }]));
     });
   });
 
@@ -198,13 +236,30 @@ describe('Hex', () => {
         }),
       ));
 
+    it('should reject prefixed hex one byte below the byte length', () => {
+      expect(TwoToFourBytes.either('0xab')).toEqual(
+        Either.left([{ message: byteLengthOutOfRange('0xab', 1, '2..=4') }]),
+      );
+    });
+
     it('should reject plain hex within the byte length', () => {
       expect(TwoToFourBytes.either('abcd')).toEqual(Either.left([{ message: prefixRequired('abcd') }]));
     });
 
-    it('should reject a prefixed string that is not hex before checking the byte length', () => {
+    it('should take the byte length as an IntegerRange', () => {
+      const TwoToFour = Hex.ConstrainedPrefixedHex({ byteLength: IntegerRange.exclusive([2, 5]) });
+      expect(TwoToFour('0xabcdef01')).toBe('0xabcdef01');
+      expect(TwoToFour.either('0xab')).toEqual(Either.left([{ message: byteLengthOutOfRange('0xab', 1, '2..5') }]));
+    });
+
+    it('should reject an incomplete last byte before checking the byte length', () => {
       expect(TwoToFourBytes.either('0xabc')).toEqual(
-        Either.left([{ message: "Last byte of source string '0xabc' is incomplete", meta: expect.anything() }]),
+        Either.left([
+          {
+            message: "Last byte of source string '0xabc' is incomplete",
+            meta: expect.objectContaining({ hasPrefix: true, byteChars: 'ab', incompleteChars: 'c' }),
+          },
+        ]),
       );
     });
   });

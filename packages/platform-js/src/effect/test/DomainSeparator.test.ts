@@ -19,9 +19,9 @@ import * as fc from 'effect/FastCheck';
 
 import * as DomainSeparator from '../DomainSeparator.ts';
 import * as Arbitrary from './Arbitrary.ts';
+import { byteLengthOutOfRange, prefixNotAllowed } from './Messages.ts';
 
-const wrongByteLength = (source: string, byteLength: number) =>
-  `Source string '${source}' has a byte length of ${byteLength}, but expected 32..=32`;
+const wrongByteLength = (source: string, byteLength: number) => byteLengthOutOfRange(source, byteLength, '32..=32');
 
 describe('DomainSeparator', () => {
   describe('DomainSeparator', () => {
@@ -44,11 +44,19 @@ describe('DomainSeparator', () => {
         ),
       ));
 
+    // The lengths either side of 32 bytes, which a random length seldom lands on.
+    it.each([31, 33])('should reject plain hex of %i bytes', (byteLength) => {
+      const hex = 'ab'.repeat(byteLength);
+      expect(DomainSeparator.DomainSeparator.either(hex)).toEqual(
+        Either.left([{ message: wrongByteLength(hex, byteLength) }]),
+      );
+    });
+
     it('should reject prefixed hex', () =>
       fc.assert(
         fc.property(Arbitrary.makePrefixedHexArbitrary('32..=32'), (hex) => {
           expect(DomainSeparator.DomainSeparator.either(hex)).toEqual(
-            Either.left([{ message: `Source string '${hex}' has a '0x' prefix but prefixes are not allowed` }]),
+            Either.left([{ message: prefixNotAllowed(hex) }]),
           );
         }),
       ));
@@ -72,7 +80,6 @@ describe('DomainSeparator', () => {
         fc.property(Arbitrary.makePlainHexArbitrary('32..=32'), (hex) => {
           const bytes = DomainSeparator.asBytes(DomainSeparator.DomainSeparator(hex));
           expect(bytes).toBeInstanceOf(Uint8Array);
-          expect(bytes.length).toBe(32);
           expect(Buffer.from(bytes).toString('hex')).toBe(hex.toLowerCase());
         }),
       ));

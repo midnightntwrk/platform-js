@@ -19,19 +19,15 @@ import * as fc from 'effect/FastCheck';
 
 import * as SigningKey from '../SigningKey.ts';
 import * as Arbitrary from './Arbitrary.ts';
+import { byteLengthOutOfRange, prefixNotAllowed } from './Messages.ts';
 
 // A valid signing key value is plain hex, 32 to 35 bytes in length.
 const VALID_VALUE = 'a1'.repeat(32);
 
-const wrongByteLength = (source: string, byteLength: number) =>
-  `Source string '${source}' has a byte length of ${byteLength}, but expected 32..=35`;
+const wrongByteLength = (source: string, byteLength: number) => byteLengthOutOfRange(source, byteLength, '32..=35');
 
 describe('SigningKey', () => {
   describe('Value', () => {
-    it('accepts a valid plain hex value', () => {
-      expect(SigningKey.Value(VALID_VALUE)).toBe(VALID_VALUE);
-    });
-
     it('accepts plain hex of 32 to 35 bytes', () =>
       fc.assert(
         fc.property(Arbitrary.makePlainHexArbitrary('32..=35'), (hex) => {
@@ -54,17 +50,14 @@ describe('SigningKey', () => {
     it.each([
       ['an empty value', '', [{ message: 'Source string must have non-zero length' }]],
       [
-        'a value that is not hex',
+        'a value with an incomplete last byte',
         'not-hex',
         [{ message: "Last byte of source string 'not-hex' is incomplete", meta: expect.anything() }],
       ],
-      [
-        'a prefixed hex value',
-        '0x' + VALID_VALUE,
-        [{ message: `Source string '0x${VALID_VALUE}' has a '0x' prefix but prefixes are not allowed` }],
-      ],
-      ['a 10-byte value', 'a1'.repeat(10), [{ message: wrongByteLength('a1'.repeat(10), 10) }]],
-      ['a 40-byte value', 'a1'.repeat(40), [{ message: wrongByteLength('a1'.repeat(40), 40) }]],
+      ['a prefixed hex value', '0x' + VALID_VALUE, [{ message: prefixNotAllowed('0x' + VALID_VALUE) }]],
+      // The lengths either side of the 32..=35 range, which a random length seldom lands on.
+      ['a 31-byte value', 'a1'.repeat(31), [{ message: wrongByteLength('a1'.repeat(31), 31) }]],
+      ['a 36-byte value', 'a1'.repeat(36), [{ message: wrongByteLength('a1'.repeat(36), 36) }]],
     ])('rejects %s', (_case, value, errors) => {
       expect(SigningKey.Value.either(value)).toEqual(Either.left(errors));
     });
@@ -89,19 +82,17 @@ describe('SigningKey', () => {
           },
         ),
       ));
+  });
 
-    it('validates the value, throwing the brand errors', () => {
-      expect(() => SigningKey.make('a1'.repeat(10))).toThrow(
-        expect.arrayContaining([{ message: wrongByteLength('a1'.repeat(10), 10) }]),
-      );
+  describe('SignatureKinds', () => {
+    it('exposes the supported signature kinds', () => {
+      expect(SigningKey.SignatureKinds).toEqual(['schnorr', 'ecdsa']);
     });
   });
 
-  it('exposes the supported signature kinds', () => {
-    expect(SigningKey.SignatureKinds).toEqual(['schnorr', 'ecdsa']);
-  });
-
-  it('defaults to the schnorr signature kind', () => {
-    expect(SigningKey.DefaultSignatureKind).toBe('schnorr');
+  describe('DefaultSignatureKind', () => {
+    it('defaults to the schnorr signature kind', () => {
+      expect(SigningKey.DefaultSignatureKind).toBe('schnorr');
+    });
   });
 });

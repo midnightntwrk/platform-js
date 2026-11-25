@@ -19,12 +19,20 @@ import * as fc from 'effect/FastCheck';
 
 import * as CoinPublicKey from '../CoinPublicKey.ts';
 import * as Arbitrary from './Arbitrary.ts';
+import { prefixNotAllowed } from './Messages.ts';
+
+const plainKeyArbitrary = Arbitrary.makePlainHexArbitrary('1..=64');
+const prefixedKeyArbitrary = Arbitrary.makePrefixedHexArbitrary('1..=64');
+
+// A key in the Bech32m form a wallet shows: human-readable part, separator `1`, then the data characters.
+// Nothing here checks the checksum, so the data need not decode.
+const BECH32M_KEY = 'mn_shield-cpk_test1q8xvz5e2p0gjjdx4nqu0qp6c5wkjyvh3dzrmf7xhk2hag0l3wtcsqzmh4tf';
 
 describe('CoinPublicKey', () => {
   describe('Hex', () => {
     it('should accept plain hex', () =>
       fc.assert(
-        fc.property(Arbitrary.makePlainHexArbitrary('1..=64'), (hex) => {
+        fc.property(plainKeyArbitrary, (hex) => {
           expect(CoinPublicKey.Hex(hex)).toBe(hex);
           expect(CoinPublicKey.Hex.is(hex)).toBe(true);
         }),
@@ -32,10 +40,8 @@ describe('CoinPublicKey', () => {
 
     it('should reject prefixed hex', () =>
       fc.assert(
-        fc.property(Arbitrary.makePrefixedHexArbitrary('1..=64'), (hex) => {
-          expect(CoinPublicKey.Hex.either(hex)).toEqual(
-            Either.left([{ message: `Source string '${hex}' has a '0x' prefix but prefixes are not allowed` }]),
-          );
+        fc.property(prefixedKeyArbitrary, (hex) => {
+          expect(CoinPublicKey.Hex.either(hex)).toEqual(Either.left([{ message: prefixNotAllowed(hex) }]));
         }),
       ));
 
@@ -56,17 +62,25 @@ describe('CoinPublicKey', () => {
     });
 
     it('should throw the brand errors from the constructor', () => {
-      expect(() => CoinPublicKey.Hex('0xab')).toThrow(
-        expect.arrayContaining([{ message: "Source string '0xab' has a '0x' prefix but prefixes are not allowed" }]),
-      );
+      expect(() => CoinPublicKey.Hex('0xab')).toThrow(expect.arrayContaining([{ message: prefixNotAllowed('0xab') }]));
+    });
+  });
+
+  describe('Bech32m', () => {
+    it('should return a Bech32m key unchanged', () => {
+      expect(CoinPublicKey.Bech32m(BECH32M_KEY)).toBe(BECH32M_KEY);
     });
   });
 
   describe('make', () => {
+    it('should return a Bech32m key unchanged', () => {
+      expect(CoinPublicKey.make(BECH32M_KEY)).toBe(BECH32M_KEY);
+    });
+
     // Brands are erased at runtime: this checks the value `make` returns, not which brand it carries.
     it('should return plain hex unchanged', () =>
       fc.assert(
-        fc.property(Arbitrary.makePlainHexArbitrary('1..=64'), (hex) => {
+        fc.property(plainKeyArbitrary, (hex) => {
           expect(CoinPublicKey.make(hex)).toBe(hex);
         }),
       ));
@@ -75,20 +89,26 @@ describe('CoinPublicKey', () => {
   describe('asHex', () => {
     it('should return a plain hex key unchanged', () =>
       fc.assert(
-        fc.property(Arbitrary.makePlainHexArbitrary('1..=64'), (hex) => {
+        fc.property(plainKeyArbitrary, (hex) => {
           expect(CoinPublicKey.asHex(CoinPublicKey.Hex(hex))).toBe(hex);
           expect(CoinPublicKey.asHex(hex)).toBe(hex);
         }),
       ));
   });
 
+  describe('asBech32m', () => {
+    it('should return a Bech32m key unchanged', () => {
+      expect(CoinPublicKey.asBech32m(CoinPublicKey.Bech32m(BECH32M_KEY))).toBe(BECH32M_KEY);
+      expect(CoinPublicKey.asBech32m(BECH32M_KEY)).toBe(BECH32M_KEY);
+    });
+  });
+
   describe('asBytes', () => {
     it('should return the bytes a plain hex key encodes', () =>
       fc.assert(
-        fc.property(Arbitrary.makePlainHexArbitrary('1..=64'), (hex) => {
+        fc.property(plainKeyArbitrary, (hex) => {
           const bytes = CoinPublicKey.asBytes(CoinPublicKey.Hex(hex));
           expect(bytes).toBeInstanceOf(Uint8Array);
-          expect(bytes.length).toBe(hex.length / 2);
           expect(Buffer.from(bytes).toString('hex')).toBe(hex.toLowerCase());
         }),
       ));

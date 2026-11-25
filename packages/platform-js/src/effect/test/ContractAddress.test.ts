@@ -19,9 +19,9 @@ import * as fc from 'effect/FastCheck';
 
 import * as ContractAddress from '../ContractAddress.ts';
 import * as Arbitrary from './Arbitrary.ts';
+import { byteLengthOutOfRange, prefixNotAllowed } from './Messages.ts';
 
-const wrongByteLength = (source: string, byteLength: number) =>
-  `Source string '${source}' has a byte length of ${byteLength}, but expected 32..=32`;
+const wrongByteLength = (source: string, byteLength: number) => byteLengthOutOfRange(source, byteLength, '32..=32');
 
 describe('ContractAddress', () => {
   describe('ContractAddress', () => {
@@ -32,29 +32,31 @@ describe('ContractAddress', () => {
         }),
       ));
 
-    it('should reject short plain addresses', () =>
+    it('should reject plain addresses shorter or longer than 32 bytes', () =>
       fc.assert(
-        fc.property(Arbitrary.makePlainHexArbitrary('1..32'), (hex) => {
-          expect(ContractAddress.ContractAddress.either(hex)).toEqual(
-            Either.left([{ message: wrongByteLength(hex, hex.length / 2) }]),
-          );
-        }),
+        fc.property(
+          fc.oneof(Arbitrary.makePlainHexArbitrary('1..32'), Arbitrary.makePlainHexArbitrary('33..=50')),
+          (hex) => {
+            expect(ContractAddress.ContractAddress.either(hex)).toEqual(
+              Either.left([{ message: wrongByteLength(hex, hex.length / 2) }]),
+            );
+          },
+        ),
       ));
 
-    it('should reject long plain addresses', () =>
-      fc.assert(
-        fc.property(Arbitrary.makePlainHexArbitrary('33..=50'), (hex) => {
-          expect(ContractAddress.ContractAddress.either(hex)).toEqual(
-            Either.left([{ message: wrongByteLength(hex, hex.length / 2) }]),
-          );
-        }),
-      ));
+    // The lengths either side of 32 bytes, which a random length seldom lands on.
+    it.each([31, 33])('should reject a plain address of %i bytes', (byteLength) => {
+      const hex = 'ab'.repeat(byteLength);
+      expect(ContractAddress.ContractAddress.either(hex)).toEqual(
+        Either.left([{ message: wrongByteLength(hex, byteLength) }]),
+      );
+    });
 
     it('should reject prefixed addresses', () =>
       fc.assert(
         fc.property(Arbitrary.makePrefixedHexArbitrary('32..=32'), (hex) => {
           expect(ContractAddress.ContractAddress.either(hex)).toEqual(
-            Either.left([{ message: `Source string '${hex}' has a '0x' prefix but prefixes are not allowed` }]),
+            Either.left([{ message: prefixNotAllowed(hex) }]),
           );
         }),
       ));
@@ -62,6 +64,12 @@ describe('ContractAddress', () => {
     it('should reject an invalid address', () => {
       expect(ContractAddress.ContractAddress.either('HOSKYA')).toEqual(
         Either.left([{ message: "Invalid hex-digit 'H' found in source string at index 0", meta: expect.anything() }]),
+      );
+    });
+
+    it('should throw the brand errors from the constructor', () => {
+      expect(() => ContractAddress.ContractAddress('ab')).toThrow(
+        expect.arrayContaining([{ message: wrongByteLength('ab', 1) }]),
       );
     });
   });
@@ -72,7 +80,6 @@ describe('ContractAddress', () => {
         fc.property(Arbitrary.makePlainHexArbitrary('32..=32'), (hex) => {
           const bytes = ContractAddress.asBytes(ContractAddress.ContractAddress(hex));
           expect(bytes).toBeInstanceOf(Uint8Array);
-          expect(bytes.length).toBe(32);
           expect(Buffer.from(bytes).toString('hex')).toBe(hex.toLowerCase());
         }),
       ));
