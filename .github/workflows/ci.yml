@@ -104,6 +104,15 @@ jobs:
       - name: Install dependencies
         run: yarn install --immutable
 
+      # `--immutable` guards only `yarn.lock`: Yarn still rewrites a package manifest that is not in its own layout,
+      # and the changeset check then sees a package change no changeset covers. The checkout must match the commit.
+      - name: Check install left tracked files unchanged
+        run: |
+          if ! git diff --exit-code; then
+            echo "::error::yarn install rewrote a tracked file; commit each package manifest in Yarn's layout (run yarn and commit the result)"
+            exit 1
+          fi
+
       - name: Run typecheck
         run: yarn typecheck
 
@@ -117,6 +126,12 @@ jobs:
       - name: Check the source guards
         if: ${{ !cancelled() }}
         run: bash scripts/check-source-guards.sh
+
+      # Root dev tool versions live in the Yarn catalog, so every root devDependency says `catalog:`; a published
+      # package never says `catalog:`, since npm packs and publishes it without resolving the value.
+      - name: Check the package manifests
+        if: ${{ !cancelled() }}
+        run: bash scripts/check-manifests.sh
 
   test-unit:
     name: Unit Tests
