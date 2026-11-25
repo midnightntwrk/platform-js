@@ -15,14 +15,44 @@ const documentedExportContexts = [
   'ExportNamedDeclaration > TSTypeAliasDeclaration',
   'ExportNamedDeclaration > TSInterfaceDeclaration',
   'ExportNamedDeclaration > TSEnumDeclaration',
-  'ExportNamedDeclaration > ClassDeclaration'
+  'ExportNamedDeclaration > ClassDeclaration',
+  'ExportNamedDeclaration > TSDeclareFunction'
 ];
-// Exports whose parameters a lint can see: written as a function. One built by a call (dual, Brand.refined) or
-// assigned from another binding (`= internal.parseHex`) is not among them.
+// Exports written as a function: the only ones whose parameters a lint can see.
 const functionExportContexts = [
   'ExportNamedDeclaration > FunctionDeclaration',
+  'ExportNamedDeclaration > TSDeclareFunction',
   'ExportNamedDeclaration > VariableDeclaration > VariableDeclarator > ArrowFunctionExpression',
   'ExportNamedDeclaration > VariableDeclaration > VariableDeclarator > FunctionExpression'
+];
+
+const relativeJsPathMessage =
+  'Relative import and export paths end in .ts, not .js: tsc rewrites them to .js when it compiles.';
+// Relative paths name the .ts source (tsc rewrites them, rewriteRelativeImportExtensions). Flat config replaces the
+// whole no-restricted-syntax option, so every block that sets the rule spreads these in.
+const relativeJsPathRestrictions = [
+  {
+    selector:
+      ':matches(ImportDeclaration, ExportNamedDeclaration, ExportAllDeclaration, ImportExpression, TSImportType)' +
+      '[source.value=/^\\.{1,2}\\/.*\\.js$/]',
+    message: relativeJsPathMessage
+  },
+  {
+    selector:
+      "ImportExpression[source.type='TemplateLiteral'][source.expressions.length=0]" +
+      '[source.quasis.0.value.raw=/^\\.{1,2}\\/.*\\.js$/]',
+    message: relativeJsPathMessage
+  },
+  {
+    selector: 'TSModuleDeclaration[id.value=/^\\.{1,2}\\/.*\\.js$/]',
+    message: relativeJsPathMessage
+  },
+  {
+    selector:
+      "CallExpression[callee.object.name='vi'][callee.property.name=/^(mock|importActual|importMock|doMock)$/]" +
+      '[arguments.0.value=/^\\.{1,2}\\/.*\\.js$/]',
+    message: relativeJsPathMessage
+  }
 ];
 
 export default tseslint.config(
@@ -115,33 +145,7 @@ export default tseslint.config(
       'import-x/no-extraneous-dependencies': 'off',
       'max-classes-per-file': 'off',
       'lines-between-class-members': 'off',
-      // Relative paths name the .ts source (tsc rewrites them, rewriteRelativeImportExtensions). Flat config replaces
-      // the whole rule option: a later block that sets no-restricted-syntax must repeat these entries.
-      'no-restricted-syntax': [
-        'error',
-        {
-          selector:
-            ':matches(ImportDeclaration, ExportNamedDeclaration, ExportAllDeclaration, ImportExpression, TSImportType)' +
-            '[source.value=/^\\.{1,2}\\/.*\\.js$/]',
-          message: 'Relative import and export paths end in .ts, not .js: tsc rewrites them to .js when it compiles.'
-        },
-        {
-          selector:
-            "ImportExpression[source.type='TemplateLiteral'][source.expressions.length=0]" +
-            '[source.quasis.0.value.raw=/^\\.{1,2}\\/.*\\.js$/]',
-          message: 'Relative import and export paths end in .ts, not .js: tsc rewrites them to .js when it compiles.'
-        },
-        {
-          selector: 'TSModuleDeclaration[id.value=/^\\.{1,2}\\/.*\\.js$/]',
-          message: 'Relative import and export paths end in .ts, not .js: tsc rewrites them to .js when it compiles.'
-        },
-        {
-          selector:
-            "CallExpression[callee.object.name='vi'][callee.property.name=/^(mock|importActual|importMock|doMock)$/]" +
-            '[arguments.0.value=/^\\.{1,2}\\/.*\\.js$/]',
-          message: 'Relative import and export paths end in .ts, not .js: tsc rewrites them to .js when it compiles.'
-        }
-      ],
+      'no-restricted-syntax': ['error', ...relativeJsPathRestrictions],
       'no-restricted-imports': [
         'error',
         {
@@ -179,40 +183,41 @@ export default tseslint.config(
   {
     // .claude/rules/functional-style.md → Public API documentation, as far as a lint can see it. ADR-0005 lists what
     // it can't see.
-    files: ['packages/*/src/**/*.ts'],
-    ignores: ['packages/*/src/**/internal/**', 'packages/*/src/**/index.ts'],
+    files: ['packages/*/src/**/*.{ts,mts,tsx}'],
+    ignores: ['packages/*/src/**/internal/**', 'packages/*/src/index.ts', 'packages/*/src/effect/index.ts'],
     plugins: { jsdoc },
     settings: { jsdoc: { mode: 'typescript' } },
     rules: {
       'jsdoc/require-jsdoc': [
         'error',
         {
+          // Off, so the contexts alone pick what is checked: by default every function declaration is, exported or
+          // not.
           require: { FunctionDeclaration: false },
           contexts: documentedExportContexts
         }
       ],
-      'jsdoc/require-description': [
+      'jsdoc/require-description': ['error', { contexts: documentedExportContexts }],
+      'jsdoc/require-param': ['error', { contexts: functionExportContexts, checkDestructured: false }],
+      'jsdoc/require-returns': ['error', { contexts: functionExportContexts }],
+      // The JSDoc rules see an export only where it is declared. jsdoc/no-restricted-syntax can't ban these: it checks
+      // only nodes that already have a JSDoc block.
+      'no-restricted-syntax': [
         'error',
+        ...relativeJsPathRestrictions,
         {
-          contexts: documentedExportContexts
+          selector: 'ExportNamedDeclaration[declaration=null][source=null]',
+          message: 'Export where you declare (`export const x = ...`), not from a list: the JSDoc rules check exports ' +
+            'only where they are declared in place.'
+        },
+        {
+          selector: 'ExportDefaultDeclaration',
+          message: 'No default export: use a named export, declared in place, so the JSDoc rules check it.'
         }
       ],
-      'jsdoc/require-param': [
-        'error',
-        {
-          contexts: functionExportContexts
-        }
-      ],
-      'jsdoc/require-returns': [
-        'error',
-        {
-          contexts: functionExportContexts
-        }
-      ],
-      // Checked per export: jsdoc/no-missing-syntax would pass a whole file on a single @category. The context is the
-      // bare ExportNamedDeclaration, which holds the JSDoc block: a child selector (`ExportNamedDeclaration > ...`)
-      // never matches here. It also covers exports inside a `declare namespace`, but not the namespace itself: the
-      // same-named type's JSDoc covers that.
+      // The context is the bare ExportNamedDeclaration, which holds the JSDoc block: a child selector
+      // (`ExportNamedDeclaration > ...`) never matches here. Exports inside a `declare namespace` are checked; the
+      // namespace itself is not.
       'jsdoc/no-restricted-syntax': [
         'error',
         {
