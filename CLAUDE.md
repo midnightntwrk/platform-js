@@ -94,7 +94,9 @@ keeps the declaration maps).
 The `.ts` source is the source of truth: relative imports end in `.ts`, and `tsc` rewrites them to `.js`. Public entry
 points are the `exports` in the package's `package.json` (ESM only). Each has an opt-in source condition first, then
 `types`, `import` and `default` pointing at `dist/`. Changing one is a public API change. Details:
-[ADR-0003](docs/decisions/0003-typescript-source-as-source-of-truth.md).
+[ADR-0003](docs/decisions/0003-typescript-source-as-source-of-truth.md). A `typesVersions` map gives consumers on
+`node10` resolution, which ignores `exports`, the same `effect` and `effect/*` types
+([ADR-0004](docs/decisions/0004-keep-node10-subpath-types.md)).
 
 ## Testing
 

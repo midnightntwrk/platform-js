@@ -19,7 +19,9 @@ It is written in TypeScript with [Effect](https://effect.website/). Values are b
 npm install @midnightntwrk/platform-js
 ```
 
-The package is ESM only. TypeScript consumers need `moduleResolution` set to `NodeNext`, `Node16` or `Bundler`.
+The package is ESM only. TypeScript consumers should set `moduleResolution` to `NodeNext`, `Node16` or `Bundler`.
+Projects still on `node10` (`"moduleResolution": "node"`) get the types for `effect` and `effect/*` subpaths through
+`typesVersions`, but TypeScript 6.0 deprecates `node10`, so plan to move off it.
 
 Versions up to 3.0.0 were published from [`midnightntwrk/midnight-sdk`](https://github.com/midnightntwrk/midnight-sdk).
 With the first release from this repository, the package moves to the `@midnightntwrk` scope, matching the GitHub
