@@ -60,7 +60,8 @@ The supported agentic flow is in `docs/AgenticWorkflow.md`. It replaces the skil
 ## Build Commands
 
 This section is the one agent-facing source for the commands; other agent files point here. Run the package scripts
-(`dist`, `typecheck`, `lint`, `test`, `publint`, `package`, `clean`) from the repo root, where turbo runs them in each
+(`dist`, `dist:publish`, `typecheck`, `lint`, `test`, `test:unit`, `test:integration`, `format`, `format:check`,
+`publint`, `package`, `clean`) from the repo root, where turbo runs them in each
 package (the Yarn workspace and Turborepo root, ADR-0001). Run one test file from the package folder with
 `yarn run -T vitest`.
 
@@ -69,9 +70,28 @@ nvm use && corepack enable   # at the repo root
 yarn                         # install dependencies
 yarn dist                    # compile each package's src/ to dist/ (turbo)
 yarn dist:publish            # clean dist/ build without source or declaration maps
+yarn watch                   # rebuild dist/ on every change (turbo watch dist)
 yarn typecheck               # type-check src and tests
 yarn test                    # full test suite (turbo), straight from src/, no build needed
-yarn lint                    # eslint in each package, plus root eslint.config.mjs and vitest.config.ts (turbo)
+yarn test:unit               # unit lane: test/**/*.test.ts except *.integration.test.ts
+yarn test:integration        # integration lane: test/**/*.integration.test.ts (none yet; passes)
+yarn lint                    # eslint in each package, plus lint:root
+yarn lint:root               # eslint on root eslint.config.mjs, vitest.config.ts, vitest.outputs.ts
+yarn format                  # prettier --write in each package, then format:root
+yarn format:check            # prettier --check, same scope
+yarn format:root             # prettier --write on root files only (.prettierignore.root leaves out packages/)
+yarn format:check:root       # prettier --check on root files only
+yarn format:file <files>     # prettier --write on the files named
+yarn check-barrel-exports    # every src/effect/ module re-exported from its index.ts, nothing from internal/
+yarn verify:check            # typecheck, format:check, lint and check-barrel-exports
+yarn verify:test             # the unit lane
+yarn verify:integration      # the integration lane
+yarn verify                  # verify:check, verify:test and verify:integration
+yarn changed-files           # files changed since HEAD, untracked included
+yarn format:changed          # format:file on changed-files
+yarn lint:changed            # turbo lint lint:root --affected (packages and root changed since main)
+yarn els:changed             # Effect language service diagnostics on changed packages/**/*.ts
+yarn verify:changed          # format:changed, lint:changed, then els:changed
 yarn publint                 # publish build, then publint --strict on the package
 yarn package                 # publish build, then npm pack (the .tgz lands in the package folder)
 yarn clean                   # remove dist, coverage, reports and tsconfig.*.tsbuildinfo
@@ -81,7 +101,8 @@ cd packages/platform-js      # the package folder
 yarn run -T vitest run test/effect/Hex.test.ts   # one test file
 ```
 
-There is no `format` script yet. `-T` runs a tool installed at the workspace root.
+`-T` runs a tool installed at the workspace root. Each test lane writes to its own `coverage/<lane>` and
+`reports/<lane>` folder (`unit`, `integration`, or `all` for `yarn test`), set by the root `vitest.outputs.ts`.
 
 ## Architecture
 
@@ -103,7 +124,7 @@ one is a public API change. `typesVersions` mirrors `effect` and `effect/*` for 
 user review it, then implement. **A confirmed-failing test must never be weakened to fit the implementation**: escalate
 to the user instead. Full loop: the `test-first` skill (Matt's `tdd`, which `/implement` calls, runs inside it).
 
-Unit tests only today: `*.test.ts` in `packages/platform-js/test/`, using `@effect/vitest` and `effect/FastCheck`
+Unit tests only today (the `integration` lane is empty): `*.test.ts` in `packages/platform-js/test/`, using `@effect/vitest` and `effect/FastCheck`
 property tests. Hard rules load from `.claude/rules/testing.md`; tiers: `DEV_GUIDE.md` → Testing Tiers.
 
 ## Versioning

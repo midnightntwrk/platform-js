@@ -1,0 +1,20 @@
+# This file is used by the root tasks "format:root" & "format:check:root"
+# It is important that we ignore the "packages" directory, but if we do that in the
+# standard .prettierignore then vscode fails to format.
+#
+# This file is ONLY used by the root tasks.
+#
+
+dist/
+coverage/
+reports/
+.yarnrc.yml
+.changeset/
+.turbo/
+.yarn/
+packages/
+
+# Third-party skills are vendored, not ours to reformat — keep in sync with .prettierignore
+.claude/
+# Rewritten by the skills CLI on every install or update — keep in sync with .prettierignore
+skills-lock.json

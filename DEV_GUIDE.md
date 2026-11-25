@@ -99,16 +99,42 @@ Run these from the repo root.
 | ---------------------- | ----------------------------------------------------- |
 | `yarn dist`            | Compiles each package's `src/` to `dist/` (Turbo).    |
 | `yarn dist:publish`    | Clean `dist/` build, no source or declaration maps.   |
+| `yarn watch`           | Rebuilds `dist/` on every change (`turbo watch dist`). |
 | `yarn typecheck`       | Type-checks `src/` and the tests.                     |
 | `yarn test`            | Runs all tests (Turbo) from `src/`; no build needed.  |
+| `yarn test:unit`       | Runs the unit lane: every test except `*.integration.test.ts`. |
+| `yarn test:integration` | Runs the integration lane: `*.integration.test.ts` (none yet, so it passes). |
 | `yarn lint`            | Lints packages and root configs; warnings fail.       |
+| `yarn lint:root`       | Lints the root configs alone.                         |
+| `yarn format`          | Formats each package, then the root files, with Prettier. |
+| `yarn format:check`    | Checks the same files are formatted; changes nothing. |
+| `yarn format:root`     | Formats the root files only (`packages/` aside).      |
+| `yarn format:check:root` | Checks the root files only.                         |
+| `yarn format:file <f>` | Formats the files you name.                           |
+| `yarn check-barrel-exports` | Checks every `src/effect/` module is re-exported from `src/effect/index.ts`, `src/index.ts` re-exports it, and no barrel re-exports `internal/`. |
+| `yarn verify:check`    | `typecheck`, `format:check`, `lint` and `check-barrel-exports`. |
+| `yarn verify:test`     | The unit lane.                                        |
+| `yarn verify:integration` | The integration lane.                              |
+| `yarn verify`          | All three `verify:*` steps above.                     |
+| `yarn changed-files`   | Lists files changed since `HEAD`, untracked ones included. |
+| `yarn format:changed`  | Formats only those files.                             |
+| `yarn lint:changed`    | Lints the packages Turbo sees as affected, plus the root configs when they changed. |
+| `yarn els:changed`     | Runs the Effect language service diagnostics on changed `packages/**/*.ts` files. |
+| `yarn verify:changed`  | `format:changed`, `lint:changed`, then `els:changed`. |
 | `yarn publint`         | Publish build, then `publint --strict`.               |
 | `yarn package`         | Publish build, then `npm pack` in each package.       |
 | `yarn clean`           | Removes `dist`, coverage, reports and build info.     |
 | `yarn changeset`       | Adds a changeset (asks which packages and bumps).     |
 | `yarn changeset:check` | Lists the pending changesets and the bumps they make. |
 
-There is no `format` script yet.
+Prettier's settings are in `.prettierrc.json`, the same as midnight-wallet's. It formats `ts`, `js`, `json`, `yaml`,
+`yml` and `md` files, so `scripts/*.mjs` stay hand-formatted. The package scripts read `.prettierignore`; the root
+scripts read `.prettierignore.root`, which also leaves out `packages/`.
+
+`lint:changed` and `els:changed` compare against different points: `lint:changed` uses Turbo's `--affected` (the
+branch since it left `main`), while `changed-files` and the scripts built on it list only uncommitted work.
+
+`els:changed` runs with the `deterministicKeys` rule turned off for now (see the comment in `scripts/els-changed.mjs`).
 
 ### Known failures today
 
@@ -147,7 +173,7 @@ when a PR changes the label. A new workflow pins the same label.
 
 ## Testing Tiers
 
-Today there are **unit tests only**. They are pure: no Docker, network or other outside services.
+Today there are **unit tests only**; the `integration` lane below is empty. They are pure: no Docker, network or other outside services.
 
 - Files are named `*.test.ts` and live in `packages/platform-js/test/` (for example `test/effect/Hex.test.ts`).
 - They use [`@effect/vitest`](https://github.com/Effect-TS/effect/tree/main/packages/vitest) (`it.effect`) and property
@@ -159,6 +185,11 @@ Run every test from the repo root:
 ```bash
 yarn test
 ```
+
+Tests run in two Vitest projects, called lanes: `unit` (every `*.test.ts` except `*.integration.test.ts`) and
+`integration` (`*.integration.test.ts`, none yet). Run one lane with `yarn test:unit` or `yarn test:integration`. Each
+lane writes coverage and reports to its own folder, `coverage/<lane>` and `reports/<lane>` (`all` for `yarn test`), so
+`yarn verify`, which runs both lanes side by side, keeps both.
 
 Run one file from `packages/platform-js/`:
 

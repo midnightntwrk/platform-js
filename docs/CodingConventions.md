@@ -641,8 +641,10 @@ When a module import would clash with a local export, rename the import with a t
 when it compiles (`rewriteRelativeImportExtensions`), and lint rejects a relative import or export ending in `.js`
 ([ADR-0003](decisions/0003-typescript-source-as-source-of-truth.md)).
 
-**Import aliases** — Effect modules that shadow JS globals should be imported under an alias. This is a convention
-only: nothing enforces it (the Effect language service is not configured yet, see #46), so reviewers check it.
+**Import aliases** — Effect modules that shadow JS globals should be imported under an alias. The Effect language
+service (the `@effect/language-service` plugin in `tsconfig.base.json`) uses these aliases when an editor auto-imports
+one of these modules. It does not report a wrong alias: it has no diagnostic for this, so neither the editor nor
+`yarn els:changed` flags one, and reviewers still check it.
 
 | Module     | Alias       |
 | ---------- | ----------- |

@@ -15,11 +15,14 @@
 /// <reference types="vitest" />
 import { configDefaults, defineConfig } from 'vitest/config';
 
+import { testOutputs } from '../../vitest.outputs.ts';
+
+const outputs = testOutputs();
+
 export default defineConfig({
   test: {
     environment: 'node',
     globals: true,
-    include: ['test/**/*.test.ts'],
     exclude: [...configDefaults.exclude, '**/dist/**'],
     coverage: {
       provider: 'v8',
@@ -27,12 +30,29 @@ export default defineConfig({
       clean: true,
       include: ['src/**/*.ts'],
       reporter: ['clover', 'json', 'json-summary', 'lcov', 'text'],
-      reportsDirectory: './coverage'
+      reportsDirectory: outputs.coverageDirectory
     },
+    projects: [
+      {
+        extends: true,
+        test: {
+          name: 'unit',
+          include: ['test/**/*.test.ts'],
+          exclude: [...configDefaults.exclude, '**/dist/**', '**/*.integration.test.ts']
+        }
+      },
+      {
+        extends: true,
+        test: {
+          name: 'integration',
+          include: ['test/**/*.integration.test.ts']
+        }
+      }
+    ],
     reporters: [
       'default',
-      ['junit', { outputFile: `reports/report/test-report.xml` }],
-      ['html', { outputFile: `reports/report/test-report.html` }]
+      ['junit', { outputFile: outputs.junitFile }],
+      ['html', { outputFile: outputs.htmlFile }]
     ]
   }
 });
