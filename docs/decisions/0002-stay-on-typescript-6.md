@@ -28,8 +28,9 @@ platform-js stay on?
 ## Decision Outcome
 
 Chosen option: "Stay on TypeScript 6.0", because it is the only option on which both `typescript-eslint` and the Effect
-language service can run. The root `package.json` pins `typescript` to `~6.0.3`: `~` allows 6.0 patch releases only,
-where `^` would allow 6.1 and later, which `typescript-eslint` does not support.
+language service can run. The Yarn catalog (`.yarnrc.yml`) pins `typescript` to `~6.0.3`, and the root `package.json`
+`devDependencies` say `"typescript": "catalog:"`: `~` allows 6.0 patch releases only, where `^` would allow 6.1 and
+later, which `typescript-eslint` does not support.
 
 ### Positive Consequences
 
@@ -41,7 +42,8 @@ where `^` would allow 6.1 and later, which `typescript-eslint` does not support.
 
 - Bumps past 6.0 wait until `typescript-eslint` supports them.
 - Automated dependency updates must hold `typescript` below 6.1: the Renovate setup
-  ([#17](https://github.com/midnightntwrk/platform-js/issues/17)) needs a rule for it.
+  ([#17](https://github.com/midnightntwrk/platform-js/issues/17)) needs a rule for the `typescript` entry in the Yarn
+  catalog (`.yarnrc.yml`), where the version lives.
 - The move to TypeScript 7 needs a later decision, once `typescript-eslint` supports it and the Effect language service
   has a replacement that works with the Effect version in use.
 
