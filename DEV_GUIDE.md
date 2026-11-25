@@ -23,6 +23,48 @@ The repo root is a Yarn 4 workspace, built with Turborepo. Packages live in `pac
 
 ---
 
+## Dependency versions
+
+Root dev tooling versions live in one place: the Yarn [catalog](https://yarnpkg.com/features/catalogs) in
+[`.yarnrc.yml`](.yarnrc.yml). The root `package.json` lists each tool in `devDependencies` as `"catalog:"`, and Yarn
+reads the version from the catalog.
+
+- **Add or bump a dev tool:** set its version under `catalog:` in `.yarnrc.yml`, write `"catalog:"` in the root
+  `devDependencies`, then run `yarn` and commit `yarn.lock`. Don't use `yarn up <tool>` or `yarn add -D <tool>` on a
+  root tool: Yarn writes an inline range into the root `package.json`, and the tool leaves the catalog. CI's
+  `scripts/check-manifests.sh` fails when a root `devDependencies` value is not `"catalog:"`.
+- **A dev tool only one package uses** still goes in the root `devDependencies`, through the catalog. Package scripts
+  call it directly when run from the root (turbo); to run it by hand from a package folder, use `yarn run -T <tool>`.
+- **No `catalog:` in a published package**, in any dependency field (`dependencies`, `peerDependencies`,
+  `devDependencies`): write inline ranges there. npm does not replace `catalog:` when it packs or publishes (Yarn
+  does), and this repo packs and publishes with npm. In `dependencies` or `peerDependencies`, a `catalog:` value makes
+  the package uninstallable: npm fails with `EUNSUPPORTEDPROTOCOL`. In `devDependencies`, `npm pack` ships it
+  unresolved in the published manifest. CI's `scripts/check-manifests.sh` enforces this rule. This lasts while packing
+  and publishing use npm (`npm pack` in `yarn package` and the CD dry run, `npm publish` in Changesets 2.x); #84 plans
+  to move publishing to Yarn with Changesets 3.x.
+- **A script that needs a tool's version** reads it from the catalog, not from the root `package.json` (which says
+  `catalog:`). The CD dry run uses `yarn config get 'catalog["<name>"]'`, which prints one entry's range. Use the
+  bracket form: the dot form (`catalog.<name>`) prints `undefined`. `yarn config get catalog --json` prints the whole
+  catalog as JSON.
+- **Keep `effect` in step:** the root `effect` range (in the catalog, needed as the peer of `@effect/vitest`) must
+  equal the `effect` range in `packages/platform-js/package.json` `dependencies`. Nothing checks this; bump both
+  together.
+
+To check a pack, run this from the repo root. It must print `no catalog: values`. It fails with an error when the
+tarball is missing or its manifest holds a `catalog:` value. The clean removes old tarballs, so exactly one is read.
+
+```bash
+yarn clean && yarn package
+tar -xOf packages/platform-js/*.tgz package/package.json | node -e '
+  const manifest = require("node:fs").readFileSync(0, "utf8");
+  if (manifest === "") throw new Error("no package.json read from the tarball");
+  if (manifest.includes("catalog:")) throw new Error("the packed package.json holds a catalog: value");
+  console.log("no catalog: values");
+'
+```
+
+---
+
 ## Branching Strategy
 
 We use a simple, linear workflow. Branch names are not enforced, but the strongly recommended pattern is:
@@ -78,12 +120,12 @@ The `CI` workflow (`.github/workflows/ci.yml`) runs on every pull request, on ev
 on every push to `main`, and by hand (`workflow_dispatch`). Build, General Checks and Unit Tests run side by side, each
 after `yarn install --immutable`. Tests waits for all three and passes only when all three succeed:
 
-| Job            | Runs                                                                          |
-| -------------- | ----------------------------------------------------------------------------- |
-| Build          | `yarn dist`, then `yarn publint`                                              |
-| General Checks | `yarn typecheck`, `yarn lint`, then `bash scripts/check-source-guards.sh`     |
-| Unit Tests     | `yarn test`                                                                   |
-| Tests          | waits for the three jobs above; passes only when all succeed                  |
+| Job            | Runs                                                                                                                                                   |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Build          | `yarn dist`, then `yarn publint`                                                                                                                       |
+| General Checks | `git diff --exit-code` after the install, `yarn typecheck`, `yarn lint`, `bash scripts/check-source-guards.sh`, then `bash scripts/check-manifests.sh` |
+| Unit Tests     | `yarn test`                                                                                                                                            |
+| Tests          | waits for the three jobs above; passes only when all succeed                                                                                           |
 
 **`Tests` is the status check for `main` to require** (a repo setting, made by a maintainer): a lint error, a type
 error, a failing test or a broken build fails it. Run the same commands locally before you push ([Commands](#commands)).
