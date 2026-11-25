@@ -35,15 +35,18 @@ change when a module is added (the wildcard covers it), and changes nothing for 
 "typesVersions": {
   "*": {
     "effect": ["./dist/effect/index.d.ts"],
+    "effect/internal/*": [],
     "effect/*": ["./dist/effect/*.d.ts"]
   }
 }
 ```
 
-The root import needs no entry: the top-level `types` field covers it. `typesVersions` is read only when a resolver
-ignores `exports`, so `NodeNext`, `Node16` and `Bundler` consumers resolve exactly as before. Under `node10`, the
-`.ts` relative paths in the emitted `.d.ts` files ([ADR-0003](0003-typescript-source-as-source-of-truth.md)) resolve
-to the sibling `.d.ts`, the same as under `NodeNext`.
+The root import needs no entry: the top-level `types` field covers it. The empty `effect/internal/*` entry makes that
+path fail to resolve under `node10` (TS2307), as `exports` does elsewhere. It sits before `effect/*` so it wins.
+`typesVersions` is read only when a resolver ignores `exports`, so `NodeNext`, `Node16` and `Bundler` consumers
+resolve exactly as before. Under `node10`, the `.ts` relative paths in the emitted `.d.ts` files
+([ADR-0003](0003-typescript-source-as-source-of-truth.md)) resolve to the sibling `.d.ts`, the same as under
+`NodeNext`.
 
 Checked with a scratch consumer of the packed tarball, `skipLibCheck: false`, on TypeScript 5.9 and 6.0: `node10`,
 `nodenext` and `bundler` all type-check imports of the root, `effect` and `effect/Hex`.
@@ -55,8 +58,6 @@ Checked with a scratch consumer of the packed tarball, `skipLibCheck: false`, on
 
 ### Negative Consequences
 
-- `node10` consumers can reach the types of `effect/internal/*`, which `exports` blocks for everyone else; they could
-  with 3.0.0 too. Internal code stays free to change.
 - `node10` consumers on TypeScript 6.0 need `"ignoreDeprecations": "6.0"`; the map stops mattering once they move off
   `node10` or to TypeScript 7.
 - One more field in `package.json` to keep in step if the `dist/` layout changes.
@@ -67,7 +68,6 @@ Checked with a scratch consumer of the packed tarball, `skipLibCheck: false`, on
 
 - Good, because existing `node10` consumers upgrade without changing settings.
 - Good, because the wildcard covers every module.
-- Bad, because `effect/internal/*` types are reachable under `node10`.
 
 ### No `node10` support
 
