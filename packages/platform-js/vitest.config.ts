@@ -30,7 +30,7 @@ export default defineConfig({
       clean: true,
       include: ['src/**/*.ts'],
       reporter: ['clover', 'json', 'json-summary', 'lcov', 'text'],
-      reportsDirectory: outputs.coverageDirectory
+      reportsDirectory: outputs.coverageDirectory,
     },
     projects: [
       {
@@ -38,21 +38,17 @@ export default defineConfig({
         test: {
           name: 'unit',
           include: ['test/**/*.test.ts'],
-          exclude: [...configDefaults.exclude, '**/dist/**', '**/*.integration.test.ts']
-        }
+          exclude: [...configDefaults.exclude, '**/dist/**', '**/*.integration.test.ts'],
+        },
       },
       {
         extends: true,
         test: {
           name: 'integration',
-          include: ['test/**/*.integration.test.ts']
-        }
-      }
+          include: ['test/**/*.integration.test.ts'],
+        },
+      },
     ],
-    reporters: [
-      'default',
-      ['junit', { outputFile: outputs.junitFile }],
-      ['html', { outputFile: outputs.htmlFile }]
-    ]
-  }
+    reporters: ['default', ['junit', { outputFile: outputs.junitFile }], ['html', { outputFile: outputs.htmlFile }]],
+  },
 });

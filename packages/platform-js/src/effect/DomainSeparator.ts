@@ -19,21 +19,20 @@ import * as Hex from './Hex.ts';
 
 /**
  * A plain hex-encoded token domain separator, 32 bytes in length.
- * 
+ *
  * @category models
  */
 export type DomainSeparator = Brand.Branded<string, 'DomainSeparator'>;
 export const DomainSeparator = Brand.all(
   Brand.nominal<DomainSeparator>(),
-  Hex.ConstrainedPlainHex({ byteLength: '32..=32' })
+  Hex.ConstrainedPlainHex({ byteLength: '32..=32' }),
 );
 
 /**
  * Creates a buffer representing the raw bytes of a token domain separator.
- * 
+ *
+ * @category constructors
  * @param self The {@link DomainSeparator} for which raw bytes are required.
  * @returns A `Uint8Array` representing the raw bytes of `self`.
- * 
- * @category constructors
  */
 export const asBytes: (self: DomainSeparator) => Uint8Array = (self) => Buffer.from(self, 'hex');

@@ -1,6 +1,6 @@
 name: Feature request
 description: Propose a new feature or capability for platform-js
-title: "[Feature] "
+title: '[Feature] '
 type: Feature
 labels:
   - status:untriaged

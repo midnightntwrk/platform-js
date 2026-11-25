@@ -36,5 +36,5 @@ drivers, consequences) makes the reasoning behind a decision explicit for whoeve
 
 ### Negative Consequences
 
-- The agent skills default to `docs/adr/` and a minimal format, so `docs/agents/domain.md` and `CLAUDE.md` must
-  override them.
+- The agent skills default to `docs/adr/` and a minimal format, so `docs/agents/domain.md` and `CLAUDE.md` must override
+  them.

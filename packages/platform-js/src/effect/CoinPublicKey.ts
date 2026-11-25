@@ -23,12 +23,11 @@ import * as ParseError from './ParseError.ts';
  * A user public key capable of receiving Zswap coins.
  *
  * @remarks
- * `CoinPublicKey` is a 'branded' string type that represents a public key encoded either as a sequence of
- * hexadecimal characters, or as a string formatted according to the Bech32m encoding scheme.
- * 
+ *   `CoinPublicKey` is a 'branded' string type that represents a public key encoded either as a sequence of hexadecimal
+ *   characters, or as a string formatted according to the Bech32m encoding scheme.
+ * @category keys
  * @see {@link CoinPublicKey.Hex}
  * @see {@link CoinPublicKey.Bech32m}
- * @category keys
  */
 export type CoinPublicKey = CoinPublicKey.Bech32m | CoinPublicKey.Hex;
 
@@ -41,8 +40,7 @@ export declare namespace CoinPublicKey {
   export type Hex = Brand.Branded<string, 'CoinPublicKeyHex'>;
 
   /**
-   * A user public key capable of receiving Zswap coins, formatted as a string according to the Bech32m encoding
-   * scheme.
+   * A user public key capable of receiving Zswap coins, formatted as a string according to the Bech32m encoding scheme.
    *
    * @category keys
    */
@@ -54,10 +52,7 @@ export declare namespace CoinPublicKey {
  *
  * @category constructors
  */
-export const Hex = Brand.all(
-  Brand.nominal<CoinPublicKey.Hex>(),
-  Hex_.PlainHex
-);
+export const Hex = Brand.all(Brand.nominal<CoinPublicKey.Hex>(), Hex_.PlainHex);
 
 /**
  * Create a coin public key from a source string formatted according to the Bech32m encoding scheme.
@@ -69,11 +64,10 @@ export const Bech32m = Brand.nominal<CoinPublicKey.Bech32m>();
 /**
  * Creates a hex-encoded coin public key from a given source.
  *
- * @param self A source string that should become a {@link CoinPublicKey.Hex}, or a {@link CoinPublicKey} that
- * should become a {@link CoinPublicKey.Hex}.
- * @returns A {@link CoinPublicKey.Hex}.
- *
  * @category constructors
+ * @param self A source string that should become a {@link CoinPublicKey.Hex}, or a {@link CoinPublicKey} that should
+ *   become a {@link CoinPublicKey.Hex}.
+ * @returns A {@link CoinPublicKey.Hex}.
  */
 export const asHex: (self: CoinPublicKey | string) => CoinPublicKey.Hex = (self) => {
   if (Hex.is(self)) return self;
@@ -86,11 +80,10 @@ export const asHex: (self: CoinPublicKey | string) => CoinPublicKey.Hex = (self)
 /**
  * Creates a Bech32m formatted coin public key from a given source.
  *
- * @param self A source string that should become a {@link CoinPublicKey.Bech32m}, or a {@link CoinPublicKey} that
- * should become a {@link CoinPublicKey.Bech32m}.
- * @returns A {@link CoinPublicKey.Bech32m}.
- *
  * @category constructors
+ * @param self A source string that should become a {@link CoinPublicKey.Bech32m}, or a {@link CoinPublicKey} that should
+ *   become a {@link CoinPublicKey.Bech32m}.
+ * @returns A {@link CoinPublicKey.Bech32m}.
  */
 export const asBech32m: (self: CoinPublicKey | string) => CoinPublicKey.Bech32m = (self) => {
   if (Bech32m.is(self)) return self;
@@ -102,26 +95,24 @@ export const asBech32m: (self: CoinPublicKey | string) => CoinPublicKey.Bech32m 
 
 /**
  * Creates a buffer representing the raw bytes of a coin public key.
- * 
+ *
+ * @category constructors
  * @param self The {@link CoinPublicKey} for which raw bytes are required.
  * @returns A `Uint8Array` representing the raw bytes of `self`.
- * 
- * @category constructors
  */
 export const asBytes: (self: CoinPublicKey) => Uint8Array = (self) => Buffer.from(asHex(self), 'hex');
 
 /**
  * Create a coin public key from a source string.
  *
- * @param value The string value that is become a {@link CoinPublicKey}.
- * @returns A {@link CoinPublicKey} that is an instance of {@link CoinPublicKey.Hex} if `value` could be
- * parsed as a hex-encoded string; otherwise as an instance of {@link CoinPublicKey.Bech32m}.
- *
  * @category constructors
+ * @param value The string value that is become a {@link CoinPublicKey}.
+ * @returns A {@link CoinPublicKey} that is an instance of {@link CoinPublicKey.Hex} if `value` could be parsed as a
+ *   hex-encoded string; otherwise as an instance of {@link CoinPublicKey.Bech32m}.
  */
 export const make: (value: string) => CoinPublicKey = (value) => {
   return Either.match(Hex_.parseHex(value), {
     onRight: (_) => Hex(value),
-    onLeft: (_) => Bech32m(value)
+    onLeft: (_) => Bech32m(value),
   });
 };

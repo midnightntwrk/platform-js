@@ -1,16 +1,16 @@
 version: 2
 
 updates:
-  - package-ecosystem: "github-actions"
-    directory: "/"
+  - package-ecosystem: 'github-actions'
+    directory: '/'
     schedule:
-      interval: "weekly"
+      interval: 'weekly'
     cooldown:
       default-days: 7
     ignore:
       # changesets/action v2 requires @changesets/cli v3 or later.
-      - dependency-name: "changesets/action"
-        update-types: ["version-update:semver-major"]
+      - dependency-name: 'changesets/action'
+        update-types: ['version-update:semver-major']
 
 #  - package-ecosystem: "cargo"
 #    directory: "/"

@@ -27,20 +27,14 @@ const readKeys = (json: unknown): Configuration.Configuration.Keys =>
   Effect.runSync(
     Effect.gen(function* () {
       return yield* Configuration.Keys;
-    }).pipe(
-      Effect.provide(Configuration.layer),
-      Effect.withConfigProvider(Configuration.configProvider(json))
-    )
+    }).pipe(Effect.provide(Configuration.layer), Effect.withConfigProvider(Configuration.configProvider(json))),
   );
 
 const readNetwork = (json: unknown) =>
   Effect.runSync(
     Effect.gen(function* () {
       return yield* Configuration.Network;
-    }).pipe(
-      Effect.provide(Configuration.layer),
-      Effect.withConfigProvider(Configuration.configProvider(json))
-    )
+    }).pipe(Effect.provide(Configuration.layer), Effect.withConfigProvider(Configuration.configProvider(json))),
   );
 
 describe('Configuration', () => {
@@ -52,7 +46,7 @@ describe('Configuration', () => {
 
     it('assembles a signing key using the configured signing kind', () => {
       const keys = readKeys({
-        keys: { coinPublic: COIN_PUBLIC, signing: SIGNING, signingKind: 'ecdsa' }
+        keys: { coinPublic: COIN_PUBLIC, signing: SIGNING, signingKind: 'ecdsa' },
       });
       expect(keys.getSigningKey()).toEqual(Option.some({ tag: 'ecdsa', value: SIGNING }));
     });
@@ -68,9 +62,7 @@ describe('Configuration', () => {
     });
 
     it('fails for an unrecognized signing kind', () => {
-      expect(() =>
-        readKeys({ keys: { coinPublic: COIN_PUBLIC, signing: SIGNING, signingKind: 'rsa' } })
-      ).toThrow();
+      expect(() => readKeys({ keys: { coinPublic: COIN_PUBLIC, signing: SIGNING, signingKind: 'rsa' } })).toThrow();
     });
   });
 

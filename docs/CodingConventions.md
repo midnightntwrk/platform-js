@@ -62,8 +62,8 @@ const hex: Either.Either<Hex.Hex.PlainHex, Brand.Brand.BrandErrors> = Hex.PlainH
 ```
 
 `Hex.parseHex` is the lower-level step under it. It returns a `ParsedHexString` on the right: a parse report (prefix
-flag, whole-byte characters, leftover characters), not a branded value. On the left it returns a `ParseError` that
-says exactly which character or byte was wrong.
+flag, whole-byte characters, leftover characters), not a branded value. On the left it returns a `ParseError` that says
+exactly which character or byte was wrong.
 
 **Use branded types** to prevent mixing similar primitives. A refined brand runs its check in the constructor:
 
@@ -71,13 +71,11 @@ says exactly which character or byte was wrong.
 // src/effect/NetworkIdMoniker.ts
 export type NetworkIdMoniker = Brand.Branded<string, 'NetworkIdMoniker'>;
 
-export const NetworkIdMoniker = Brand.refined<NetworkIdMoniker>(
-  (source: string) => {
-    return source.match(NETWORK_ID_REGEXP)
-      ? Option.none()
-      : Option.some(Brand.error(`Source string '${source}' is not a valid network identifier`));
-  }
-);
+export const NetworkIdMoniker = Brand.refined<NetworkIdMoniker>((source: string) => {
+  return source.match(NETWORK_ID_REGEXP)
+    ? Option.none()
+    : Option.some(Brand.error(`Source string '${source}' is not a valid network identifier`));
+});
 ```
 
 Brands compose. `ContractAddress` is a nominal brand combined with a constrained hex parser:
@@ -87,7 +85,7 @@ Brands compose. `ContractAddress` is a nominal brand combined with a constrained
 export type ContractAddress = Brand.Branded<string, 'ContractAddress'>;
 export const ContractAddress = Brand.all(
   Brand.nominal<ContractAddress>(),
-  Hex.ConstrainedPlainHex({ byteLength: '32..=32' })
+  Hex.ConstrainedPlainHex({ byteLength: '32..=32' }),
 );
 ```
 
@@ -97,8 +95,8 @@ A brand constructor such as `ContractAddress(s)` **throws** a `BrandErrors` when
 answers only whether the refinement passes.
 
 **Brands are erased at runtime.** A branded value is a plain `string` at runtime, so `.is` and `.either` run only the
-brand's refinement, and a nominal brand's `.is` (`Brand.nominal`) is always `true`. Never branch on `.is` to tell
-brands apart: `ContractAddress` and `DomainSeparator` share one refinement, so `ContractAddress.is` accepts a
+brand's refinement, and a nominal brand's `.is` (`Brand.nominal`) is always `true`. Never branch on `.is` to tell brands
+apart: `ContractAddress` and `DomainSeparator` share one refinement, so `ContractAddress.is` accepts a
 `DomainSeparator`. Brands keep values apart at compile time only.
 
 ### Make Illegal States Unrepresentable
@@ -117,10 +115,10 @@ type ContractAddress = Brand.Branded<string, 'ContractAddress'>;
 type DomainSeparator = Brand.Branded<string, 'DomainSeparator'>;
 ```
 
-The compiler rejects a `DomainSeparator` where a `ContractAddress` is expected, but at runtime both are the same
-32-byte plain hex string and nothing tells them apart (see "Brands are erased at runtime" above). Where code must
-tell two encodings apart at runtime, parse the content; don't ask a brand. `CoinPublicKey` gets this wrong today (see
-the known exceptions under Total Functions).
+The compiler rejects a `DomainSeparator` where a `ContractAddress` is expected, but at runtime both are the same 32-byte
+plain hex string and nothing tells them apart (see "Brands are erased at runtime" above). Where code must tell two
+encodings apart at runtime, parse the content; don't ask a brand. `CoinPublicKey` gets this wrong today (see the known
+exceptions under Total Functions).
 
 **Use tagged unions** to model mutually exclusive states:
 
@@ -134,8 +132,8 @@ export type IntegerRangeValue =
   | { readonly _tag: 'Exclusive'; readonly min: number; readonly max: number };
 ```
 
-The union encodes which bound is inclusive: `min` always, `max` only in `Inclusive`. It does not encode `min <= max`
-or that both bounds are integers; nothing checks those today (#25).
+The union encodes which bound is inclusive: `min` always, `max` only in `Inclusive`. It does not encode `min <= max` or
+that both bounds are integers; nothing checks those today (#25).
 
 A template-literal input type restricts nothing at runtime, and little at compile time: `IntegerRangeInput`'s
 `` `${number}..${number}` `` accepts any number text, so a string range must still be parsed at runtime.
@@ -176,9 +174,9 @@ returns `Option.Option<SigningKey.SigningKey>` rather than `undefined` when no k
 
 **Known throwing exports, do not copy.** New code returns `Either` or fails an `Effect` instead.
 
-- `CoinPublicKey.make`, `CoinPublicKey.asHex`, `CoinPublicKey.asBech32m`, `CoinPublicKey.asBytes` (#23): `make`
-  throws on prefixed hex and labels any non-hex string Bech32m; the `as…` conversions throw a `ParseError` for
-  conversions not yet supported, and rely on a nominal `.is` that is always `true`
+- `CoinPublicKey.make`, `CoinPublicKey.asHex`, `CoinPublicKey.asBech32m`, `CoinPublicKey.asBytes` (#23): `make` throws
+  on prefixed hex and labels any non-hex string Bech32m; the `as…` conversions throw a `ParseError` for conversions not
+  yet supported, and rely on a nominal `.is` that is always `true`
 - `IntegerRange.from`, `IntegerRange.inclusive`, `IntegerRange.exclusive` (#25): throw through the private `make` on
   input it cannot read (`from` on a malformed range string)
 - `SigningKey.make` (#26): throws `BrandErrors` on an invalid key string, with no total alternative
@@ -252,8 +250,8 @@ Even in these cases, isolate mutations and document why they are necessary.
 Before using a type cast, exhaust all other options:
 
 1. Fix the underlying type definitions
-2. Use type guards or narrowing (`IntegerRange.isIntegerRange` in `src/effect/IntegerRange.ts`; a brand's `.is`
-   checks only its refinement)
+2. Use type guards or narrowing (`IntegerRange.isIntegerRange` in `src/effect/IntegerRange.ts`; a brand's `.is` checks
+   only its refinement)
 3. Use generics properly
 4. Refactor code to improve type inference
 
@@ -277,18 +275,18 @@ brand bound of `make`, on the line it applies to, not file-wide.
 
 **When to use which:**
 
-| Use Case             | Type     | Example                                                                     |
-| -------------------- | -------- | --------------------------------------------------------------------------- |
-| Pure parsing         | `Either` | `Hex.parseHex(source): Either<ParsedHexString, ParseError>`                 |
-| Total brand check    | `Either` | `ContractAddress.either(source): Either<ContractAddress, BrandErrors>`      |
-| Reading config       | `Effect` | `Layer.effect(Keys, Effect.gen(...))` in `Configuration.ts`                 |
-| Async operations     | `Effect` | `Effect.tryPromise({ try, catch })` around any Promise-returning API        |
-| Dependency injection | `Effect` | `Context.Tag` services `Configuration.Keys`, `Configuration.Network`        |
+| Use Case             | Type     | Example                                                                |
+| -------------------- | -------- | ---------------------------------------------------------------------- |
+| Pure parsing         | `Either` | `Hex.parseHex(source): Either<ParsedHexString, ParseError>`            |
+| Total brand check    | `Either` | `ContractAddress.either(source): Either<ContractAddress, BrandErrors>` |
+| Reading config       | `Effect` | `Layer.effect(Keys, Effect.gen(...))` in `Configuration.ts`            |
+| Async operations     | `Effect` | `Effect.tryPromise({ try, catch })` around any Promise-returning API   |
+| Dependency injection | `Effect` | `Context.Tag` services `Configuration.Keys`, `Configuration.Network`   |
 
 No platform-js module calls a Promise API today. When one does, wrap it in `Effect.tryPromise` with both options, and
 never use `Promise` or `async`/`await` directly in library code. `catch` maps the rejection to a `TypeIdError` (see
-Error Modeling), so callers can `Effect.catchTag` it. The single-argument form `Effect.tryPromise(() => ...)` fails
-with `UnknownException`, which loses the error type.
+Error Modeling), so callers can `Effect.catchTag` it. The single-argument form `Effect.tryPromise(() => ...)` fails with
+`UnknownException`, which loses the error type.
 
 **How Either crosses into Effect.** In Effect 3, `Either` is a subtype of `Effect`: a `Right` succeeds and a `Left`
 fails. So there is no conversion helper; yield or pass the `Either` directly where an `Effect` is expected:
@@ -301,7 +299,7 @@ Effect.gen(function* () {
 });
 
 // test/effect/Hex.test.ts - pass an Either to an Effect combinator
-const error = yield* Effect.flip(Hex.parseHex('HOSKYA'));
+const error = yield * Effect.flip(Hex.parseHex('HOSKYA'));
 expect(ParseError.isParseError(error)).toBeTruthy();
 ```
 
@@ -321,9 +319,9 @@ const byteCount: (source: string) => Either.Either<number, ParseError.ParseError
   Either.map(Hex.parseHex(source), (parsed) => parsed.byteChars.length / 2);
 ```
 
-`byteCount` is total: every string gives a `Right` count or a `Left` that says what was wrong. Branching on the
-result and replacing a failure with a fallback value (`onLeft: () => something`) drops that reason; see the known
-exceptions under Total Functions.
+`byteCount` is total: every string gives a `Right` count or a `Left` that says what was wrong. Branching on the result
+and replacing a failure with a fallback value (`onLeft: () => something`) drops that reason; see the known exceptions
+under Total Functions.
 
 ### Generator vs Pipe Style
 
@@ -337,15 +335,18 @@ Both `Effect.gen` and `pipe` are valid but serve different purposes:
 
 ```typescript
 // src/effect/Configuration.ts
-Layer.effect(Keys, Effect.gen(function* () {
-  const [coinPublic, signing, signingKind] = yield* KeysConfig;
-  const signingKey = Option.map(signing, (value) => SigningKey.make(value, signingKind));
+Layer.effect(
+  Keys,
+  Effect.gen(function* () {
+    const [coinPublic, signing, signingKind] = yield* KeysConfig;
+    const signingKey = Option.map(signing, (value) => SigningKey.make(value, signingKind));
 
-  return Keys.of({
-    coinPublicKey: coinPublic,
-    getSigningKey: () => signingKey
-  });
-}));
+    return Keys.of({
+      coinPublicKey: coinPublic,
+      getSigningKey: () => signingKey,
+    });
+  }),
+);
 ```
 
 **Use `pipe`** (or the `.pipe` method) when:
@@ -356,10 +357,10 @@ Layer.effect(Keys, Effect.gen(function* () {
 
 ```typescript
 // src/effect/Configuration.ts
-export const configProvider: (json: unknown) => ConfigProvider.ConfigProvider
-  = (json) => ConfigProvider.fromEnv({ pathDelim: '_'}).pipe(
+export const configProvider: (json: unknown) => ConfigProvider.ConfigProvider = (json) =>
+  ConfigProvider.fromEnv({ pathDelim: '_' }).pipe(
     ConfigProvider.constantCase,
-    ConfigProvider.orElse(() => ConfigProvider.fromJson(json))
+    ConfigProvider.orElse(() => ConfigProvider.fromJson(json)),
   );
 ```
 
@@ -390,27 +391,26 @@ export const isIntegerRange = (u: unknown): u is IntegerRange => hasProperty(u, 
 const IntegerRangeProto: Omit<IntegerRange, 'value'> = {
   [TypeId]: TypeId,
   [Hash.symbol](this: IntegerRange) {
-    return Hash.cached(this, Hash.structure(this.value))
+    return Hash.cached(this, Hash.structure(this.value));
   },
   [Equal.symbol](this: IntegerRange, that: unknown) {
-    return isIntegerRange(that) && equals(this, that)
+    return isIntegerRange(that) && equals(this, that);
   },
   // toString, toJSON, [NodeInspectSymbol], pipe ...
-}
+};
 ```
 
 Equality is defined once, as an `Equivalence`, and reused by `equals` and by `Equal.symbol`:
 
 ```typescript
 // src/effect/IntegerRange.ts
-export const Equivalence: equivalence.Equivalence<IntegerRange> =
-  equivalence.struct({
-    value: equivalence.struct({
-      _tag: equivalence.string,
-      min: equivalence.number,
-      max: equivalence.number
-    })
-  });
+export const Equivalence: equivalence.Equivalence<IntegerRange> = equivalence.struct({
+  value: equivalence.struct({
+    _tag: equivalence.string,
+    min: equivalence.number,
+    max: equivalence.number,
+  }),
+});
 
 export const equals: {
   (that: IntegerRange): (self: IntegerRange) => boolean;
@@ -425,12 +425,12 @@ export const equals: {
   `HashMap` misbehave
 - A data type is an immutable proto-object plus pure functions, never a class with mutable internal state
 - `TypeId` uses `Symbol.for('platform-js/effect/<Module>')`, so it survives duplicate module copies
-- State that is not part of the public shape goes behind a symbol key (`MonikerSymbol` in `NetworkId.ts`), not a
-  named field. It is unnamed, not hidden: a `Symbol.for` key is global, so any code that knows the string can read it.
-  That is the trade-off for surviving duplicate module copies. A module-local `Symbol()` is harder to reach (though
+- State that is not part of the public shape goes behind a symbol key (`MonikerSymbol` in `NetworkId.ts`), not a named
+  field. It is unnamed, not hidden: a `Symbol.for` key is global, so any code that knows the string can read it. That is
+  the trade-off for surviving duplicate module copies. A module-local `Symbol()` is harder to reach (though
   `Object.getOwnPropertySymbols` still finds it), but two copies of the module no longer read each other's values
-- Well-known instances are exported constants built from the same prototype, so they equal a value constructed from
-  the same input
+- Well-known instances are exported constants built from the same prototype, so they equal a value constructed from the
+  same input
 - The interface fields are `readonly`
 
 **Known gap, do not copy:** `src/effect/NetworkId.ts` has no `Hash` and no `pipe`, and builds a new prototype per
@@ -465,7 +465,7 @@ export class ParseError extends Error.TypeIdError(TypeId, 'ParseError')<{
   readonly source: string;
   readonly meta?: Inspectable;
   readonly cause?: unknown;
-}> { }
+}> {}
 
 export const isParseError = (u: unknown): u is ParseError => hasProperty(u, TypeId);
 
@@ -494,8 +494,8 @@ return Either.left(
   ParseError.make(
     `Invalid hex-digit '${source[invalidCharPos]}' found in source string at index ${invalidCharPos}`,
     source,
-    parsedHex
-  )
+    parsedHex,
+  ),
 );
 ```
 
@@ -514,11 +514,10 @@ Effect.gen(function* () {
 
 ### Services and Layers
 
-Services are `Context.Tag` classes keyed by `'@midnightntwrk/platform-js/<Module>#<Service>'`. A service's shape
-is either an interface in an `export declare namespace` beside it (the `Keys` service's shape is the `Keys`
-interface in `export declare namespace Configuration`), or an existing type (the `Network` service's shape is
-`NetworkId.NetworkId`). Layers build them with `Layer.effect` and are combined with
-`Layer.mergeAll`.
+Services are `Context.Tag` classes keyed by `'@midnightntwrk/platform-js/<Module>#<Service>'`. A service's shape is
+either an interface in an `export declare namespace` beside it (the `Keys` service's shape is the `Keys` interface in
+`export declare namespace Configuration`), or an existing type (the `Network` service's shape is `NetworkId.NetworkId`).
+Layers build them with `Layer.effect` and are combined with `Layer.mergeAll`.
 
 ```typescript
 // src/effect/Configuration.ts
@@ -536,7 +535,7 @@ Provide the layer at the edge, once:
 // A Context.Tag is already an Effect: pipe it, no Effect.gen needed
 Configuration.Keys.pipe(
   Effect.provide(Configuration.layer),
-  Effect.withConfigProvider(Configuration.configProvider(json))
+  Effect.withConfigProvider(Configuration.configProvider(json)),
 );
 ```
 
@@ -597,31 +596,31 @@ Effect.all({ a: fetchA(), b: fetchB() }, { concurrency: 'unbounded' }); // → {
 
 ### Scala/F# Idiom Translation
 
-| Scala/F# Idiom       | TypeScript Equivalent                          | Example Location                                     |
-| -------------------- | ---------------------------------------------- | ---------------------------------------------------- |
-| for-comprehension    | `Effect.gen(function* () { ... })`             | `src/effect/Configuration.ts`                        |
-| case class           | Proto-object with `Equal`/`Hash`, `TypeId`     | `src/effect/IntegerRange.ts`                         |
-| sealed trait / DU    | `_tag` union type                              | `IntegerRangeValue` in `src/effect/IntegerRange.ts`  |
-| exception type       | `TypeIdError` class + guard + `make`           | `src/effect/ParseError.ts`                           |
-| opaque / newtype     | `Brand.nominal`, `Brand.refined`, `Brand.all`  | `src/effect/ContractAddress.ts`                      |
-| implicit / given     | `Context.Tag` + `Layer`                        | `src/effect/Configuration.ts`                        |
-| `\|>` pipe           | `pipe()` / `.pipe()` from effect               | Throughout                                           |
-| Railway-oriented     | `Either.map`, `Either.flatMap` chains          | Not used in `src/` yet                               |
-| Pattern matching     | `Either.match({ onLeft, onRight })`, `Option.match` | `src/effect/internal/hex.ts`, `src/effect/Configuration.ts` |
-| Property-based test  | `effect/FastCheck` arbitraries                 | `test/effect/Arbitrary.ts`, `test/effect/Hex.test.ts` |
+| Scala/F# Idiom      | TypeScript Equivalent                               | Example Location                                            |
+| ------------------- | --------------------------------------------------- | ----------------------------------------------------------- |
+| for-comprehension   | `Effect.gen(function* () { ... })`                  | `src/effect/Configuration.ts`                               |
+| case class          | Proto-object with `Equal`/`Hash`, `TypeId`          | `src/effect/IntegerRange.ts`                                |
+| sealed trait / DU   | `_tag` union type                                   | `IntegerRangeValue` in `src/effect/IntegerRange.ts`         |
+| exception type      | `TypeIdError` class + guard + `make`                | `src/effect/ParseError.ts`                                  |
+| opaque / newtype    | `Brand.nominal`, `Brand.refined`, `Brand.all`       | `src/effect/ContractAddress.ts`                             |
+| implicit / given    | `Context.Tag` + `Layer`                             | `src/effect/Configuration.ts`                               |
+| `\|>` pipe          | `pipe()` / `.pipe()` from effect                    | Throughout                                                  |
+| Railway-oriented    | `Either.map`, `Either.flatMap` chains               | Not used in `src/` yet                                      |
+| Pattern matching    | `Either.match({ onLeft, onRight })`, `Option.match` | `src/effect/internal/hex.ts`, `src/effect/Configuration.ts` |
+| Property-based test | `effect/FastCheck` arbitraries                      | `test/effect/Arbitrary.ts`, `test/effect/Hex.test.ts`       |
 
 ### Effect Usage
 
-platform-js is an Effect library: its public API is Effect modules (`@midnightntwrk/platform-js/effect/*`), and
-callers are expected to use Effect.
+platform-js is an Effect library: its public API is Effect modules (`@midnightntwrk/platform-js/effect/*`), and callers
+are expected to use Effect.
 
 - **Public modules** (`src/effect/*.ts`): types, constructors, guards and services, each with JSDoc. The package
-  `exports` map publishes their compiled `dist/` files through the `./effect/*` wildcard, so a new module is
-  importable by path (`@midnightntwrk/platform-js/effect/Hex`) without touching `package.json`. Also re-export each
-  new module from `src/effect/index.ts` as a namespace (`export * as Hex from './Hex.ts';`), keeping the list sorted
-- **Internal modules** (`src/effect/internal/*.ts`): implementation, marked `/** @internal */`, removed from the
-  emitted types by `stripInternal`, and blocked from import by the package `exports` map, so callers import the public
-  module instead; tests, which import from `src/`, also import the public module
+  `exports` map publishes their compiled `dist/` files through the `./effect/*` wildcard, so a new module is importable
+  by path (`@midnightntwrk/platform-js/effect/Hex`) without touching `package.json`. Also re-export each new module from
+  `src/effect/index.ts` as a namespace (`export * as Hex from './Hex.ts';`), keeping the list sorted
+- **Internal modules** (`src/effect/internal/*.ts`): implementation, marked `/** @internal */`, removed from the emitted
+  types by `stripInternal`, and blocked from import by the package `exports` map, so callers import the public module
+  instead; tests, which import from `src/`, also import the public module
 - **Public re-export**: a public module re-exports the internal function with its full type
   (`export const parseHex: (...) => ... = internal.parseHex;` in `Hex.ts`)
 
@@ -658,35 +657,35 @@ one of these modules. It does not report a wrong alias: it has no diagnostic for
 **Effect is a rich library** - many problems are already solved. Before writing custom utilities, check if Effect
 provides a solution:
 
-| Module                                  | Provides                                              |
-| --------------------------------------- | ----------------------------------------------------- |
-| `effect/Array`                          | `NonEmptyReadonlyArray`, `reduce`, `match`            |
-| `effect/Function`                       | `dual`, `pipe`, `identity`, `constVoid`               |
-| `effect/Brand`                          | `nominal`, `refined`, `all`, `error` — branded types  |
-| `effect/Equal`, `effect/Hash`           | Structural equality and hashing for data types        |
-| `effect/Equivalence`                    | `struct`, `mapInput`, `string`, `number`              |
-| `effect/Predicate`                      | `hasProperty`, `isString`, `isNumber`                 |
-| `effect/Inspectable`, `effect/Pipeable` | `NodeInspectSymbol`, `pipeArguments`                  |
-| `effect/Match`                          | Pattern matching combinators                          |
-| `effect/HashMap`, `effect/HashSet`      | Immutable collections                                 |
-| `effect/Option`, `effect/Either`        | Sum types                                             |
-| `effect/Schema`                         | Validation and parsing (`fromBrand`, `Config`)        |
-| `effect/Config`, `effect/ConfigProvider`| Typed configuration from env and JSON                 |
-| `effect/FastCheck`                      | Property-based test arbitraries                       |
+| Module                                   | Provides                                             |
+| ---------------------------------------- | ---------------------------------------------------- |
+| `effect/Array`                           | `NonEmptyReadonlyArray`, `reduce`, `match`           |
+| `effect/Function`                        | `dual`, `pipe`, `identity`, `constVoid`              |
+| `effect/Brand`                           | `nominal`, `refined`, `all`, `error` — branded types |
+| `effect/Equal`, `effect/Hash`            | Structural equality and hashing for data types       |
+| `effect/Equivalence`                     | `struct`, `mapInput`, `string`, `number`             |
+| `effect/Predicate`                       | `hasProperty`, `isString`, `isNumber`                |
+| `effect/Inspectable`, `effect/Pipeable`  | `NodeInspectSymbol`, `pipeArguments`                 |
+| `effect/Match`                           | Pattern matching combinators                         |
+| `effect/HashMap`, `effect/HashSet`       | Immutable collections                                |
+| `effect/Option`, `effect/Either`         | Sum types                                            |
+| `effect/Schema`                          | Validation and parsing (`fromBrand`, `Config`)       |
+| `effect/Config`, `effect/ConfigProvider` | Typed configuration from env and JSON                |
+| `effect/FastCheck`                       | Property-based test arbitraries                      |
 
 ### Canonical Pattern Files
 
 When implementing new features, refer to these exemplary files:
 
-| Pattern                                    | File                                                      |
-| ------------------------------------------ | --------------------------------------------------------- |
-| Pure core, parse don't validate            | `src/effect/internal/hex.ts`, `src/effect/Hex.ts`         |
+| Pattern                                    | File                                                             |
+| ------------------------------------------ | ---------------------------------------------------------------- |
+| Pure core, parse don't validate            | `src/effect/internal/hex.ts`, `src/effect/Hex.ts`                |
 | Composed brands, distinct at compile time  | `src/effect/ContractAddress.ts`, `src/effect/DomainSeparator.ts` |
-| Refined brand                              | `src/effect/NetworkIdMoniker.ts`                          |
-| Proto-object data type, `_tag` union, dual | `src/effect/IntegerRange.ts`                              |
-| Error type (`TypeIdError` + guard + make)  | `src/effect/ParseError.ts`                                |
-| Services, `Context.Tag`, layers, config    | `src/effect/Configuration.ts`                             |
-| Tests (`@effect/vitest`, FastCheck)        | `test/effect/Hex.test.ts`, `test/effect/Arbitrary.ts`     |
+| Refined brand                              | `src/effect/NetworkIdMoniker.ts`                                 |
+| Proto-object data type, `_tag` union, dual | `src/effect/IntegerRange.ts`                                     |
+| Error type (`TypeIdError` + guard + make)  | `src/effect/ParseError.ts`                                       |
+| Services, `Context.Tag`, layers, config    | `src/effect/Configuration.ts`                                    |
+| Tests (`@effect/vitest`, FastCheck)        | `test/effect/Hex.test.ts`, `test/effect/Arbitrary.ts`            |
 
 ## Documentation Standards
 
@@ -697,8 +696,8 @@ APIs:
 - `@param` for each parameter and `@returns` for the result, naming `Right`/`Left` cases for an `Either`
 - `@category` on every export, from the set in use: `models`, `constructors`, `guards`, `predicates`, `equivalence`,
   `utilities`, `errors`, `services`, `layers`, `keys`
-- In new code, `@throws` on the rare export that can throw (a brand constructor called directly). No file in `src/`
-  uses it yet, so existing exports, the known throwing exports under Total Functions included, lack it
+- In new code, `@throws` on the rare export that can throw (a brand constructor called directly). No file in `src/` uses
+  it yet, so existing exports, the known throwing exports under Total Functions included, lack it
 - `/** @internal */` on anything in `src/effect/internal/`
 
 Use `{@link ...}` to cross-reference other symbols, and `@see` for related ones.
@@ -708,11 +707,10 @@ Use `{@link ...}` to cross-reference other symbols, and `@see` for related ones.
 /**
  * Parses a hex-encoded string.
  *
- * @param source The source string to parse.
- * @returns An `Either` with a `Right` value of {@link ParsedHexString} describing the parsed elements of `source`,
- * or a `Left` value of {@link ParseError.ParseError | ParseError} if parsing fails.
- *
  * @category utilities
+ * @param source The source string to parse.
+ * @returns An `Either` with a `Right` value of {@link ParsedHexString} describing the parsed elements of `source`, or a
+ *   `Left` value of {@link ParseError.ParseError | ParseError} if parsing fails.
  */
 export const parseHex: (source: string) => Either.Either<ParsedHexString, ParseError.ParseError> = internal.parseHex;
 ```
@@ -722,13 +720,12 @@ export const parseHex: (source: string) => Either.Either<ParsedHexString, ParseE
 /**
  * Creates a network identifier.
  *
+ * @category constructors
  * @param input The input to use when constructing the network identifier.
  * @returns A {@link NetworkId} derived from `input`.
- *
- * @category constructors
  */
-export const make: (input: NetworkIdInput) => NetworkId =
-  (input) => Object.create(NetworkIdProto(isNetworkId(input) ? input[MonikerSymbol] : input));
+export const make: (input: NetworkIdInput) => NetworkId = (input) =>
+  Object.create(NetworkIdProto(isNetworkId(input) ? input[MonikerSymbol] : input));
 ```
 
 **Recommended for new public APIs:** an `@example` block with a working snippet. No file in `src/` has one yet, so this

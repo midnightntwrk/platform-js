@@ -19,21 +19,20 @@ import * as Hex from './Hex.ts';
 
 /**
  * A plain hex-encoded contract address, 32 bytes in length.
- * 
+ *
  * @category models
  */
 export type ContractAddress = Brand.Branded<string, 'ContractAddress'>;
 export const ContractAddress = Brand.all(
   Brand.nominal<ContractAddress>(),
-  Hex.ConstrainedPlainHex({ byteLength: '32..=32' })
+  Hex.ConstrainedPlainHex({ byteLength: '32..=32' }),
 );
 
 /**
  * Creates a buffer representing the raw bytes of a contract address.
- * 
+ *
+ * @category constructors
  * @param self The {@link ContractAddress} for which raw bytes are required.
  * @returns A `Uint8Array` representing the raw bytes of `self`.
- * 
- * @category constructors
  */
 export const asBytes: (self: ContractAddress) => Uint8Array = (self) => Buffer.from(self, 'hex');

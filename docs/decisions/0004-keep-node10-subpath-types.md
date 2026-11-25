@@ -43,10 +43,9 @@ change when a module is added (the wildcard covers it), and changes nothing for 
 
 The root import needs no entry: the top-level `types` field covers it. The empty `effect/internal/*` entry makes that
 path fail to resolve under `node10` (TS2307), as `exports` does elsewhere. It sits before `effect/*` so it wins.
-`typesVersions` is read only when a resolver ignores `exports`, so `NodeNext`, `Node16` and `Bundler` consumers
-resolve exactly as before. Under `node10`, the `.ts` relative paths in the emitted `.d.ts` files
-([ADR-0003](0003-typescript-source-as-source-of-truth.md)) resolve to the sibling `.d.ts`, the same as under
-`NodeNext`.
+`typesVersions` is read only when a resolver ignores `exports`, so `NodeNext`, `Node16` and `Bundler` consumers resolve
+exactly as before. Under `node10`, the `.ts` relative paths in the emitted `.d.ts` files
+([ADR-0003](0003-typescript-source-as-source-of-truth.md)) resolve to the sibling `.d.ts`, the same as under `NodeNext`.
 
 Checked with a scratch consumer of the packed tarball, `skipLibCheck: false`, on TypeScript 5.9 and 6.0: `node10`,
 `nodenext` and `bundler` all type-check imports of the root, `effect` and `effect/Hex`.

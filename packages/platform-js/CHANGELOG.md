@@ -10,8 +10,8 @@ Versions up to 3.0.0 were published as `@midnight-ntwrk/platform-js`.
   shape matches the Ledger 9 signing key. `tag` is the signature scheme (`SignatureKind`) and `value` is the raw key
   (`SigningKey.Value`).
 
-  Migration: replace `SigningKey.SigningKey(hex)` with `SigningKey.make(hex)`, or `SigningKey.make(hex, 'ecdsa')` for
-  an ECDSA key. Brand a raw key with `SigningKey.Value(hex)`. Code that read the key as a string reads `key.value`.
+  Migration: replace `SigningKey.SigningKey(hex)` with `SigningKey.make(hex)`, or `SigningKey.make(hex, 'ecdsa')` for an
+  ECDSA key. Brand a raw key with `SigningKey.Value(hex)`. Code that read the key as a string reads `key.value`.
 
 - **BREAKING CHANGE:** `Configuration.Keys.getSigningKey()` now returns `Option<SigningKey>` in the new `{ tag, value }`
   shape. The `tag` comes from the new `keys.signingKind` configuration value, and is `'schnorr'` when that is not set.

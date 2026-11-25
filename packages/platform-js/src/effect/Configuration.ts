@@ -33,10 +33,7 @@ import * as SigningKey from './SigningKey.ts';
  *
  * @category services
  */
-export class Keys extends Context.Tag('@midnightntwrk/platform-js/Configuration#Keys')<
-  Keys,
-  Configuration.Keys
->() {}
+export class Keys extends Context.Tag('@midnightntwrk/platform-js/Configuration#Keys')<Keys, Configuration.Keys>() {}
 
 /**
  * Provides an accessor for retrieving the configured {@link NetworkId.NetworkId | NetworkId}.
@@ -49,9 +46,7 @@ export class Network extends Context.Tag('@midnightntwrk/platform-js/Configurati
 >() {}
 
 export declare namespace Configuration {
-  /**
-   * Accessors for retrieving keys.
-   */
+  /** Accessors for retrieving keys. */
   export interface Keys {
     /**
      * Gets the current user's Zswap public key.
@@ -64,14 +59,13 @@ export declare namespace Configuration {
      * Gets a signing key.
      *
      * @remarks
-     * A signing key is required when creating Contract Maintenance Authority (CMA) instances when initializing
-     * new contracts. If `Option.None` is returned, then a new singing key is sampled and used for the CMA
-     * instead. Returning the same signing key is useful when that key is to be used to maintain multiple contracts.
+     *   A signing key is required when creating Contract Maintenance Authority (CMA) instances when initializing new
+     *   contracts. If `Option.None` is returned, then a new singing key is sampled and used for the CMA instead.
+     *   Returning the same signing key is useful when that key is to be used to maintain multiple contracts.
      *
-     * The returned key carries its {@link SigningKey.SignatureKind | kind} (the `tag`), taken from the
-     * `keys.signingKind` configuration value. When `signingKind` is not configured it defaults to
-     * {@link SigningKey.DefaultSignatureKind} (`'schnorr'`).
-     *
+     *   The returned key carries its {@link SigningKey.SignatureKind | kind} (the `tag`), taken from the
+     *   `keys.signingKind` configuration value. When `signingKind` is not configured it defaults to
+     *   {@link SigningKey.DefaultSignatureKind} (`'schnorr'`).
      * @category keys
      */
     getSigningKey(): Option.Option<SigningKey.SigningKey>;
@@ -83,62 +77,68 @@ const KeysConfig = Config.all([
     'coinPublic',
     Schema.Union(
       Schema.String.pipe(Schema.fromBrand(CoinPublicKey.Hex)),
-      Schema.String.pipe(Schema.fromBrand(CoinPublicKey.Bech32m))
-    )
+      Schema.String.pipe(Schema.fromBrand(CoinPublicKey.Bech32m)),
+    ),
   ),
   Config.option(Schema.Config('signing', Schema.String.pipe(Schema.fromBrand(SigningKey.Value)))),
-  Schema.Config('signingKind', Schema.Literal(...SigningKey.SignatureKinds))
-    .pipe(Config.withDefault(SigningKey.DefaultSignatureKind))
+  Schema.Config('signingKind', Schema.Literal(...SigningKey.SignatureKinds)).pipe(
+    Config.withDefault(SigningKey.DefaultSignatureKind),
+  ),
 ]).pipe(Config.nested('keys'));
 
-const NetworkIdConfig = Config.option(Schema.Config(
-  'network',
-  Schema.String.pipe(Schema.fromBrand(NetworkIdMoniker.NetworkIdMoniker))
-));
+const NetworkIdConfig = Config.option(
+  Schema.Config('network', Schema.String.pipe(Schema.fromBrand(NetworkIdMoniker.NetworkIdMoniker))),
+);
 
-const makeKeys: () => Layer.Layer<Keys, ConfigError>
-  = () => Layer.effect(Keys, Effect.gen(function* () {
-    const [coinPublic, signing, signingKind] = yield* KeysConfig;
-    const signingKey = Option.map(signing, (value) => SigningKey.make(value, signingKind));
+const makeKeys: () => Layer.Layer<Keys, ConfigError> = () =>
+  Layer.effect(
+    Keys,
+    Effect.gen(function* () {
+      const [coinPublic, signing, signingKind] = yield* KeysConfig;
+      const signingKey = Option.map(signing, (value) => SigningKey.make(value, signingKind));
 
-    return Keys.of({
-      coinPublicKey: coinPublic,
-      getSigningKey: () => signingKey
-    });
-  }));
+      return Keys.of({
+        coinPublicKey: coinPublic,
+        getSigningKey: () => signingKey,
+      });
+    }),
+  );
 
-const makeNetwork: () => Layer.Layer<Network, ConfigError>
-  = () => Layer.effect(Network, Effect.gen(function* () {
-    return Network.of(
-        NetworkId.make(Option.match(yield* NetworkIdConfig, {
-        onSome: identity,
-        onNone: () => NetworkId.MainNet
-      }))
-    );
-  }));
+const makeNetwork: () => Layer.Layer<Network, ConfigError> = () =>
+  Layer.effect(
+    Network,
+    Effect.gen(function* () {
+      return Network.of(
+        NetworkId.make(
+          Option.match(yield* NetworkIdConfig, {
+            onSome: identity,
+            onNone: () => NetworkId.MainNet,
+          }),
+        ),
+      );
+    }),
+  );
 
 /**
  * Creates a platform independent configuration provider,
  *
- * @param json A JSON object from which configuration values can be read.
- * @returns A `ConfigProvider` that defaults to values present in `json`, but allows them to be overridden
- * via environment variables.
- * 
  * @category constructors
+ * @param json A JSON object from which configuration values can be read.
+ * @returns A `ConfigProvider` that defaults to values present in `json`, but allows them to be overridden via
+ *   environment variables.
  */
-export const configProvider: (json: unknown) => ConfigProvider.ConfigProvider
-  = (json) => ConfigProvider.fromEnv({ pathDelim: '_'}).pipe(
+export const configProvider: (json: unknown) => ConfigProvider.ConfigProvider = (json) =>
+  ConfigProvider.fromEnv({ pathDelim: '_' }).pipe(
     ConfigProvider.constantCase,
-    ConfigProvider.orElse(() => ConfigProvider.fromJson(json))
+    ConfigProvider.orElse(() => ConfigProvider.fromJson(json)),
   );
 
 /**
  * A default layer that provides a collection of services that provide accessors, that in turn, access underlying
  * configured values.
  *
+ * @category layers
  * @see {@link Keys}
  * @see {@link Network}
- * 
- * @category layers
  */
 export const layer = Layer.mergeAll(makeKeys(), makeNetwork());

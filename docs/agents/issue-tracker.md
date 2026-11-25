@@ -1,7 +1,6 @@
 # Issue tracker: GitHub
 
-Issues for this repo live as GitHub issues in `midnightntwrk/platform-js`. Use the `gh` CLI for all
-operations.
+Issues for this repo live as GitHub issues in `midnightntwrk/platform-js`. Use the `gh` CLI for all operations.
 
 ## Org rules that apply to every issue
 
@@ -14,14 +13,14 @@ operations.
 - **No closing keywords**: link issues with a plain `#123`, never `Closes`/`Fixes`/`Resolves`. Issues are closed by hand
   after QA.
 - **No checkboxes**: write acceptance criteria, tasks and every other list in an issue body as plain `-` bullets, never
-  `- [ ]`, as midnight-wallet does. Nobody ticks them, so they only show as unfinished work. This overrides the
-  `- [ ]` template in Matt's `/to-tickets` skill.
+  `- [ ]`, as midnight-wallet does. Nobody ticks them, so they only show as unfinished work. This overrides the `- [ ]`
+  template in Matt's `/to-tickets` skill.
 
 ## Conventions
 
-- **Create an issue**: `gh issue create` skips the issue forms in `.github/ISSUE_TEMPLATE/`, so do by hand what the
-  form does: its title prefix, Issue Type and labels (below), plus `bot:ai-assisted`, and its fields as `###` headings
-  in the body.
+- **Create an issue**: `gh issue create` skips the issue forms in `.github/ISSUE_TEMPLATE/`, so do by hand what the form
+  does: its title prefix, Issue Type and labels (below), plus `bot:ai-assisted`, and its fields as `###` headings in the
+  body.
 
   | Form                            | Title prefix | Issue Type | Labels                                                       |
   | ------------------------------- | ------------ | ---------- | ------------------------------------------------------------ |
@@ -34,8 +33,10 @@ operations.
   `gh issue create --title "[Task] ..." --type Task --label status:untriaged,component:platform-js,bot:ai-assisted --body "..."`,
   with `### Summary`, `### Acceptance criteria / done when` and `### Context / notes`. Use a heredoc for multi-line
   bodies.
+
 - **Read an issue**: `gh issue view <number> --json number,title,body,labels,comments`.
-- **List issues**: `gh issue list --state open --json number,title,body,labels,comments --jq '[.[] | {number, title, body, labels: [.labels[].name], comments: [.comments[].body]}]'`
+- **List issues**:
+  `gh issue list --state open --json number,title,body,labels,comments --jq '[.[] | {number, title, body, labels: [.labels[].name], comments: [.comments[].body]}]'`
   with appropriate `--label` and `--state` filters.
 - **Make an issue a sub-issue of a parent**: `gh issue create --parent <parent> ...`, or
   `gh issue edit <parent> --add-sub-issue <child>` afterwards.
@@ -43,8 +44,9 @@ operations.
   `gh issue create --blocked-by <n>,<n> ...` or `gh issue edit <child> --add-blocked-by <blocker>`. Where dependencies
   aren't available, fall back to a `Blocked by: #<n>, #<n>` line at the top of the child body. A ticket is unblocked
   when every blocker is closed.
-- **Count open blockers**: `gh api repos/midnightntwrk/platform-js/issues/<n> --jq .issue_dependencies_summary.blocked_by`
-  (open blockers only; 0 means startable).
+- **Count open blockers**:
+  `gh api repos/midnightntwrk/platform-js/issues/<n> --jq .issue_dependencies_summary.blocked_by` (open blockers only; 0
+  means startable).
 - **Comment on an issue**: `gh issue comment <number> --body "..."`
 - **Apply / remove labels**: `gh issue edit <number> --add-label "..."` / `--remove-label "..."`
 - **Close**: post the explanation with `gh issue comment <number> --body "..."`, then `gh issue close <number>`. On an
@@ -69,5 +71,5 @@ Read it as in **Read an issue** above.
 
 ## Wayfinding operations
 
-`/wayfinder` uses `wayfinder:map` and `wayfinder:<type>` labels. They don't exist on this repo and can't be created
-here (see **No new labels**), so don't run `/wayfinder` until SRE has added them.
+`/wayfinder` uses `wayfinder:map` and `wayfinder:<type>` labels. They don't exist on this repo and can't be created here
+(see **No new labels**), so don't run `/wayfinder` until SRE has added them.

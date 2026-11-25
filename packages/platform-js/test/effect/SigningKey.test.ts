@@ -31,7 +31,7 @@ describe('SigningKey', () => {
       'not-hex',
       '0x' + VALID_VALUE, // prefixed hex is not a plain hex value
       'a1'.repeat(10), // too short (10 bytes)
-      'a1'.repeat(40) // too long (40 bytes)
+      'a1'.repeat(40), // too long (40 bytes)
     ])('rejects an invalid value (%s)', (value) => {
       expect(() => SigningKey.Value(value)).toThrow();
     });

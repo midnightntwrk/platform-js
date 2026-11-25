@@ -16,7 +16,7 @@
 import * as Equal from 'effect/Equal';
 import * as equivalence from 'effect/Equivalence';
 import { dual } from 'effect/Function';
-import { type Inspectable,NodeInspectSymbol } from 'effect/Inspectable';
+import { type Inspectable, NodeInspectSymbol } from 'effect/Inspectable';
 import { hasProperty } from 'effect/Predicate';
 
 import * as NetworkIdMoniker from './NetworkIdMoniker.ts';
@@ -30,12 +30,11 @@ const MonikerSymbol: unique symbol = Symbol.for('platform-js/effect/NetworkId#Ne
 
 /**
  * Represents a Midnight network identifier.
- * 
+ *
  * @remarks
- * A {@link NetworkId} can be constructed by calling {@link make} with a valid
- * {@link NetworkIdMoniker.NetworkIdMoniker | NetworkIdMoniker} identifying the network. Alternatively, in order
- * to use the Midnight MainNet, use the exported instance {@link MainNet}.
- * 
+ *   A {@link NetworkId} can be constructed by calling {@link make} with a valid
+ *   {@link NetworkIdMoniker.NetworkIdMoniker | NetworkIdMoniker} identifying the network. Alternatively, in order to use
+ *   the Midnight MainNet, use the exported instance {@link MainNet}.
  * @see {@link NetworkIdInput}
  * @see {@link make}
  */
@@ -52,7 +51,7 @@ export interface NetworkId extends Equal.Equal, Inspectable {
 
 /**
  * An input for constructing {@link NetworkId} instances.
- * 
+ *
  * @see {@link make}
  */
 export type NetworkIdInput = NetworkIdMoniker.NetworkIdMoniker | NetworkId;
@@ -61,23 +60,20 @@ export type NetworkIdInput = NetworkIdMoniker.NetworkIdMoniker | NetworkId;
  * Provides equivalence for {@link NetworkId} instances.
  *
  * @remarks
- * For two {@link NetworkId} instances to be considered equal, their underlying monikers must be equal.
- *
+ *   For two {@link NetworkId} instances to be considered equal, their underlying monikers must be equal.
  * @category equivalence
  */
-export const Equivalence: equivalence.Equivalence<NetworkId> =
-  equivalence.mapInput(
-    (a, b) => Equal.equals(a, b),
-    (_) => _[MonikerSymbol]
-  );
+export const Equivalence: equivalence.Equivalence<NetworkId> = equivalence.mapInput(
+  (a, b) => Equal.equals(a, b),
+  (_) => _[MonikerSymbol],
+);
 
 /**
  * Determines if a value is a network identifier.
  *
+ * @category guards
  * @param u The value to check.
  * @returns `true` if `u` is a {@link NetworkId}; `false` otherwise.
- *
- * @category guards
  */
 export const isNetworkId = (u: unknown): u is NetworkId => hasProperty(u, TypeId);
 
@@ -91,44 +87,38 @@ export const equals: {
   (self: NetworkId, that: NetworkId): boolean;
 } = dual(2, (self: NetworkId, that: NetworkId): boolean => Equivalence(self, that));
 
-
 const NetworkIdProto = (networkMoniker: string | true) => ({
   [TypeId]: TypeId,
   [Equal.symbol](this: NetworkId, that: unknown) {
-    return isNetworkId(that) && equals(this, that)
+    return isNetworkId(that) && equals(this, that);
   },
   toString(this: NetworkId) {
-    return this[MonikerSymbol] === true
-      ? MAINNET_MONIKER
-      : this[MonikerSymbol];
+    return this[MonikerSymbol] === true ? MAINNET_MONIKER : this[MonikerSymbol];
   },
   toJSON(this: NetworkId) {
     return {
       _id: 'NetworkId',
-      moniker: this.toString()
+      moniker: this.toString(),
     };
   },
   [NodeInspectSymbol](this: NetworkId) {
-    return this.toJSON()
+    return this.toJSON();
   },
   [MonikerSymbol]: networkMoniker,
   isMainNet(this: NetworkId): boolean {
     return this[MonikerSymbol] === true;
-  }
+  },
 });
 
-/**
- * A network identifier that represents the Midnight MainNet.
- */
+/** A network identifier that represents the Midnight MainNet. */
 export const MainNet: NetworkId = Object.create(NetworkIdProto(true));
 
 /**
  * Creates a network identifier.
  *
+ * @category constructors
  * @param input The input to use when constructing the network identifier.
  * @returns A {@link NetworkId} derived from `input`.
- *
- * @category constructors
  */
-export const make: (input: NetworkIdInput) => NetworkId =
-  (input) => Object.create(NetworkIdProto(isNetworkId(input) ? input[MonikerSymbol] : input));
+export const make: (input: NetworkIdInput) => NetworkId = (input) =>
+  Object.create(NetworkIdProto(isNetworkId(input) ? input[MonikerSymbol] : input));

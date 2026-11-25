@@ -13,24 +13,21 @@
  * limitations under the License.
  */
 
-import { describe, expect,it } from '@effect/vitest';
+import { describe, expect, it } from '@effect/vitest';
 import * as fc from 'effect/FastCheck';
 
 import * as NetworkIdMoniker from '../../src/effect/NetworkIdMoniker.ts';
 import * as Arbitrary from './Arbitrary.ts';
 
 describe('NetworkIdMoniker', () => {
-  it('should not throw for valid identifiers', () => fc.assert(
-    fc.property(Arbitrary.makeNetworkIdArbitrary(), (networkId) => {
-      expect(() => NetworkIdMoniker.NetworkIdMoniker(networkId)).not.toThrow();
-    })
-  ));
+  it('should not throw for valid identifiers', () =>
+    fc.assert(
+      fc.property(Arbitrary.makeNetworkIdArbitrary(), (networkId) => {
+        expect(() => NetworkIdMoniker.NetworkIdMoniker(networkId)).not.toThrow();
+      }),
+    ));
 
-  it.each([
-    'hosky!dev',
-    'hosky_dev_01',
-    '!@£&^*'
-  ])('should throw for invalid identifiers (%s)', (networkId) => {
+  it.each(['hosky!dev', 'hosky_dev_01', '!@£&^*'])('should throw for invalid identifiers (%s)', (networkId) => {
     expect(() => NetworkIdMoniker.NetworkIdMoniker(networkId)).toThrow();
   });
 });

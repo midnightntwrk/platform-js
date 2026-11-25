@@ -19,35 +19,33 @@ import * as fc from 'effect/FastCheck';
 
 import * as IntegerRange from '../../src/effect/IntegerRange.ts';
 
-export const makeNetworkIdArbitrary: () => fc.Arbitrary<string> =
-  () => fc.stringMatching(/^(dev|test)-[0-9a-fA-F]{4,8}-0[1-9]$/);
+export const makeNetworkIdArbitrary: () => fc.Arbitrary<string> = () =>
+  fc.stringMatching(/^(dev|test)-[0-9a-fA-F]{4,8}-0[1-9]$/);
 
-export const makePlainHexArbitrary: (inputOrRange: IntegerRange.IntegerRangeInput | IntegerRange.IntegerRange) => fc.Arbitrary<string> =
-  (inputOrRange) => fc.stringMatching(hexRegExp(inputOrRange));
+export const makePlainHexArbitrary: (
+  inputOrRange: IntegerRange.IntegerRangeInput | IntegerRange.IntegerRange,
+) => fc.Arbitrary<string> = (inputOrRange) => fc.stringMatching(hexRegExp(inputOrRange));
 
-export const makePrefixedHexArbitrary: (inputOrRange: IntegerRange.IntegerRangeInput | IntegerRange.IntegerRange) => fc.Arbitrary<string> =
-  (inputOrRange) => fc.stringMatching(hexRegExp(inputOrRange, { includePrefix: true }));
+export const makePrefixedHexArbitrary: (
+  inputOrRange: IntegerRange.IntegerRangeInput | IntegerRange.IntegerRange,
+) => fc.Arbitrary<string> = (inputOrRange) => fc.stringMatching(hexRegExp(inputOrRange, { includePrefix: true }));
 
-export const makeHexArbitrary: (inputOrRange: IntegerRange.IntegerRangeInput | IntegerRange.IntegerRange) => fc.Arbitrary<string> =
-  (inputOrRange) => fc.oneof(
-    makePlainHexArbitrary(inputOrRange),
-    makePrefixedHexArbitrary(inputOrRange)
-  );
+export const makeHexArbitrary: (
+  inputOrRange: IntegerRange.IntegerRangeInput | IntegerRange.IntegerRange,
+) => fc.Arbitrary<string> = (inputOrRange) =>
+  fc.oneof(makePlainHexArbitrary(inputOrRange), makePrefixedHexArbitrary(inputOrRange));
 
 type HexRegExpOptions = {
   readonly includePrefix?: boolean;
-}
+};
 
-const hexRegExp: (input: IntegerRange.IntegerRangeInput, options?: HexRegExpOptions) => RegExp =
-  (input, options) => {
-    const mergedOptions = { ...defaultHexRegExpOptions, ...options };
-    const byteLength = IntegerRange.isIntegerRange(input)
-      ? input
-      : IntegerRange.from(input);
-    const { min, max } = IntegerRange.inclusive(byteLength).value;
-    return new RegExp(`^${mergedOptions.includePrefix ? '0x' : ''}([0-9a-fA-F]{2}){${min},${max}}$`);
-  };
+const hexRegExp: (input: IntegerRange.IntegerRangeInput, options?: HexRegExpOptions) => RegExp = (input, options) => {
+  const mergedOptions = { ...defaultHexRegExpOptions, ...options };
+  const byteLength = IntegerRange.isIntegerRange(input) ? input : IntegerRange.from(input);
+  const { min, max } = IntegerRange.inclusive(byteLength).value;
+  return new RegExp(`^${mergedOptions.includePrefix ? '0x' : ''}([0-9a-fA-F]{2}){${min},${max}}$`);
+};
 
 const defaultHexRegExpOptions: HexRegExpOptions = {
-  includePrefix: false
-}
+  includePrefix: false,
+};

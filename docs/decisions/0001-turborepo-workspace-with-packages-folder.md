@@ -9,13 +9,13 @@ Technical Story: [#18](https://github.com/midnightntwrk/platform-js/issues/18)
 
 platform-js was split out of midnight-sdk and kept its layout: the Yarn workspace sits in `platform-js/` and the one
 package in `platform-js/platform-js/`, because midnight-sdk held compact-js alongside it. The repo needs a layout of its
-own. Should the workspace move to the repo root with packages under `packages/`, or should the single package become
-the repo root?
+own. Should the workspace move to the repo root with packages under `packages/`, or should the single package become the
+repo root?
 
 ## Decision Drivers
 
-- Moving the package is the expensive part: every path in docs, agent rules, tsconfig, vitest and eslint changes.
-  The layout chosen now should not need moving again.
+- Moving the package is the expensive part: every path in docs, agent rules, tsconfig, vitest and eslint changes. The
+  layout chosen now should not need moving again.
 - The build already runs through Turborepo (`turbo run build|test|package`).
 - midnight-wallet, a sibling Midnight repo, uses a Turborepo workspace with `packages/*`; matching it lowers the cost of
   working across both.
@@ -40,8 +40,8 @@ can be added without another layout move, Turborepo already works here, and it m
 ### Negative Consequences
 
 - With one package, the workspace and Turborepo add a layer a single-package repo would not need.
-- Commands run from the root go through Turborepo; per-file commands (one test file, the type-check) run in the
-  package folder.
+- Commands run from the root go through Turborepo; per-file commands (one test file, the type-check) run in the package
+  folder.
 
 ## Pros and Cons of the Options
 

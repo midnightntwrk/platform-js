@@ -24,13 +24,9 @@ const NETWORK_ID_REGEXP = /^[a-zA-Z0-9-]+$/;
  */
 export type NetworkIdMoniker = Brand.Branded<string, 'NetworkIdMoniker'>;
 
-/**
- * @category constructors
- */
-export const NetworkIdMoniker = Brand.refined<NetworkIdMoniker>(
-  (source: string) => {
-    return source.match(NETWORK_ID_REGEXP)
-      ? Option.none()
-      : Option.some(Brand.error(`Source string '${source}' is not a valid network identifier`));
-  }
-);
+/** @category constructors */
+export const NetworkIdMoniker = Brand.refined<NetworkIdMoniker>((source: string) => {
+  return source.match(NETWORK_ID_REGEXP)
+    ? Option.none()
+    : Option.some(Brand.error(`Source string '${source}' is not a valid network identifier`));
+});
