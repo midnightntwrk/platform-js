@@ -299,8 +299,10 @@ Effect.gen(function* () {
 });
 
 // test/effect/Hex.test.ts - pass an Either to an Effect combinator
-const error = yield * Effect.flip(Hex.parseHex('HOSKYA'));
-expect(ParseError.isParseError(error)).toBeTruthy();
+Effect.gen(function* () {
+  const error = yield* Effect.flip(Hex.parseHex('HOSKYA'));
+  expect(ParseError.isParseError(error)).toBeTruthy();
+});
 ```
 
 **Never mix them carelessly:**

@@ -1,6 +1,8 @@
 # platform-js
 
-> [!WARNING] **This repository is not live yet.** platform-js is moving here from
+<!-- prettier-ignore -->
+> [!WARNING]
+> **This repository is not live yet.** platform-js is moving here from
 > [`midnightntwrk/midnight-sdk`](https://github.com/midnightntwrk/midnight-sdk), and nothing has been released from this
 > repository. Until the first release, treat its issues as placeholders: their scope and details may change.
 

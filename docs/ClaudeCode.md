@@ -173,8 +173,8 @@ Two skill names mean something specific in this repo:
 
 ## Hooks
 
-The repo has no hooks of its own yet. Format-on-edit and verify-on-stop hooks are a follow-up. The scripts they need now
-exist: `format`, `verify` and their `:changed` variants (`DEV_GUIDE.md` → Commands).
+The repo has no hooks of its own yet. Format-on-edit and verify-on-stop hooks are a follow-up. The scripts they would
+call exist: `format`, `verify` and their `:changed` variants (`DEV_GUIDE.md` → Commands).
 
 The `shielded-core-rules` plugin does add hooks. At session start, one tells Claude to load the Shielded rules. Before
 each Bash call, two others block `gh pr create` or `gh issue create` without the `bot:ai-assisted` label, and block

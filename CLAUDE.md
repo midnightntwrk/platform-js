@@ -59,10 +59,9 @@ The supported agentic flow is in `docs/AgenticWorkflow.md`. It replaces the skil
 
 ## Build Commands
 
-This section is the one agent-facing source for the commands; other agent files point here. Run the package scripts
-(`dist`, `dist:publish`, `typecheck`, `lint`, `test`, `test:unit`, `test:integration`, `format`, `format:check`,
-`publint`, `package`, `clean`) from the repo root, where turbo runs them in each package (the Yarn workspace and
-Turborepo root, ADR-0001). Run one test file from the package folder with `yarn run -T vitest`.
+This section is the one agent-facing source for the commands; other agent files point here. Run the scripts in the block
+below from the repo root, where turbo runs the package scripts in each package (the Yarn workspace and Turborepo root,
+ADR-0001). Run one test file from the package folder with `yarn run -T vitest`.
 
 ```bash
 nvm use && corepack enable   # at the repo root
@@ -70,26 +69,28 @@ yarn                         # install dependencies
 yarn dist                    # compile each package's src/ to dist/ (turbo)
 yarn dist:publish            # clean dist/ build without source or declaration maps
 yarn watch                   # rebuild dist/ on every change (turbo watch dist)
-yarn typecheck               # type-check src and tests
-yarn test                    # full test suite (turbo), straight from src/, no build needed
-yarn test:unit               # unit lane: test/**/*.test.ts except *.integration.test.ts
-yarn test:integration        # integration lane: test/**/*.integration.test.ts (none yet; passes)
+yarn typecheck               # type-check each package's src and tests
+yarn typecheck:root          # type-check the Vitest configs and test/tooling/
+yarn test                    # full test suite (turbo), straight from src/, no build or type-check
+yarn test:unit               # unit lane: test/**/*.test.ts, not *.integration.test.ts; type-checks first; fails if none
+yarn test:integration        # integration lane: test/**/*.integration.test.ts; type-checks first (none yet; passes)
 yarn lint                    # eslint in each package, plus lint:root
-yarn lint:root               # eslint on root eslint.config.mjs, vitest.config.ts, vitest.outputs.ts
-yarn format                  # prettier --write in each package, then format:root
-yarn format:check            # prettier --check, same scope
+yarn lint:root               # eslint on the root eslint.config.mjs, vitest*.ts configs and test/tooling/
+yarn format                  # format:root first, then prettier --write in each package
+yarn format:check            # format:check:root first, then prettier --check in each package
 yarn format:root             # prettier --write on root files only (.prettierignore.root leaves out packages/)
 yarn format:check:root       # prettier --check on root files only
 yarn format:file <files>     # prettier --write on the files named
+yarn test:tooling            # tests for the root scripts, turbo.json and Vitest configs (test/tooling/)
 yarn check-barrel-exports    # every src/effect/ module re-exported from its index.ts, nothing from internal/
-yarn verify:check            # typecheck, format:check, lint and check-barrel-exports
-yarn verify:test             # the unit lane
+yarn verify:check            # typecheck, typecheck:root, format:check, lint, lint:root, check-barrel-exports
+yarn verify:test             # the unit lane, plus test:tooling
 yarn verify:integration      # the integration lane
 yarn verify                  # verify:check, verify:test and verify:integration
-yarn changed-files           # files changed since HEAD, untracked included
-yarn format:changed          # format:file on changed-files
-yarn lint:changed            # turbo lint lint:root --affected (packages and root changed since main)
-yarn els:changed             # Effect language service diagnostics on changed packages/**/*.ts
+yarn changed-files           # files changed since HEAD, untracked included, NUL-separated
+yarn format:changed          # format:file on changed-files, uncommitted work vs HEAD (scripts/format-changed.mjs)
+yarn lint:changed            # turbo lint lint:root --affected: the branch vs main, not just uncommitted work
+yarn els:changed             # Effect language service on changed packages/**/*.ts vs HEAD; warnings fail (--strict)
 yarn verify:changed          # format:changed, lint:changed, then els:changed
 yarn publint                 # publish build, then publint --strict on the package
 yarn package                 # publish build, then npm pack (the .tgz lands in the package folder)

@@ -94,47 +94,61 @@ Examples: `feat/123-network-id-parsing`, `chore/19-agentic-workflow-setup`, `doc
 
 Run these from the repo root.
 
-| Command                     | What it does                                                                                                                                     |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `yarn dist`                 | Compiles each package's `src/` to `dist/` (Turbo).                                                                                               |
-| `yarn dist:publish`         | Clean `dist/` build, no source or declaration maps.                                                                                              |
-| `yarn watch`                | Rebuilds `dist/` on every change (`turbo watch dist`).                                                                                           |
-| `yarn typecheck`            | Type-checks `src/` and the tests.                                                                                                                |
-| `yarn test`                 | Runs all tests (Turbo) from `src/`; no build needed.                                                                                             |
-| `yarn test:unit`            | Runs the unit lane: every test except `*.integration.test.ts`.                                                                                   |
-| `yarn test:integration`     | Runs the integration lane: `*.integration.test.ts` (none yet, so it passes).                                                                     |
-| `yarn lint`                 | Lints packages and root configs; warnings fail.                                                                                                  |
-| `yarn lint:root`            | Lints the root configs alone.                                                                                                                    |
-| `yarn format`               | Formats each package, then the root files, with Prettier.                                                                                        |
-| `yarn format:check`         | Checks the same files are formatted; changes nothing.                                                                                            |
-| `yarn format:root`          | Formats the root files only (`packages/` aside).                                                                                                 |
-| `yarn format:check:root`    | Checks the root files only.                                                                                                                      |
-| `yarn format:file <f>`      | Formats the files you name.                                                                                                                      |
-| `yarn check-barrel-exports` | Checks every `src/effect/` module is re-exported from `src/effect/index.ts`, `src/index.ts` re-exports it, and no barrel re-exports `internal/`. |
-| `yarn verify:check`         | `typecheck`, `format:check`, `lint` and `check-barrel-exports`.                                                                                  |
-| `yarn verify:test`          | The unit lane.                                                                                                                                   |
-| `yarn verify:integration`   | The integration lane.                                                                                                                            |
-| `yarn verify`               | All three `verify:*` steps above.                                                                                                                |
-| `yarn changed-files`        | Lists files changed since `HEAD`, untracked ones included.                                                                                       |
-| `yarn format:changed`       | Formats only those files.                                                                                                                        |
-| `yarn lint:changed`         | Lints the packages Turbo sees as affected, plus the root configs when they changed.                                                              |
-| `yarn els:changed`          | Runs the Effect language service diagnostics on changed `packages/**/*.ts` files.                                                                |
-| `yarn verify:changed`       | `format:changed`, `lint:changed`, then `els:changed`.                                                                                            |
-| `yarn publint`              | Publish build, then `publint --strict`.                                                                                                          |
-| `yarn package`              | Publish build, then `npm pack` in each package.                                                                                                  |
-| `yarn clean`                | Removes `dist`, coverage, reports and build info.                                                                                                |
-| `yarn changeset`            | Adds a changeset (asks which packages and bumps).                                                                                                |
-| `yarn changeset:check`      | Lists the pending changesets and the bumps they make.                                                                                            |
+| Command                     | What it does                                                                                                                                                                    |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `yarn dist`                 | Compiles each package's `src/` to `dist/` (Turbo).                                                                                                                              |
+| `yarn dist:publish`         | Clean `dist/` build, no source or declaration maps.                                                                                                                             |
+| `yarn watch`                | Rebuilds `dist/` on every change (`turbo watch dist`).                                                                                                                          |
+| `yarn typecheck`            | Type-checks each package's `src/` and tests.                                                                                                                                    |
+| `yarn typecheck:root`       | Type-checks the root and package Vitest configs, `vitest.outputs.ts` and `test/tooling/` (`tsconfig.tooling.json`).                                                             |
+| `yarn test`                 | Runs all package tests (Turbo) from `src/`; no build and no type-check first.                                                                                                   |
+| `yarn test:unit`            | Type-checks, then runs the unit lane: every test except `*.integration.test.ts`. Fails if it finds no tests.                                                                    |
+| `yarn test:integration`     | Type-checks, then runs the integration lane: `*.integration.test.ts` (none yet, so it passes).                                                                                  |
+| `yarn test:tooling`         | Runs the repo tooling tests in `test/tooling/` (`vitest.tooling.config.ts`).                                                                                                    |
+| `yarn lint`                 | Lints packages and root files; warnings fail.                                                                                                                                   |
+| `yarn lint:root`            | Lints the root files alone: `eslint.config.mjs`, the root Vitest configs, `vitest.outputs.ts` and `test/tooling/`.                                                              |
+| `yarn format`               | Formats the root files, then each package, with Prettier.                                                                                                                       |
+| `yarn format:check`         | Checks the root files, then each package, are formatted; changes nothing.                                                                                                       |
+| `yarn format:root`          | Formats the root files only (`packages/` aside).                                                                                                                                |
+| `yarn format:check:root`    | Checks the root files only.                                                                                                                                                     |
+| `yarn format:file <f>`      | Formats the files you name.                                                                                                                                                     |
+| `yarn check-barrel-exports` | Checks the barrels: every `src/effect/` module outside `internal/` (any depth) is in `src/effect/index.ts`, `src/index.ts` re-exports it, and no barrel re-exports `internal/`. |
+| `yarn verify:check`         | `typecheck`, `typecheck:root`, `format:check`, `lint`, `lint:root` and `check-barrel-exports`.                                                                                  |
+| `yarn verify:test`          | The unit lane, plus `test:tooling`.                                                                                                                                             |
+| `yarn verify:integration`   | The integration lane.                                                                                                                                                           |
+| `yarn verify`               | All three `verify:*` steps above.                                                                                                                                               |
+| `yarn changed-files`        | Lists files changed since `HEAD`, untracked ones included, NUL-separated.                                                                                                       |
+| `yarn format:changed`       | Formats only those files.                                                                                                                                                       |
+| `yarn lint:changed`         | Lints the packages Turbo sees as affected since `main`, plus the root files when they changed.                                                                                  |
+| `yarn els:changed`          | Runs the Effect language service diagnostics on changed `packages/**/*.ts` files; warnings fail.                                                                                |
+| `yarn verify:changed`       | `format:changed`, `lint:changed`, then `els:changed`.                                                                                                                           |
+| `yarn publint`              | Publish build, then `publint --strict`.                                                                                                                                         |
+| `yarn package`              | Publish build, then `npm pack` in each package.                                                                                                                                 |
+| `yarn clean`                | Removes `dist`, coverage, reports and build info.                                                                                                                               |
+| `yarn changeset`            | Adds a changeset (asks which packages and bumps).                                                                                                                               |
+| `yarn changeset:check`      | Lists the pending changesets and the bumps they make.                                                                                                                           |
 
 Prettier's settings are in `.prettierrc.json`: midnight-wallet's, plus `jsdocCapitalizeDescription: false`, which keeps
 `@category` tags lowercase (`.claude/rules/functional-style.md`). It formats `ts`, `js`, `json`, `yaml`, `yml` and `md`
-files, so `scripts/*.mjs` stay hand-formatted. The package scripts read `.prettierignore`; the root scripts read
-`.prettierignore.root`, which also leaves out `packages/`.
+files. Each script reads its own ignore files:
 
-`lint:changed` and `els:changed` compare against different points: `lint:changed` uses Turbo's `--affected` (the branch
-since it left `main`), while `changed-files` and the scripts built on it list only uncommitted work.
+- `format:root` and `format:check:root` run at the root and pass
+  `--ignore-path .gitignore --ignore-path .prettierignore.root`. `.prettierignore.root` also leaves out `packages/`.
+- A package's `format` and `format:check` run in the package folder and read that folder's `.prettierignore`, plus
+  `.gitignore` (Prettier's default).
+- `format:file`, and so `format:changed`, runs at the root and reads the root `.gitignore` and `.prettierignore`.
 
-`els:changed` runs with the `deterministicKeys` rule turned off for now (see the comment in `scripts/els-changed.mjs`).
+All of them ignore `*.mjs` files (`scripts/` and `eslint.config.mjs`), which stay hand-formatted, and all of `.claude/`.
+
+`format:changed` and `els:changed` check uncommitted and untracked work against `HEAD`. `lint:changed` uses Turbo's
+`--affected`, so it checks the whole branch against `main`. Once you commit, the first two print "nothing to format" or
+"nothing to check" and pass. A change to `eslint.config.mjs` or `tsconfig.base.json` marks every package as affected
+(Turbo `globalDependencies`).
+
+`els:changed` runs the language service with `--strict`, so warnings fail as well as errors. It uses the shared plugin
+config from `tsconfig.base.json` unchanged. `deterministicKeys` is an error everywhere. The two `Context.Tag` keys in
+`Configuration.ts` turn it off with `@effect-diagnostics-next-line deterministicKeys:off`, because the keys are runtime
+identifiers other code may depend on. Renaming them is tracked in #87.
 
 ### Known failures today
 
@@ -173,30 +187,39 @@ changes the label. A new workflow pins the same label.
 
 ## Testing Tiers
 
-Today there are **unit tests only**; the `integration` lane below is empty. They are pure: no Docker, network or other
-outside services.
+### Package tests
+
+Today the package has **unit tests only**. They are pure: no Docker, network or other outside services.
 
 - Files are named `*.test.ts` and live in `packages/platform-js/test/` (for example `test/effect/Hex.test.ts`).
 - They use [`@effect/vitest`](https://github.com/Effect-TS/effect/tree/main/packages/vitest) (`it.effect`) and property
   tests from `effect/FastCheck`.
 - Tests import from `src/` by relative path, for example `../../src/effect/Hex.ts`, so they need no build first.
 
-Run every test from the repo root:
+Run every package test from the repo root:
 
 ```bash
 yarn test
 ```
 
 Tests run in two Vitest projects, called lanes: `unit` (every `*.test.ts` except `*.integration.test.ts`) and
-`integration` (`*.integration.test.ts`, none yet). Run one lane with `yarn test:unit` or `yarn test:integration`. Each
-lane writes coverage and reports to its own folder, `coverage/<lane>` and `reports/<lane>` (`all` for `yarn test`), so
-`yarn verify`, which runs both lanes side by side, keeps both.
+`integration` (`*.integration.test.ts`, none yet). Run one lane with `yarn test:unit` or `yarn test:integration`. Both
+lane scripts type-check first; `yarn test` does not. `test:unit` fails when it finds no tests; `test:integration` passes
+when empty. Each lane writes coverage and reports to its own folder, `coverage/<lane>` and `reports/<lane>` (`all` for
+`yarn test`), so `yarn verify`, which runs both lanes side by side, keeps both.
 
 Run one file from `packages/platform-js/`:
 
 ```bash
 yarn run -T vitest run test/effect/Hex.test.ts
 ```
+
+### Repo tooling tests
+
+`test/tooling/` at the repo root tests the repo's own tooling, not the package: the root scripts, `turbo.json` and the
+Vitest configs. The tests run the scripts as child processes against temporary folders and temporary git repos. They
+have their own config, `vitest.tooling.config.ts`, and run only through `yarn test:tooling` (part of
+`yarn verify:test`). `yarn typecheck:root` type-checks them.
 
 ---
 
