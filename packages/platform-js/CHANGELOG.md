@@ -1,5 +1,42 @@
 # @midnightntwrk/platform-js
 
+## 4.0.0
+
+### Major Changes
+
+- 14cbfdc: **BREAKING CHANGE:** the package is now built with `tsc` straight to `dist/` and published as ESM only. Each
+  entry in `exports` (`.`, `./effect`, `./effect/*`) has `types`, `import` and `default` conditions, all pointing at the
+  ESM build in `dist/`; `default` no longer points at CommonJS files the package never shipped. The
+  `effect/*/package.json` stub folders are gone; `typesVersions` now maps `effect` and `effect/*` into `dist/` in their
+  place, so TypeScript projects on the old `node10` module resolution still get the types for `effect` and `effect/*`
+  subpaths. `NodeNext`, `Node16` or `Bundler` is still the recommended setting: TypeScript 6.0 deprecates `node10`.
+  Imports through the package's exported paths need no change; code that imported files by their location inside the
+  package must use the exported paths. A CommonJS TypeScript project must use `NodeNext` on TypeScript 5.8 or later, or
+  `Bundler`: under `Node16`, or `NodeNext` before 5.8, TypeScript reports TS1479 for an ES module imported from
+  CommonJS.
+- 947b5c5: **BREAKING CHANGE:** the package is now published as `@midnightntwrk/platform-js` (the npm scope without the
+  dash) instead of `@midnight-ntwrk/platform-js`. There is no alias under the old name: versions up to `3.0.0` stay on
+  npm as `@midnight-ntwrk/platform-js` and get no further releases. The `Context.Tag` keys of the `Configuration`
+  services (`Keys`, `Network`) move to the new scope too, for example
+  `'@midnightntwrk/platform-js/Configuration#Network'`. A layer built with the old package does not provide the new
+  package's `Keys` or `Network` services, so move every dependent to the new scope together.
+
+  To migrate, swap the dependency and update every import:
+
+  ```sh
+  npm uninstall @midnight-ntwrk/platform-js
+  npm install @midnightntwrk/platform-js
+  ```
+
+  ```ts
+  // before
+  import { Hex } from '@midnight-ntwrk/platform-js';
+  import * as NetworkId from '@midnight-ntwrk/platform-js/effect/NetworkId';
+  // after
+  import { Hex } from '@midnightntwrk/platform-js';
+  import * as NetworkId from '@midnightntwrk/platform-js/effect/NetworkId';
+  ```
+
 Versions up to 3.0.0 were published as `@midnight-ntwrk/platform-js`.
 
 ## 3.0.0
