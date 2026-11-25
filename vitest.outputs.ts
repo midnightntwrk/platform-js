@@ -41,10 +41,10 @@ export const testOutputs = (lane: TestLane = testLaneOf(process.env.npm_lifecycl
 });
 
 /**
- * Whether a run checks the coverage thresholds: only a full run of the unit tests, the package's `test` or `test:unit`
- * script. Any other run measures less than the whole suite would, so a threshold would fail it for no fault: the empty
- * integration lane covers nothing, and a single-file or editor run (`yarn run -T vitest run <file>`) covers one
- * module.
+ * Whether a run checks the coverage thresholds: any run of the package's `test` or `test:unit` script, including one
+ * given a file filter (`yarn test -- <file>`), which then fails the thresholds because it covers one module. The runs
+ * that skip them are the direct `yarn run -T vitest run <file>` (and editor runs), which measure one module, and the
+ * integration lane, which covers nothing.
  */
 export const checksCoverageThresholds = (script: string | undefined): boolean =>
   script === 'test' || script === 'test:unit';

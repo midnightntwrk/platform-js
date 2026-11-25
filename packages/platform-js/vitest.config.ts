@@ -40,7 +40,8 @@ export default defineConfig({
       // Tests and their helpers sit beside the source (ADR-0006); coverage measures only the code they test.
       exclude: ['src/**/test/**'],
       // A floor, not a target: the coverage the unit tests reach, rounded down to the nearest 5. Raise it as the
-      // known gaps close; never lower it to make a change pass. Checked only on a full unit run.
+      // known gaps close; never lower it to make a change pass. Checked only by the package's `test` and `test:unit`
+      // scripts (`checksCoverageThresholds`); `yarn run -T vitest run <file>` skips it.
       ...(checksCoverageThresholds(process.env.npm_lifecycle_event)
         ? { thresholds: { statements: 90, branches: 80, functions: 90, lines: 90 } }
         : {}),

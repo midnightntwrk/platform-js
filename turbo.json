@@ -4,7 +4,7 @@
   "globalDependencies": ["eslint.config.mjs", "tsconfig.base.json"],
   "tasks": {
     "dist": {
-      "inputs": ["src/**/*.ts", "package.json", "tsconfig*.json", "$TURBO_ROOT$/tsconfig.base.json"],
+      "inputs": ["src/**/*.ts", "!src/**/test/**", "package.json", "tsconfig*.json", "$TURBO_ROOT$/tsconfig.base.json"],
       "outputs": ["dist/**", "tsconfig.build.tsbuildinfo"],
       "outputLogs": "new-only",
       "dependsOn": ["^dist"]
@@ -73,7 +73,7 @@
       "cache": false
     },
     "publint": {
-      "inputs": ["src/**/*.ts", "package.json", "tsconfig*.json", "$TURBO_ROOT$/tsconfig.base.json"],
+      "inputs": ["src/**/*.ts", "!src/**/test/**", "package.json", "tsconfig*.json", "$TURBO_ROOT$/tsconfig.base.json"],
       "outputLogs": "new-only",
       "dependsOn": ["dist:publish"]
     },

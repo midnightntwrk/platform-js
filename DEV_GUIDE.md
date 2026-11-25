@@ -212,9 +212,10 @@ when empty. Each lane writes coverage and reports to its own folder, `coverage/<
 `yarn test`), so `yarn verify`, which runs both lanes side by side, keeps both.
 
 `yarn test` and `yarn test:unit` also fail when coverage drops below the thresholds in
-`packages/platform-js/vitest.config.ts` (statements 90, branches 80, functions 90, lines 90). A single-file run and the
-integration lane don't check them. The thresholds are a floor: raise them as coverage grows, never lower them to make a
-change pass.
+`packages/platform-js/vitest.config.ts` (statements 90, branches 80, functions 90, lines 90). They check every run of
+the package's `test` and `test:unit` scripts, even one given a single file, which then fails.
+`yarn run -T vitest run <file>` and the integration lane skip them. The thresholds are a floor: raise them as coverage
+grows, never lower them to make a change pass.
 
 Run one file from `packages/platform-js/`:
 
