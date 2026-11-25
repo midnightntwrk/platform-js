@@ -59,7 +59,8 @@ paths:
   via `Effect.provide`.
 - Config fixtures: `ConfigProvider.fromJson(json)`, applied with `Effect.withConfigProvider`. Never
   `Configuration.configProvider(json)`: it reads real environment variables first, so a shell or CI variable changes
-  the result. `src/effect/test/Configuration.test.ts` still uses it (#29): don't copy that part.
+  the result. To test `configProvider` itself, clear every variable it could read with `vi.stubEnv(name, undefined)`
+  in a `beforeEach` and restore them with `vi.unstubAllEnvs()` (`src/effect/test/Configuration.test.ts`).
 
 ## Testing Effect code
 
