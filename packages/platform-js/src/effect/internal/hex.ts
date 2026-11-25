@@ -70,11 +70,9 @@ const defaultHexConstructionConstraints: HexConstraints = {
 };
 
 /** @internal */
-/* eslint-disable @typescript-eslint/no-explicit-any -- the brand's own type is left open, so any Branded<string, _> fits */
-export const make: <T extends Brand.Branded<string, any>>(
+export const make: <T extends Brand.Branded<string, string | symbol>>(
   constraints?: HexConstraints,
-) => Brand.Brand.Constructor<T> = <T extends Brand.Branded<string, any>>(options?: Hex.HexConstraints) => {
-  /* eslint-enable @typescript-eslint/no-explicit-any */
+) => Brand.Brand.Constructor<T> = <T extends Brand.Branded<string, string | symbol>>(options?: Hex.HexConstraints) => {
   const mergedOptions = { ...defaultHexConstructionConstraints, ...options };
   return Brand.refined<T>((source: string) =>
     Either.match(parseHex(source), {
